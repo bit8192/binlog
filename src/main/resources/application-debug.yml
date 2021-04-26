@@ -1,0 +1,12 @@
+debug: true
+spring:
+  jpa:
+    show-sql: on
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+server:
+  port: 8081
+logging:
+  level:
+    cn.bincker.web.blog: debug

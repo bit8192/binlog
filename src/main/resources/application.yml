@@ -1,0 +1,27 @@
+server:
+  port: 80
+system:
+  name: Bincker的博客
+  copy-right: copyright @2021 Bincker
+  ipc: 京ICP备1234567890号
+  github: https://github.com/Bincker1973
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/blog?createDatabaseIfNotExist=true&serverTime=Asia/Shanghai&useUnicode=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+  data:
+    rest:
+      base-path: /api
+  profiles:
+    active: debug
+  servlet:
+    multipart:
+      location: upload-file
+      max-file-size: 20MB
+      max-request-size: 24MB
+  web:
+    locale: zh_CN
