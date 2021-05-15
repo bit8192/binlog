@@ -3,6 +3,7 @@ package cn.bincker.web.blog.base.controller;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.restdocs.RestDocumentationContextProvider;
 import org.springframework.restdocs.RestDocumentationExtension;
@@ -25,6 +26,9 @@ class UploadControllerTest {
 
     private MockMvc mockMvc;
 
+    @Value("${system.base-path}")
+    private String basePath;
+
     @BeforeEach
     public void beforeTest(
             WebApplicationContext context,
@@ -38,8 +42,8 @@ class UploadControllerTest {
     @Test
     void upload() throws Exception {
         mockMvc.perform(
-                fileUpload("/api/files")
-                .file("filename", "hello world".getBytes(StandardCharsets.UTF_8))
+                fileUpload(basePath + "/files")
+                .file("filename", "<<upload-content>>".getBytes(StandardCharsets.UTF_8))
                 .param("isPublic", "true")
         )
                 .andExpect(status().isOk())
@@ -49,7 +53,7 @@ class UploadControllerTest {
     @Test
     void get() throws Exception {
         mockMvc.perform(
-                RestDocumentationRequestBuilders.get("/api/files/6")
+                RestDocumentationRequestBuilders.get(basePath + "/files/6")
         )
                 .andExpect(status().isOk())
                 .andDo(print())

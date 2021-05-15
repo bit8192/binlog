@@ -5,6 +5,10 @@ system:
   copy-right: copyright @2021 Bincker
   ipc: 京ICP备1234567890号
   github: https://github.com/Bincker1973
+  base-path: /api
+  datetime-format: yyyy-MM-dd HH:mm:ss
+  date-format: yyyy-MM-dd
+  time-format: HH:mm:ss
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -13,9 +17,6 @@ spring:
     password: 123456
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
-  data:
-    rest:
-      base-path: /api
   profiles:
     active: debug
   servlet:

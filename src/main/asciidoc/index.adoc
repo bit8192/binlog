@@ -1,0 +1,36 @@
+= binlog接口文档
+Bincker <1229732681@qq.com>
+2021-05-08 13:00
+:toc:
+现在只是简单测试了一下spring-restdocs的功能.
+
+== 文章分类
+=== 获取条目
+
+.request
+include::{snippets}/ArticleClassControllerTest/getItem/http-request.adoc[]
+
+.path parameters
+include::{snippets}/ArticleClassControllerTest/getItem/path-parameters.adoc[]
+
+.response fields
+include::{snippets}/ArticleClassControllerTest/getItem/response-fields.adoc[]
+
+=== 列出子节点
+
+.request
+include::{snippets}/ArticleClassControllerTest/findAllByParentId/http-request.adoc[]
+
+.response fields
+include::{snippets}/ArticleClassControllerTest/findAllByParentId/response-fields.adoc[]
+
+=== 添加条目
+
+.request
+include::{snippets}/ArticleClassControllerTest/addItem/http-request.adoc[]
+
+.request fields
+include::{snippets}/ArticleClassControllerTest/addItem/request-fields.adoc[]
+
+.response fields
+include::{snippets}/ArticleClassControllerTest/addItem/response-fields.adoc[]

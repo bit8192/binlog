@@ -6,6 +6,7 @@ import cn.bincker.web.blog.security.machine.VerifyQuestion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.util.Pair;
 import org.springframework.mock.web.MockHttpSession;
@@ -17,14 +18,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import javax.imageio.ImageIO;
-import javax.swing.*;
-
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Objects;
 
@@ -39,6 +33,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(RestDocumentationExtension.class)
 public class AuthenticationTests {
     private MockMvc mock;
+    @Value("${system.base-path}")
+    private String basePath;
 
     @BeforeEach
     void beforeTest(
@@ -55,7 +51,7 @@ public class AuthenticationTests {
     void authentication() throws Exception {
         MockHttpSession session = new MockHttpSession();
         MvcResult result = mock.perform(
-                get("/verify-code")
+                get(basePath + "/verify-code")
                 .session(session)
         )
                 .andExpect(status().isOk())
@@ -66,7 +62,7 @@ public class AuthenticationTests {
         System.out.println(verifyQuestion);
 
         MockHttpServletRequestBuilder requestBuilder =
-                post("/authentication")
+                post(basePath + "/authentication")
                         .param("username", "admin")
                         .param("password", "123456")
                 .session(session);

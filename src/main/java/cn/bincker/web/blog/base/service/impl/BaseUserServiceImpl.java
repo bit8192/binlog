@@ -23,4 +23,9 @@ public class BaseUserServiceImpl implements IBaseUserService {
         Optional<BaseUser> userOptional = repository.findByUsername(s);
         return new AuthorizationUser(userOptional.orElseThrow(()->new UsernameNotFoundException("用户不存在")));
     }
+
+    @Override
+    public BaseUser getByUsername(String username) {
+        return repository.findByUsername(username).orElse(null);
+    }
 }

@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class WhiteBackgroundGeneratorTest {
 
-    @Test
+//    @Test
     void generator() {
         int width = 1960;
         int height = 1080;

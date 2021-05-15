@@ -1,6 +1,7 @@
 package cn.bincker.web.blog.base.service.impl;
 
 import cn.bincker.web.blog.base.UserAuditingListener;
+import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.entity.UploadFile;
 import cn.bincker.web.blog.base.exception.SystemException;
@@ -8,6 +9,7 @@ import cn.bincker.web.blog.base.repository.IUploadFileRepository;
 import cn.bincker.web.blog.base.service.IUploadService;
 import cn.bincker.web.blog.base.service.dto.UploadFileDto;
 import cn.bincker.web.blog.utils.CommonUtils;
+import cn.bincker.web.blog.utils.DateUtils;
 import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ResourceUtils;
@@ -28,11 +30,13 @@ public class UploadServiceImpl implements IUploadService {
     private final IUploadFileRepository repository;
     private final MultipartProperties multipartProperties;
     private final UserAuditingListener userAuditingListener;
+    private final DateUtils dateUtils;
 
-    public UploadServiceImpl(IUploadFileRepository repository, MultipartProperties multipartProperties, UserAuditingListener userAuditingListener) {
+    public UploadServiceImpl(IUploadFileRepository repository, MultipartProperties multipartProperties, UserAuditingListener userAuditingListener, DateUtils dateUtils) {
         this.repository = repository;
         this.multipartProperties = multipartProperties;
         this.userAuditingListener = userAuditingListener;
+        this.dateUtils = dateUtils;
     }
 
     @Override
@@ -49,7 +53,7 @@ public class UploadServiceImpl implements IUploadService {
 
         Optional<BaseUser> userOptional = userAuditingListener.getCurrentAuditor();
         if(userOptional.isPresent()) uploadDir = new File(uploadDir, userOptional.get().getUsername());
-        uploadDir = new File(uploadDir, SimpleDateFormat.getDateInstance().format(new Date()));
+        uploadDir = new File(uploadDir, dateUtils.getDateFormat().format(new Date()));
 
         if(!uploadDir.exists() && !uploadDir.mkdirs()){
             throw new SystemException("创建上传目录失败 path=" + uploadDir.getAbsolutePath());
@@ -64,6 +68,7 @@ public class UploadServiceImpl implements IUploadService {
 
             String fileName = multipartFile.getOriginalFilename();
             if(!StringUtils.hasText(fileName)) fileName = UUID.randomUUID().toString();
+            fileName = fileName.replaceAll(RegexpConstant.ILLEGAL_FILE_NAME_CHAR, "");
             File targetFile = new File(finalUploadDir, fileName);
             while (targetFile.exists()){
                 fileName = UploadServiceImpl.nextSerialFileName(fileName);

@@ -22,8 +22,6 @@ import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuild
 @ExtendWith(RestDocumentationExtension.class)
 class IndexControllerTest {
     private MockMvc mock;
-    @Value("${spring.data.rest.base-path}")
-    private String basePath;
 
     @BeforeEach
     public void beforeEach(WebApplicationContext applicationContext, RestDocumentationContextProvider contextProvider){
@@ -33,22 +31,4 @@ class IndexControllerTest {
                 .build();
     }
 
-    @Test
-    public void test() throws Exception {
-        mock.perform(
-                post("/test")
-                .param("test", "hello world")
-        )
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andDo(MockMvcResultHandlers.print());
-    }
-
-    @Test
-    public void apiList() throws Exception {
-        mock.perform(
-                get(basePath)
-        )
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andDo(MockMvcResultHandlers.print());
-    }
 }

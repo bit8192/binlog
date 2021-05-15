@@ -17,7 +17,7 @@ import java.io.File;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("api/files")
+@RequestMapping("${system.base-path}/files")
 public class UploadController {
     private final IUploadService uploadService;
 
@@ -33,7 +33,7 @@ public class UploadController {
     @GetMapping("/{id}")
     public ResponseEntity<?> get(@PathVariable Long id, BaseUser user, HttpServletResponse response){
         Optional<UploadFile> uploadFileOptional = uploadService.getUploadFile(id);
-        if(!uploadFileOptional.isPresent()) return ResponseEntity.notFound().build();
+        if(uploadFileOptional.isEmpty()) return ResponseEntity.notFound().build();
         UploadFile uploadFile = uploadFileOptional.get();
         //判断是否有权限读取
         if(!uploadFile.getIsPublic()){

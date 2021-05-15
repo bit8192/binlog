@@ -11,10 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -23,6 +20,7 @@ import java.util.Collections;
 import java.util.Map;
 
 @RestController
+@RequestMapping("${system.base-path}")
 public class IndexController {
     private final IVerifyCode<?> verifyCode;
     private final SystemProfile profile;
@@ -32,17 +30,17 @@ public class IndexController {
         this.profile = profile;
     }
 
-    @GetMapping(value = "api/verify-code", produces = MediaType.IMAGE_JPEG_VALUE)
+    @GetMapping(value = "verify-code", produces = MediaType.IMAGE_JPEG_VALUE)
     public void verifyCode(HttpServletRequest request, HttpServletResponse response) throws IOException {
         verifyCode.write(request, response);
     }
 
-    @GetMapping("api/profile")
+    @GetMapping("profile")
     public EntityModel<SystemProfile> profile(){
         return EntityModel.of(profile);
     }
 
-    @GetMapping("api/self-info")
+    @GetMapping("self-info")
     public EntityModel<BaseUser> selfInfo(BaseUser user){
         if(user == null) throw new UnauthorizedException();
         return EntityModel.of(user);

@@ -41,13 +41,15 @@ public class Article extends AuditEntity {
     /**
      * 简述
      */
+    @SuppressWarnings("JpaDataSourceORMInspection")
     @Column(name = "[describe]")
     private String describe;
 
     @ManyToMany
     private Set<Tag> tags;
 
-    private String cover;
+    @ManyToOne
+    private UploadFile cover;
 
     @Convert(converter = StringArrayConverter.class)
     private String[] images;

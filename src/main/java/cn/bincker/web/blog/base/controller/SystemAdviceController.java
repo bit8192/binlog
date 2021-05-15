@@ -3,9 +3,7 @@ package cn.bincker.web.blog.base.controller;
 import cn.bincker.web.blog.base.UserAuditingListener;
 import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.entity.ErrorResult;
-import cn.bincker.web.blog.base.exception.BadRequestException;
-import cn.bincker.web.blog.base.exception.SystemException;
-import cn.bincker.web.blog.base.exception.UnauthorizedException;
+import cn.bincker.web.blog.base.exception.*;
 import cn.bincker.web.blog.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,12 +16,12 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
 @RestControllerAdvice
-public class SystemExceptionHandlerController {
-    private static final Logger log = LoggerFactory.getLogger(SystemExceptionHandlerController.class);
+public class SystemAdviceController {
+    private static final Logger log = LoggerFactory.getLogger(SystemAdviceController.class);
 
     private final UserAuditingListener userAuditingListener;
 
-    public SystemExceptionHandlerController(UserAuditingListener userAuditingListener) {
+    public SystemAdviceController(UserAuditingListener userAuditingListener) {
         this.userAuditingListener = userAuditingListener;
     }
 
@@ -49,6 +47,18 @@ public class SystemExceptionHandlerController {
         String msg = "未获授权请求";
         printLog(exception, request, msg);
         return new ErrorResult(msg);
+    }
+
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(NotFoundException.class)
+    public ErrorResult notFoundExceptionHandle(NotFoundException exception){
+        return new ErrorResult(exception.getTip());
+    }
+
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ExceptionHandler(ForbiddenException.class)
+    public ErrorResult forbiddenExceptionHandle(){
+        return new ErrorResult("您没有权限访问");
     }
 
     private void printLog(Exception exception, HttpServletRequest request, String msg){

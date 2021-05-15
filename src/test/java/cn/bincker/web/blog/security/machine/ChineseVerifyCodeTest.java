@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ChineseVerifyCodeTest {
 
-    @Test
+//    @Test
     void generate() {
         int width = 350;
         int height = 350;
