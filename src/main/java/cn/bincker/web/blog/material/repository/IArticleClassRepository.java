@@ -1,7 +1,7 @@
 package cn.bincker.web.blog.material.repository;
 
 import cn.bincker.web.blog.material.entity.ArticleClass;
-import cn.bincker.web.blog.material.service.vo.ArticleClassVo;
+import cn.bincker.web.blog.material.vo.ArticleClassVo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -14,7 +14,7 @@ import java.util.Optional;
 @Repository
 public interface IArticleClassRepository extends JpaRepository<ArticleClass, Long>, JpaSpecificationExecutor<ArticleClass> {
     String ARTICLE_CLASS_VO_FIELDS = """
-        new cn.bincker.web.blog.material.service.vo.ArticleClassVo(
+        new cn.bincker.web.blog.material.vo.ArticleClassVo(
         ac,
         count(child.id) as childrenNum
         )

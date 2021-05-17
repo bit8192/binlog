@@ -1,6 +1,6 @@
 package cn.bincker.web.blog.security.filter;
 
-import cn.bincker.web.blog.base.entity.vo.SuccessMsgVo;
+import cn.bincker.web.blog.base.vo.SuccessMsgVo;
 import cn.bincker.web.blog.security.machine.IVerifyCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;

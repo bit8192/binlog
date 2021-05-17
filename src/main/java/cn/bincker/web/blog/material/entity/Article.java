@@ -3,6 +3,7 @@ package cn.bincker.web.blog.material.entity;
 import cn.bincker.web.blog.base.entity.AuditEntity;
 import cn.bincker.web.blog.base.entity.UploadFile;
 import cn.bincker.web.blog.base.entity.converter.StringArrayConverter;
+import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -14,6 +15,13 @@ import java.util.Set;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Data
+@NamedEntityGraphs({
+        @NamedEntityGraph(name = "Article.default", attributeNodes = {
+                @NamedAttributeNode("tags"),
+                @NamedAttributeNode("cover"),
+                @NamedAttributeNode("articleClass")
+        })
+})
 public class Article extends AuditEntity {
     @NotEmpty
     private String title;
@@ -36,7 +44,7 @@ public class Article extends AuditEntity {
     /**
      * 推荐和置顶的排序
      */
-    private Integer orderNum;
+    private Integer orderNum = 0;
 
     /**
      * 简述
@@ -49,7 +57,7 @@ public class Article extends AuditEntity {
     private Set<Tag> tags;
 
     @ManyToOne
-    private UploadFile cover;
+    private NetDiskFile cover;
 
     @Convert(converter = StringArrayConverter.class)
     private String[] images;
@@ -70,20 +78,20 @@ public class Article extends AuditEntity {
     /**
      * 浏览量
      */
-    private long viewingNum;
+    private Long viewingNum = 0L;
 
     /**
      * 赞数量
      */
-    private long agreedNum;
+    private Long agreedNum = 0L;
 
     /**
      * 评论量
      */
-    private long commentNum;
+    private Long commentNum = 0L;
 
     /**
      * 转发量
      */
-    private long forwardingNum;
+    private Long forwardingNum = 0L;
 }

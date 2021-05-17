@@ -1,26 +1,19 @@
 package cn.bincker.web.blog.material.controller;
 
+import cn.bincker.web.blog.base.exception.NotFoundException;
 import cn.bincker.web.blog.material.service.IArticleClassService;
-import cn.bincker.web.blog.material.service.dto.ArticleClassPostDto;
-import cn.bincker.web.blog.material.service.dto.ArticleClassPutDto;
-import cn.bincker.web.blog.material.service.vo.ArticleClassVo;
-import org.springframework.hateoas.CollectionModel;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.hateoas.LinkRelation;
-import org.springframework.hateoas.RepresentationModel;
-import org.springframework.hateoas.mediatype.hal.HalModelBuilder;
+import cn.bincker.web.blog.material.dto.ArticleClassPostDto;
+import cn.bincker.web.blog.material.dto.ArticleClassPutDto;
+import cn.bincker.web.blog.material.vo.ArticleClassVo;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
-
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+import java.util.Collection;
 
 @RestController
-@RequestMapping("${system.base-path}/articleClasses")
+@RequestMapping("${system.base-path}/article-classes")
 public class ArticleClassController {
     private final IArticleClassService articleClassService;
 
@@ -32,30 +25,24 @@ public class ArticleClassController {
      * 获取分类信息
      */
     @GetMapping("{id}")
-    public RepresentationModel<EntityModel<ArticleClassVo>> get(@PathVariable Long id){
-        Optional<ArticleClassVo> result = articleClassService.getById(id);
-        return HalModelBuilder.halModelOf(result).build();
+    public ArticleClassVo get(@PathVariable Long id){
+        return articleClassService.getById(id).orElseThrow(NotFoundException::new);
     }
 
     /**
      * 列出子节点
      */
     @GetMapping("search/parent")
-    public RepresentationModel<CollectionModel<ArticleClassVo>> findAllByParentId(Long id) {
-        return HalModelBuilder
-                .halModel()
-                .embed(articleClassService.findAllByParentId(id), LinkRelation.of("articleClassVo"))
-                .link(linkTo(methodOn(ArticleClassController.class).findAllByParentId(id)).withSelfRel())
-                .build();
+    public Collection<ArticleClassVo> findAllByParentId(Long id) {
+        return articleClassService.findAllByParentId(id);
     }
 
     /**
      * 添加
      */
     @PostMapping
-    public EntityModel<ArticleClassVo> post(@Validated @RequestBody ArticleClassPostDto articleClass){
-        ArticleClassVo result = articleClassService.add(articleClass);
-        return EntityModel.of(result);
+    public ArticleClassVo post(@Validated @RequestBody ArticleClassPostDto articleClass){
+        return articleClassService.add(articleClass);
     }
 
     /**
@@ -72,9 +59,9 @@ public class ArticleClassController {
      * 修改
      */
     @PutMapping("")
-    public ResponseEntity<EntityModel<ArticleClassVo>> put(@Validated @RequestBody ArticleClassPutDto articleClassPutDto){
+    public ResponseEntity<ArticleClassVo> put(@Validated @RequestBody ArticleClassPutDto articleClassPutDto){
         if(articleClassService.exists(articleClassPutDto.getId()))
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        return ResponseEntity.ok(EntityModel.of(articleClassService.save(articleClassPutDto)));
+        return ResponseEntity.ok(articleClassService.save(articleClassPutDto));
     }
 }

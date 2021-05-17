@@ -4,9 +4,9 @@ import cn.bincker.web.blog.base.exception.NotFoundException;
 import cn.bincker.web.blog.material.entity.ArticleClass;
 import cn.bincker.web.blog.material.repository.IArticleClassRepository;
 import cn.bincker.web.blog.material.service.IArticleClassService;
-import cn.bincker.web.blog.material.service.dto.ArticleClassPostDto;
-import cn.bincker.web.blog.material.service.dto.ArticleClassPutDto;
-import cn.bincker.web.blog.material.service.vo.ArticleClassVo;
+import cn.bincker.web.blog.material.dto.ArticleClassPostDto;
+import cn.bincker.web.blog.material.dto.ArticleClassPutDto;
+import cn.bincker.web.blog.material.vo.ArticleClassVo;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 

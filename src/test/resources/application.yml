@@ -1,0 +1,34 @@
+debug: true
+server:
+  port: 8080
+system:
+  name: Bincker的博客
+  copy-right: copyright @2021 Bincker
+  ipc: 京ICP备1234567890号
+  github: https://github.com/Bincker1973
+  base-path: /api
+  datetime-format: yyyy-MM-dd HH:mm:ss
+  date-format: yyyy-MM-dd
+  time-format: HH:mm:ss
+netdisk:
+  type: LOCAL
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/blog?createDatabaseIfNotExist=true&serverTime=Asia/Shanghai&useUnicode=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    default-property-inclusion: non_null
+  servlet:
+    multipart:
+      location: upload-file
+      max-file-size: 20MB
+      max-request-size: 24MB
+  web:
+    locale: zh_CN
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: on

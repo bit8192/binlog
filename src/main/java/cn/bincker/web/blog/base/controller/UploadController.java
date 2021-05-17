@@ -4,9 +4,8 @@ import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.entity.Role;
 import cn.bincker.web.blog.base.entity.UploadFile;
 import cn.bincker.web.blog.base.service.IUploadService;
-import cn.bincker.web.blog.base.service.dto.UploadFileDto;
+import cn.bincker.web.blog.base.dto.UploadFileDto;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +13,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.util.Collection;
 import java.util.Optional;
 
 @RestController
@@ -26,8 +26,8 @@ public class UploadController {
     }
 
     @PostMapping
-    public CollectionModel<UploadFileDto> upload(MultipartHttpServletRequest request, @RequestParam(name = "isPublic", defaultValue = "true") boolean isPublic){
-        return CollectionModel.of(uploadService.upload(request.getFileMap().values(), isPublic));
+    public Collection<UploadFileDto> upload(MultipartHttpServletRequest request){
+        return uploadService.upload(request.getFileMap().values());
     }
 
     @GetMapping("/{id}")

@@ -1,8 +1,7 @@
 package cn.bincker.web.blog.security;
 
-import cn.bincker.web.blog.base.entity.vo.SuccessMsgVo;
+import cn.bincker.web.blog.base.vo.SuccessMsgVo;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.Data;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
+@SuppressWarnings("JpaEntityListenerWarningsInspection")
 @Component
 public class UserAuditingListener implements AuditorAware<BaseUser> {
     @Override

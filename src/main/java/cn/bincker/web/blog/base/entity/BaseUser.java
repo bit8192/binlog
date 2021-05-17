@@ -17,7 +17,7 @@ import java.util.Set;
 @Data
 public class BaseUser extends BaseEntity {
     @NotEmpty
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String username;
 
     private String nickname;
@@ -36,7 +36,7 @@ public class BaseUser extends BaseEntity {
     @Convert(converter = RoleConverter.class)
     private Set<Role> roles = new HashSet<>();
 
-    @Column(columnDefinition = "tinyint(1) default false not null")
+    @Column
     @ColumnDefault("false")
-    private Boolean locked;
+    private Boolean locked = false;
 }

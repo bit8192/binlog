@@ -1,7 +1,7 @@
 package cn.bincker.web.blog.material.repository;
 
 import cn.bincker.web.blog.material.entity.Tag;
-import cn.bincker.web.blog.material.service.vo.TagVo;
+import cn.bincker.web.blog.material.vo.TagVo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,7 +13,7 @@ import java.util.Optional;
 @Repository
 public interface ITagRepository extends JpaRepository<Tag, Long> {
     String TAG_VO = """
-            new cn.bincker.web.blog.material.service.vo.TagVo(
+            new cn.bincker.web.blog.material.vo.TagVo(
                 tag.id,
                 tag.title,
                 (select count(article.id) from Article article join article.tags tag1 on tag1.id = tag.id)

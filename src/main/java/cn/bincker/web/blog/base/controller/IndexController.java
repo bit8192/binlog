@@ -2,12 +2,10 @@ package cn.bincker.web.blog.base.controller;
 
 import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.entity.SystemProfile;
-import cn.bincker.web.blog.base.entity.vo.SuccessMsgVo;
+import cn.bincker.web.blog.base.vo.SuccessMsgVo;
 import cn.bincker.web.blog.base.exception.SystemException;
 import cn.bincker.web.blog.base.exception.UnauthorizedException;
 import cn.bincker.web.blog.security.machine.IVerifyCode;
-import org.springframework.hateoas.EntityModel;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,8 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Map;
 
 @RestController
 @RequestMapping("${system.base-path}")
@@ -36,24 +32,24 @@ public class IndexController {
     }
 
     @GetMapping("profile")
-    public EntityModel<SystemProfile> profile(){
-        return EntityModel.of(profile);
+    public SystemProfile profile(){
+        return profile;
     }
 
     @GetMapping("self-info")
-    public EntityModel<BaseUser> selfInfo(BaseUser user){
+    public BaseUser selfInfo(BaseUser user){
         if(user == null) throw new UnauthorizedException();
-        return EntityModel.of(user);
+        return user;
     }
 
     /**
      * 注销
      */
     @PostMapping("api/logout")
-    public EntityModel<SuccessMsgVo> logout(){
+    public SuccessMsgVo logout(){
         SecurityContext securityContext = SecurityContextHolder.getContext();
         if(securityContext == null) throw new SystemException("SecurityContext 为空");
         securityContext.setAuthentication(null);
-        return EntityModel.of(new SuccessMsgVo("注销成功"));
+        return new SuccessMsgVo("注销成功");
     }
 }

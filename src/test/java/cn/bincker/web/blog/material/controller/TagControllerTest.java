@@ -2,8 +2,7 @@ package cn.bincker.web.blog.material.controller;
 
 import cn.bincker.web.blog.material.entity.Tag;
 import cn.bincker.web.blog.material.repository.ITagRepository;
-import cn.bincker.web.blog.material.service.dto.TagPostDto;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import cn.bincker.web.blog.material.dto.TagPostDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +21,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.*;
@@ -77,7 +75,7 @@ class TagControllerTest {
                 .andExpect(status().isOk())
                 .andDo(
                         document("{ClassName}/{methodName}",
-                                responseFields(getTagFields("_embedded.tagVoList[]."))
+                                responseFields(getTagFields("[]."))
                         )
                 );
     }
@@ -128,5 +126,11 @@ class TagControllerTest {
                 .andDo(document("{ClassName}/{methodName}", pathParameters(
                         parameterWithName("id").description("id")
                 )));
+    }
+
+    public static Tag newTag(String title){
+        var tag = new Tag();
+        tag.setTitle(title);
+        return tag;
     }
 }

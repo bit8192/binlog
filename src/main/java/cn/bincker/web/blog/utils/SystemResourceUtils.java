@@ -21,8 +21,8 @@ public class SystemResourceUtils {
             file = ResourceUtils.getFile(multipartProperties.getLocation() + File.separator + relativePath);
         } catch (FileNotFoundException e) {
             file = new File(multipartProperties.getLocation() + File.separator + relativePath);
-            if(!file.mkdirs()) throw new RuntimeException("创建目录失败: path=" + file.getAbsolutePath());
         }
+        if(!file.exists() && !file.mkdirs()) throw new RuntimeException("创建目录失败: path=" + file.getAbsolutePath());
         return file;
 
     }

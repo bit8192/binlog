@@ -7,79 +7,70 @@ import cn.bincker.web.blog.base.entity.UploadFile;
 import cn.bincker.web.blog.base.exception.SystemException;
 import cn.bincker.web.blog.base.repository.IUploadFileRepository;
 import cn.bincker.web.blog.base.service.IUploadService;
-import cn.bincker.web.blog.base.service.dto.UploadFileDto;
+import cn.bincker.web.blog.base.dto.UploadFileDto;
+import cn.bincker.web.blog.netdisk.enumeration.FileSystemTypeEnum;
+import cn.bincker.web.blog.netdisk.service.ISystemFileFactory;
 import cn.bincker.web.blog.utils.CommonUtils;
 import cn.bincker.web.blog.utils.DateUtils;
-import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
+import cn.bincker.web.blog.utils.FileUtils;
+import cn.bincker.web.blog.utils.SystemResourceUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ResourceUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
 public class UploadServiceImpl implements IUploadService {
     private final IUploadFileRepository repository;
-    private final MultipartProperties multipartProperties;
     private final UserAuditingListener userAuditingListener;
     private final DateUtils dateUtils;
+    private final SystemResourceUtils systemResourceUtils;
+    private final ISystemFileFactory systemFileFactory;
 
-    public UploadServiceImpl(IUploadFileRepository repository, MultipartProperties multipartProperties, UserAuditingListener userAuditingListener, DateUtils dateUtils) {
+    public UploadServiceImpl(IUploadFileRepository repository, UserAuditingListener userAuditingListener, DateUtils dateUtils, SystemResourceUtils systemResourceUtils, ISystemFileFactory systemFileFactory) {
         this.repository = repository;
-        this.multipartProperties = multipartProperties;
         this.userAuditingListener = userAuditingListener;
         this.dateUtils = dateUtils;
+        this.systemResourceUtils = systemResourceUtils;
+        this.systemFileFactory = systemFileFactory;
     }
 
     @Override
-    public List<UploadFileDto> upload(Collection<MultipartFile> files, boolean isPublic) {
-        File uploadDir;
-        try {
-            uploadDir = ResourceUtils.getFile(multipartProperties.getLocation());
-        } catch (FileNotFoundException e) {
-            uploadDir = new File(multipartProperties.getLocation());
-            if(!uploadDir.mkdirs()){
-                throw new SystemException("创建上传目录失败 path=" + uploadDir.getAbsolutePath());
-            }
-        }
+    public List<UploadFileDto> upload(Collection<MultipartFile> files) {
+        String uploadDir;
 
         Optional<BaseUser> userOptional = userAuditingListener.getCurrentAuditor();
-        if(userOptional.isPresent()) uploadDir = new File(uploadDir, userOptional.get().getUsername());
-        uploadDir = new File(uploadDir, dateUtils.getDateFormat().format(new Date()));
+        uploadDir = userOptional
+                .map(baseUser -> systemResourceUtils.getUploadPath(baseUser.getUsername() + File.separator + "public" + File.separator + dateUtils.today()).getPath())
+                .orElseGet(() -> systemResourceUtils.getUploadPath("public" + File.separator + dateUtils.today()).getPath());
 
-        if(!uploadDir.exists() && !uploadDir.mkdirs()){
-            throw new SystemException("创建上传目录失败 path=" + uploadDir.getAbsolutePath());
-        }
-
-        File finalUploadDir = uploadDir;
+        String finalUploadDir = uploadDir;
         return files.stream().map(multipartFile -> {
             UploadFile uploadFile = new UploadFile();
-            uploadFile.setIsPublic(isPublic);
-            uploadFile.setStorageLocation(UploadFile.StorageLocation.LOCAL);
+            uploadFile.setIsPublic(true);
+            uploadFile.setStorageLocation(FileSystemTypeEnum.LOCAL);
             uploadFile.setSize(multipartFile.getSize());
 
             String fileName = multipartFile.getOriginalFilename();
             if(!StringUtils.hasText(fileName)) fileName = UUID.randomUUID().toString();
-            fileName = fileName.replaceAll(RegexpConstant.ILLEGAL_FILE_NAME_CHAR, "");
-            File targetFile = new File(finalUploadDir, fileName);
+            fileName = fileName.replaceAll(RegexpConstant.ILLEGAL_FILE_NAME_CHAR_VALUE, "");
+            var targetFile = systemFileFactory.fromPath(finalUploadDir, fileName);
             while (targetFile.exists()){
-                fileName = UploadServiceImpl.nextSerialFileName(fileName);
-                targetFile = new File(finalUploadDir, fileName);
+                fileName = FileUtils.nextSerialFileName(fileName);
+                targetFile = systemFileFactory.fromPath(finalUploadDir, fileName);
             }
             uploadFile.setPath(targetFile.getPath());
             uploadFile.setName(fileName);
             uploadFile.setSuffix(CommonUtils.getStringSuffix(fileName, "."));
+            uploadFile.setMediaType(multipartFile.getContentType());
             try(
                     InputStream inputStream = new BufferedInputStream(multipartFile.getInputStream());
-                    OutputStream outputStream = new FileOutputStream(targetFile)
+                    OutputStream outputStream = targetFile.getOutputStream()
             ){
                 MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
                 byte[] buf = new byte[8192];
@@ -112,23 +103,5 @@ public class UploadServiceImpl implements IUploadService {
         dto.setSuffix(uploadFile.getSuffix());
         dto.setUrl("/api/files/" + uploadFile.getId());
         return dto;
-    }
-
-    private static final Pattern PATTERN_SERIAL_FILE_NAME = Pattern.compile("(\\S+)(-\\d+)?((\\.[\\w_]+)*)$");
-
-    /**
-     * 获取下一个序列文件名
-     * 如：test-1.txt  test-2.txt  test-3.txt
-     * @param filename 文件名
-     */
-    private static String nextSerialFileName(String filename){
-        Matcher matcher = PATTERN_SERIAL_FILE_NAME.matcher(filename);
-        if(matcher.find()) throw new SystemException("无效文件名 filename=" + filename);
-        int index = 1;
-        try{
-            String indexStr = matcher.group(2);
-            index = Integer.parseInt(indexStr.substring(1)) + 1;
-        }catch (IllegalStateException ignore) {}
-            return matcher.replaceFirst("$1-" + index + "$3");
     }
 }

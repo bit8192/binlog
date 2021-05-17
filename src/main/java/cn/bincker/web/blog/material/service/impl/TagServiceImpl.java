@@ -4,9 +4,9 @@ import cn.bincker.web.blog.base.exception.NotFoundException;
 import cn.bincker.web.blog.material.entity.Tag;
 import cn.bincker.web.blog.material.repository.ITagRepository;
 import cn.bincker.web.blog.material.service.ITagService;
-import cn.bincker.web.blog.material.service.dto.TagPostDto;
-import cn.bincker.web.blog.material.service.dto.TagPutDto;
-import cn.bincker.web.blog.material.service.vo.TagVo;
+import cn.bincker.web.blog.material.dto.TagPostDto;
+import cn.bincker.web.blog.material.dto.TagPutDto;
+import cn.bincker.web.blog.material.vo.TagVo;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
