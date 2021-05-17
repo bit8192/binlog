@@ -8,7 +8,9 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import javax.persistence.*;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -50,11 +52,11 @@ public class NetDiskFile extends AuditEntity {
      * 可读用户
      */
     @ManyToMany
-    private List<BaseUser> readableUserList;
+    private Set<BaseUser> readableUserList = Collections.emptySet();
 
     /**
      * 可写用户
      */
     @ManyToMany
-    private List<BaseUser> writableUserList;
+    private Set<BaseUser> writableUserList = Collections.emptySet();
 }

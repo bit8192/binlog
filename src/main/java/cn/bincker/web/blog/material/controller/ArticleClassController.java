@@ -20,7 +20,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
-@RequestMapping("${system.base-path}/articleClasses")
+@RequestMapping("${system.base-path}/article-classes")
 public class ArticleClassController {
     private final IArticleClassService articleClassService;
 

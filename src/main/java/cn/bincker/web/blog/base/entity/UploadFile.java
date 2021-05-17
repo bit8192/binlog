@@ -1,6 +1,7 @@
 package cn.bincker.web.blog.base.entity;
 
 import cn.bincker.web.blog.base.UserAuditingListener;
+import cn.bincker.web.blog.netdisk.enumeration.FileSystemTypeEnum;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -22,7 +23,7 @@ public class UploadFile extends BaseEntity{
 
     @JsonIgnore
     @Enumerated(EnumType.STRING)
-    private StorageLocation storageLocation;
+    private FileSystemTypeEnum storageLocation;
 
     @NotEmpty
     private String name;
@@ -43,9 +44,4 @@ public class UploadFile extends BaseEntity{
     private BaseUser createdUser;
 
     private Boolean isPublic;
-
-    public enum StorageLocation{
-        LOCAL,
-        ALI_
-    }
 }

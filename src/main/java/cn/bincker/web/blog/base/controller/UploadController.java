@@ -26,8 +26,8 @@ public class UploadController {
     }
 
     @PostMapping
-    public CollectionModel<UploadFileDto> upload(MultipartHttpServletRequest request, @RequestParam(name = "isPublic", defaultValue = "true") boolean isPublic){
-        return CollectionModel.of(uploadService.upload(request.getFileMap().values(), isPublic));
+    public CollectionModel<UploadFileDto> upload(MultipartHttpServletRequest request){
+        return CollectionModel.of(uploadService.upload(request.getFileMap().values()));
     }
 
     @GetMapping("/{id}")

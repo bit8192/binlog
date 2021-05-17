@@ -17,7 +17,7 @@ import java.util.Set;
 @Data
 public class BaseUser extends BaseEntity {
     @NotEmpty
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String username;
 
     private String nickname;

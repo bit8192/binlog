@@ -1,5 +1,6 @@
+debug: true
 server:
-  port: 80
+  port: 8080
 system:
   name: Bincker的博客
   copy-right: copyright @2021 Bincker
@@ -10,7 +11,7 @@ system:
   date-format: yyyy-MM-dd
   time-format: HH:mm:ss
 netdisk:
-  type: local
+  type: LOCAL
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -19,8 +20,6 @@ spring:
     password: 123456
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
-  profiles:
-    active: debug
   servlet:
     multipart:
       location: upload-file
@@ -28,3 +27,7 @@ spring:
       max-request-size: 24MB
   web:
     locale: zh_CN
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: on

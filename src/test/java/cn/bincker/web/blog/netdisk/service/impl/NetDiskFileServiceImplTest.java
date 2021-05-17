@@ -5,11 +5,11 @@ import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.entity.UploadFile;
 import cn.bincker.web.blog.base.repository.IUploadFileRepository;
 import cn.bincker.web.blog.base.service.IBaseUserService;
+import cn.bincker.web.blog.netdisk.config.properties.NetDiskFileSystemProperties;
 import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
 import cn.bincker.web.blog.netdisk.repository.INetDiskFileRepository;
 import cn.bincker.web.blog.netdisk.service.INetDiskFileService;
-import cn.bincker.web.blog.netdisk.service.dto.NetDiskFilePostDto;
-import cn.bincker.web.blog.netdisk.service.dto.NetDiskFilePutDto;
+import cn.bincker.web.blog.netdisk.service.dto.NetDiskFileDto;
 import cn.bincker.web.blog.utils.SystemResourceUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,15 +37,17 @@ class NetDiskFileServiceImplTest {
     private SystemResourceUtils systemResourceUtils;
     @Autowired
     private IUploadFileRepository uploadFileRepository;
+    @Autowired
+    private NetDiskFileSystemProperties netDiskFileSystemProperties;
 
     @Test
     @WithUserDetails("admin")
-    void add() {
-        var dto = new NetDiskFilePostDto();
+    void createDirectory() {
+        var dto = new NetDiskFileDto();
         dto.setName("test");
         dto.setEveryoneReadable(false);
         dto.setEveryoneWritable(false);
-        var netDiskFileVo = netDiskFileService.add(dto);
+        var netDiskFileVo = netDiskFileService.createDirectory(dto);
         assertEquals(netDiskFileVo.getName(), dto.getName());
         var netDiskFile = netDiskFileRepository.findById(netDiskFileVo.getId());
         assertTrue(netDiskFile.isPresent());
@@ -96,7 +97,7 @@ class NetDiskFileServiceImplTest {
         var targetNetDiskFile = createEmptyFile("test.txt", user, null);
 
         //先最底层目录同时修改文件名
-        var dto = new NetDiskFilePutDto();
+        var dto = new NetDiskFileDto();
         dto.setId(targetNetDiskFile.getId());
         dto.setName("changed-text.txt");
         dto.setParentId(subDir.getId());
@@ -137,7 +138,7 @@ class NetDiskFileServiceImplTest {
         var firstDirSubDir = createDirectory("first-first", user, firstDir);
         var secondDirFile = createEmptyFile("test.txt", user, secondDir);
 
-        var result = netDiskFileService.listCurrentUserRoot();
+        var result = netDiskFileService.listCurrentUserRootVo();
         assertEquals(result.size(), 3);
         assertTrue(result.stream().anyMatch(item->item.getName().equals(firstDir.getName())));
         assertTrue(result.stream().anyMatch(item->item.getName().equals(secondDir.getName())));
@@ -158,7 +159,7 @@ class NetDiskFileServiceImplTest {
         var subDir = createDirectory("subDir", user, topDir);
         var subFile = createEmptyFile("test.txt", user, topDir);
 
-        var result = netDiskFileService.listChildren(topDir.getId());
+        var result = netDiskFileService.listChildrenVo(topDir.getId());
         assertEquals(result.size(), 2);
         assertTrue(result.stream().anyMatch(item->item.getName().equals(subDir.getName())));
         assertTrue(result.stream().anyMatch(item->item.getName().equals(subFile.getName()) && !item.getIsDirectory()));
@@ -204,6 +205,7 @@ class NetDiskFileServiceImplTest {
         }
         uploadFile.setPath(result.getPath());
         uploadFile.setSha256("");
+        uploadFile.setStorageLocation(netDiskFileSystemProperties.getType());
         result.setPossessor(user);
         result.setUploadFile(uploadFile);
         netDiskFileRepository.save(result);

@@ -8,25 +8,32 @@ import cn.bincker.web.blog.base.exception.ForbiddenException;
 import cn.bincker.web.blog.base.exception.NotFoundException;
 import cn.bincker.web.blog.base.exception.UnauthorizedException;
 import cn.bincker.web.blog.base.repository.IUploadFileRepository;
+import cn.bincker.web.blog.netdisk.config.properties.NetDiskFileSystemProperties;
 import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
 import cn.bincker.web.blog.netdisk.exception.DeleteFileFailException;
 import cn.bincker.web.blog.netdisk.exception.MakeDirectoryFailException;
 import cn.bincker.web.blog.netdisk.exception.RenameFileFailException;
 import cn.bincker.web.blog.netdisk.repository.INetDiskFileRepository;
 import cn.bincker.web.blog.netdisk.service.INetDiskFileService;
-import cn.bincker.web.blog.netdisk.service.dto.NetDiskFilePostDto;
-import cn.bincker.web.blog.netdisk.service.dto.NetDiskFilePutDto;
+import cn.bincker.web.blog.netdisk.service.ISystemFile;
+import cn.bincker.web.blog.netdisk.service.ISystemFileFactory;
+import cn.bincker.web.blog.netdisk.service.dto.NetDiskFileDto;
 import cn.bincker.web.blog.netdisk.service.vo.NetDiskFileVo;
+import cn.bincker.web.blog.utils.CommonUtils;
+import cn.bincker.web.blog.utils.FileUtils;
 import cn.bincker.web.blog.utils.SystemResourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,17 +44,21 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
     private final UserAuditingListener userAuditingListener;
     private final SystemResourceUtils systemResourceUtils;
     private final IUploadFileRepository uploadFileRepository;
+    private final ISystemFileFactory systemFileFactory;
+    private final NetDiskFileSystemProperties netDiskFileSystemProperties;
 
-    public NetDiskFileServiceImpl(INetDiskFileRepository netDiskFileRepository, UserAuditingListener userAuditingListener, SystemResourceUtils systemResourceUtils, IUploadFileRepository uploadFileRepository) {
+    public NetDiskFileServiceImpl(INetDiskFileRepository netDiskFileRepository, UserAuditingListener userAuditingListener, SystemResourceUtils systemResourceUtils, IUploadFileRepository uploadFileRepository, ISystemFileFactory systemFileFactory, NetDiskFileSystemProperties netDiskFileSystemProperties) {
         this.netDiskFileRepository = netDiskFileRepository;
         this.userAuditingListener = userAuditingListener;
         this.systemResourceUtils = systemResourceUtils;
         this.uploadFileRepository = uploadFileRepository;
+        this.systemFileFactory = systemFileFactory;
+        this.netDiskFileSystemProperties = netDiskFileSystemProperties;
     }
 
     @Override
     @Transactional
-    public NetDiskFileVo add(NetDiskFilePostDto dto) {
+    public NetDiskFileVo createDirectory(NetDiskFileDto dto) {
         var currentUser = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
 
         var directoryName = dto.getName().replaceAll(RegexpConstant.ILLEGAL_FILE_NAME_CHAR, "");
@@ -58,52 +69,121 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         target.setIsDirectory(true);
 
 //        如果有父级，那么设置所有者，并设置路径
-        File targetPath;
+        ISystemFile targetPath;
         if(dto.getParentId() != null){
             var parent = netDiskFileRepository.findById(dto.getParentId())
                     .orElseThrow(()->new NotFoundException("父级目录不存在", "创建目录时父级目录不存在： NetDiskFile.id=" + dto.getParentId()));
 //            判断是否有权限创建
             checkWritePermission(currentUser, parent);
             target.setPossessor(parent.getPossessor());
-            targetPath = new File(target.getPath());
+            targetPath = systemFileFactory.fromPath(parent.getPath() + File.separator + dto.getName());
             target.setPath(targetPath.getPath());
         }
 //        否则路径是用户根路径，父级为空，所有者为自己
         else{
-            targetPath = new File(systemResourceUtils.getUploadPath(currentUser.getUsername()), directoryName);
+            targetPath = systemFileFactory.fromPath(systemResourceUtils.getUploadPath(currentUser.getUsername()).getPath(), directoryName);
             target.setPath(targetPath.getPath());
             target.setPossessor(currentUser);
         }
 
 //            所有者才可以修改权限
         if(target.getPossessor().getId().equals(currentUser.getId())){
-            if(dto.getEveryoneReadable() != null) target.setEveryoneReadable(dto.getEveryoneReadable());
-            if(dto.getEveryoneWritable() != null) target.setEveryoneWritable(dto.getEveryoneWritable());
-            if(dto.getReadableUserList() != null)
-                target.setReadableUserList(dto.getReadableUserList().stream().map(id->{
-                    var user = new BaseUser();
-                    user.setId(id);
-                    return user;
-                }).collect(Collectors.toList()));
-            if(dto.getWritableUserList() != null)
-                target.setWritableUserList(dto.getWritableUserList().stream().map(id->{
-                    var user = new BaseUser();
-                    user.setId(id);
-                    return user;
-                }).collect(Collectors.toList()));
+            setNetDiskFilePermission(dto, target);
         }
 
 //        持久化
         netDiskFileRepository.save(target);
 //        生成视图
-        NetDiskFileVo vo = new NetDiskFileVo();
-        vo.setId(target.getId());
-        vo.setName(target.getName());
-        vo.setIsDirectory(true);
+        NetDiskFileVo vo = new NetDiskFileVo(target, 0L);
 
 //        创建目录放在最后面执行
         if(!targetPath.exists() && !targetPath.mkdirs()) throw new MakeDirectoryFailException(targetPath);
         return vo;
+    }
+
+    /**
+     * 设置权限
+     */
+    private void setNetDiskFilePermission(NetDiskFileDto dto, NetDiskFile target) {
+        target.setEveryoneReadable(dto.getEveryoneReadable());
+        target.setEveryoneWritable(dto.getEveryoneWritable());
+        target.setReadableUserList(dto.getReadableUserList().stream().map(id -> {
+            var user = new BaseUser();
+            user.setId(id);
+            return user;
+        }).collect(Collectors.toSet()));
+        target.setWritableUserList(dto.getWritableUserList().stream().map(id -> {
+            var user = new BaseUser();
+            user.setId(id);
+            return user;
+        }).collect(Collectors.toSet()));
+    }
+
+    @Override
+    @Transactional
+    public List<NetDiskFileVo> upload(Collection<MultipartFile> multipartFiles, NetDiskFileDto dto) {
+        var currentUser = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
+        String targetPath;
+        Optional<NetDiskFile> parentOptional = dto.getParentId() == null ? Optional.empty() : netDiskFileRepository.findById(dto.getParentId());
+        targetPath = parentOptional
+                .map(NetDiskFile::getPath)
+                .orElseGet(() -> systemResourceUtils.getUploadPath(currentUser.getUsername()).getPath());
+        var result = new ArrayList<NetDiskFileVo>(multipartFiles.size());
+        for (MultipartFile multipartFile : multipartFiles) {
+            //构建uploadFile
+            UploadFile uploadFile = new UploadFile();
+            if(StringUtils.hasText(multipartFile.getOriginalFilename())){
+                uploadFile.setName(multipartFile.getOriginalFilename().replaceAll(RegexpConstant.ILLEGAL_FILE_NAME_CHAR, ""));
+            }else{
+                uploadFile.setName(UUID.randomUUID().toString());
+            }
+            uploadFile.setPath(targetPath + File.separator + uploadFile.getName());
+            uploadFile.setStorageLocation(netDiskFileSystemProperties.getType());
+            uploadFile.setSuffix(CommonUtils.getStringSuffix(uploadFile.getName(), "."));
+            uploadFile.setMediaType(multipartFile.getContentType());
+            uploadFile.setSize(multipartFile.getSize());
+            uploadFile.setIsPublic(false);
+            //写到文件, 并计算sha256
+            var systemFile = systemFileFactory.fromPath(targetPath, uploadFile.getName());
+            while (systemFile.exists()){
+                systemFile = systemFileFactory.fromPath(targetPath, FileUtils.nextSerialFileName(systemFile.getName()));
+            }
+            try(var in = multipartFile.getInputStream(); var out = systemFile.getOutputStream()){
+                MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+                var buff = new byte[8192];
+                int len;
+                while ((len = in.read(buff)) > 0){
+                    messageDigest.update(buff, 0, len);
+                    out.write(buff, 0, len);
+                }
+                uploadFile.setSha256(CommonUtils.bytes2hex(messageDigest.digest()));
+            } catch (IOException | NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+            //持久化uploadFile
+            uploadFileRepository.save(uploadFile);
+            var netDiskFile = new NetDiskFile();
+            netDiskFile.setName(uploadFile.getName());
+            netDiskFile.setPath(uploadFile.getPath());
+            if(parentOptional.isPresent()){
+                netDiskFile.setParent(parentOptional.get());
+                netDiskFile.setPossessor(parentOptional.get().getPossessor());
+            }else{
+                netDiskFile.setPossessor(currentUser);
+            }
+            netDiskFile.setIsDirectory(false);
+            netDiskFile.setUploadFile(uploadFile);
+            //如果是持有者，那么设置权限
+            if(currentUser.getId().equals(netDiskFile.getPossessor().getId())){
+                setNetDiskFilePermission(dto, netDiskFile);
+            }
+            //持久化
+            netDiskFileRepository.save(netDiskFile);
+            //vo
+            var vo = new NetDiskFileVo(netDiskFile);
+            result.add(vo);
+        }
+        return result;
     }
 
     @Override
@@ -143,25 +223,18 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         netDiskFileRepository.deleteAll(allFileAndDirectory);
 //        删除上传文件实体
         for (UploadFile uploadFile : uploadFiles) {
-            switch (uploadFile.getStorageLocation()) {
-                case LOCAL -> {
-                    try {
-                        var file = new File(uploadFile.getPath());
-                        if(!file.delete()) throw new DeleteFileFailException(file);
-                    }catch (Exception e){
-                        //出现任何异常都不进行回滚，因为即使回滚了也可能有一部分文件已经被删除了
-                        log.error("删除目录失败：path=" + uploadFile.getPath(), e);
-                    }
-                }
-                case ALI_ -> {
-//                    TODO 删除云端文件
-                }
+            try {
+                var file = systemFileFactory.fromPath(uploadFile.getPath());
+                if(!file.delete()) throw new DeleteFileFailException(file);
+            }catch (Exception e){
+                //出现任何异常都不进行回滚，因为即使回滚了也可能有一部分文件已经被删除了
+                log.error("删除目录失败：path=" + uploadFile.getPath(), e);
             }
         }
 //        删除所有目录, 从底部向上删除
         for (int i = allDirectory.size() - 1; i > -1; i--) {
             try {
-                var file = new File(allDirectory.get(i).getPath());
+                var file = systemFileFactory.fromPath(allDirectory.get(i).getPath());
                 if(!file.delete()) throw new DeleteFileFailException(file);
             }catch (Exception e){
                 //出现任何异常都不进行回滚，因为即使回滚了也可能有一部分文件已经被删除了
@@ -185,7 +258,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
 
     @Override
     @Transactional
-    public NetDiskFileVo save(NetDiskFilePutDto dto) {
+    public NetDiskFileVo save(NetDiskFileDto dto) {
         //当前用户
         var currentUser = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
 //        更新对象
@@ -212,28 +285,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         }
 //        只有所有者才能修改权限
         if(target.getPossessor().getId().equals(currentUser.getId())) {
-            if (dto.getEveryoneReadable() == null) {
-                target.setEveryoneReadable(false);
-            } else {
-                target.setEveryoneReadable(dto.getEveryoneReadable());
-            }
-            if (dto.getEveryoneWritable() == null) {
-                target.setEveryoneWritable(false);
-            } else {
-                target.setEveryoneWritable(dto.getEveryoneWritable());
-            }
-            if (dto.getWritableUserList() != null)
-                target.setReadableUserList(dto.getReadableUserList().stream().map(id -> {
-                    var user = new BaseUser();
-                    user.setId(id);
-                    return user;
-                }).collect(Collectors.toList()));
-            if (dto.getReadableUserList() != null)
-                target.setWritableUserList(dto.getWritableUserList().stream().map(id -> {
-                    var user = new BaseUser();
-                    user.setId(id);
-                    return user;
-                }).collect(Collectors.toList()));
+            setNetDiskFilePermission(dto, target);
         }
 
 //        持久化
@@ -248,7 +300,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         }
 //        执行实体文件操作
         if(!oldPath.equals(target.getPath())){
-            if(!new File(oldPath).renameTo(new File(target.getPath())))
+            if(!systemFileFactory.fromPath(oldPath).renameTo(target.getPath()))
                 throw new RenameFileFailException(oldPath, target.getPath());
         }
 //        vo
@@ -260,18 +312,18 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
     }
 
     @Override
-    public List<NetDiskFileVo> listUserRoot(Long userId) {
+    public List<NetDiskFileVo> listUserRootVo(Long userId) {
         return netDiskFileRepository.listUserRootVo(userId);
     }
 
     @Override
-    public List<NetDiskFileVo> listCurrentUserRoot() {
+    public List<NetDiskFileVo> listCurrentUserRootVo() {
         var currentUser = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
         return netDiskFileRepository.listUserRootVo(currentUser.getId());
     }
 
     @Override
-    public List<NetDiskFileVo> listChildren(Long id) {
+    public List<NetDiskFileVo> listChildrenVo(Long id) {
         var currentUser = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
         var target = netDiskFileRepository.findById(id).orElseThrow(NotFoundException::new);
         //检测权限
@@ -279,13 +331,20 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         return netDiskFileRepository.listVoByParentId(id);
     }
 
+    @Override
+    public Optional<NetDiskFile> findById(Long id) {
+        return netDiskFileRepository.findById(id);
+    }
+
     /**
      * 检测写入权限
      */
-    private void checkWritePermission(BaseUser user, NetDiskFile target){
+    @Override
+    public void checkWritePermission(BaseUser user, NetDiskFile target){
         if(!target.getPossessor().getId().equals(user.getId())) {//若不是所有者创建
             if (!target.getEveryoneWritable()) {//若不是所有人都可写入
-                if(target.getWritableUserList().stream().noneMatch(u -> u.getId().equals(user.getId())))
+                var writableUserIds = netDiskFileRepository.getWritableUserIds(target.getId());
+                if(writableUserIds.stream().noneMatch(uid -> uid.equals(user.getId())))
                     throw new ForbiddenException();
             }
         }
@@ -294,26 +353,26 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
     /**
      * 检测删除权限
      */
-    private void checkDeletePermission(BaseUser currentUser, NetDiskFile target) {
-        if (!target.getPossessor().getId().equals(currentUser.getId()) && !target.getCreatedUser().getId().equals(currentUser.getId()))
-            throw new ForbiddenException();
+    private void checkDeletePermission(BaseUser user, NetDiskFile target) {
+        checkWritePermission(user, target);
     }
 
     /**
      * 检测更新权限
      */
-    private void checkUpdatePermission(BaseUser currentUser, NetDiskFile target) {
-        if (!target.getPossessor().getId().equals(currentUser.getId()) && !target.getCreatedUser().getId().equals(currentUser.getId()))
-            throw new ForbiddenException();
+    private void checkUpdatePermission(BaseUser user, NetDiskFile target) {
+        checkWritePermission(user, target);
     }
 
     /**
      * 检测读取权限
      */
-    private void checkReadPermission(BaseUser user, NetDiskFile target){
+    @Override
+    public void checkReadPermission(BaseUser user, NetDiskFile target){
         if(!target.getPossessor().getId().equals(user.getId())) {//若不是所有者
             if (!target.getEveryoneReadable()) {//若不是所有人都可读取
-                if(target.getReadableUserList().stream().noneMatch(u -> u.getId().equals(user.getId())))
+                var readableUserList = netDiskFileRepository.getReadableUserIds(target.getId());
+                if(readableUserList.stream().noneMatch(id -> id.equals(user.getId())))
                     throw new ForbiddenException();
             }
         }

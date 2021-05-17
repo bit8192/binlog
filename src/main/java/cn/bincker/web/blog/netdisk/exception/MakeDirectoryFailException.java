@@ -1,12 +1,12 @@
 package cn.bincker.web.blog.netdisk.exception;
 
-import java.io.File;
+import cn.bincker.web.blog.netdisk.service.ISystemFile;
 
 /**
  * 创建目录失败异常
  */
 public class MakeDirectoryFailException extends RuntimeException{
-    public MakeDirectoryFailException(File file) {
-        super("创建目录失败: absolutePath=" + file.getAbsolutePath());
+    public MakeDirectoryFailException(ISystemFile file) {
+        super("创建目录失败: path=" + file.getPath());
     }
 }

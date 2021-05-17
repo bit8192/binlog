@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.RestDocumentationContextProvider;
@@ -42,6 +43,8 @@ class ArticleClassControllerTest {
     private IArticleClassRepository articleClassRepository;
     @Autowired
     private ObjectMapper objectMapper;
+    @Value("${system.base-path}")
+    private String basePath;
 
     @BeforeEach
     void beforeEach(
@@ -67,7 +70,7 @@ class ArticleClassControllerTest {
     @Test
     void getItem() throws Exception {
         mockMvc.perform(
-                get("/api/articleClasses/{id}", 7)
+                get(basePath + "/article-classes/{id}", 7)
         )
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -82,7 +85,7 @@ class ArticleClassControllerTest {
     @Test
     void findAllByParentId() throws Exception {
         mockMvc.perform(
-                get("/api/articleClasses/search/parent")
+                get(basePath + "/article-classes/search/parent")
         )
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -105,7 +108,7 @@ class ArticleClassControllerTest {
         data.setVisible(true);
         data.setOrderNum(33);
         MvcResult addParentResult = mockMvc.perform(
-                post("/api/articleClasses").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(data))
+                post(basePath + "/article-classes").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(data))
         )
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -119,7 +122,7 @@ class ArticleClassControllerTest {
         data.setOrderNum(44);
         data.setParentId(parent.getId());
         MvcResult addChildrenResult = mockMvc.perform(
-                post("/api/articleClasses").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(data))
+                post(basePath + "/article-classes").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(data))
         )
                 .andDo(print())
                 .andExpect(status().isOk())
