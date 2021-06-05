@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.material.controller;
 
+import cn.bincker.web.blog.AuthenticationTests;
 import cn.bincker.web.blog.base.repository.IBaseUserRepository;
 import cn.bincker.web.blog.material.dto.ArticleDto;
 import cn.bincker.web.blog.material.entity.Article;
@@ -24,6 +25,7 @@ import org.springframework.restdocs.RestDocumentationContextProvider;
 import org.springframework.restdocs.RestDocumentationExtension;
 import org.springframework.restdocs.payload.FieldDescriptor;
 import org.springframework.restdocs.payload.JsonFieldType;
+import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,6 +76,7 @@ class ArticleControllerTest {
 
     @Test
     void getDetail() throws Exception{
+        var user = baseUserRepository.findByUsername("admin").orElseThrow();
         var tag = TagControllerTest.newTag("test-tag");
         tagRepository.save(tag);
         var cover = newCover();
@@ -81,6 +84,8 @@ class ArticleControllerTest {
         var articleClass = ArticleClassControllerTest.newArticleClass("test article class", 0, true, null);
         articleClassRepository.save(articleClass);
         var article = newArticle("test article", "test article content", Collections.singleton(tag), cover, articleClass);
+        article.setCreatedUser(user);
+        article.setLastModifiedUser(user);
         articleRepository.save(article);
         mockMvc.perform(
                 get(basePath + "/article/{id}", article.getId())
@@ -94,6 +99,7 @@ class ArticleControllerTest {
     }
 
     @Test
+    @WithUserDetails("admin")
     void insertAndUpdate() throws Exception {
         var dto = new ArticleDto();
         dto.setTitle("test title");
@@ -162,12 +168,16 @@ class ArticleControllerTest {
     }
 
     @Test
+    @WithUserDetails("admin")
     void del() throws Exception {
+        var user = baseUserRepository.findByUsername("admin").orElseThrow();
         var cover = newCover();
         netDiskFileRepository.save(cover);
         var articleClass = ArticleClassControllerTest.newArticleClass("test class", 0, true, null);
         articleClassRepository.save(articleClass);
         var article = newArticle("test title", "content", Collections.emptySet(), cover, articleClass);
+        article.setCreatedUser(user);
+        article.setLastModifiedUser(user);
         articleRepository.save(article);
         mockMvc.perform(
                 delete(basePath + "/article/{id}", article.getId())
@@ -262,10 +272,13 @@ class ArticleControllerTest {
     }
 
     private void buildPageData(int size, ArticleClass articleClass, Set<Tag> tags){
+        var user = baseUserRepository.findByUsername("admin").orElseThrow();
         var cover = newCover();
         netDiskFileRepository.save(cover);
         for (int i = 0; i < size; i++) {
             var article = newArticle("test title " + i, "content" + i, tags, cover, articleClass);
+            article.setCreatedUser(user);
+            article.setLastModifiedUser(user);
             if(i < size - 3) {
                 article.setTop(false);
                 article.setRecommend(false);
@@ -317,6 +330,7 @@ class ArticleControllerTest {
         result.add(fieldWithPath(prefix + "agreedNum").type(JsonFieldType.NUMBER).description("点赞量"));
         result.add(fieldWithPath(prefix + "commentNum").type(JsonFieldType.NUMBER).description("评论量"));
         result.add(fieldWithPath(prefix + "forwardingNum").type(JsonFieldType.NUMBER).description("转发量"));
+        result.addAll(AuthenticationTests.getBaseUserVoFields(prefix + "createdUser."));
         return result;
     }
 
@@ -341,6 +355,7 @@ class ArticleControllerTest {
         result.add(fieldWithPath(prefix + "agreedNum").type(JsonFieldType.NUMBER).description("点赞量"));
         result.add(fieldWithPath(prefix + "commentNum").type(JsonFieldType.NUMBER).description("评论量"));
         result.add(fieldWithPath(prefix + "forwardingNum").type(JsonFieldType.NUMBER).description("转发量"));
+        result.addAll(AuthenticationTests.getBaseUserVoFields(prefix + "createdUser."));
         return result;
     }
 

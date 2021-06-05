@@ -20,7 +20,7 @@ public abstract class JsonConverter implements AttributeConverter<Object, String
         try {
             return objectMapper.writeValueAsString(o);
         } catch (JsonProcessingException e) {
-            throw new SystemException("转换数据到json失败 \ttarget=" + o.toString(), e);
+            throw new SystemException("转换数据到json失败 \ttarget=" + o, e);
         }
     }
 

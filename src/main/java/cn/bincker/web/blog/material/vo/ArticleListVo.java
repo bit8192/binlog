@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.material.vo;
 
+import cn.bincker.web.blog.base.vo.BaseUserVo;
 import cn.bincker.web.blog.material.entity.Article;
 import cn.bincker.web.blog.netdisk.vo.NetDiskFileListVo;
 import lombok.Data;
@@ -24,6 +25,7 @@ public class ArticleListVo {
     private Long agreedNum;
     private Long commentNum;
     private Long forwardingNum;
+    private BaseUserVo createdUser;
 
     public ArticleListVo(Article article) {
         id = article.getId();
@@ -40,5 +42,6 @@ public class ArticleListVo {
         agreedNum = article.getAgreedNum();
         commentNum = article.getCommentNum();
         forwardingNum = article.getForwardingNum();
+        createdUser = new BaseUserVo(article.getCreatedUser());
     }
 }

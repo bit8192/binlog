@@ -1,8 +1,11 @@
 package cn.bincker.web.blog.material.service.impl;
 
+import cn.bincker.web.blog.base.UserAuditingListener;
 import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.exception.BadRequestException;
+import cn.bincker.web.blog.base.exception.ForbiddenException;
 import cn.bincker.web.blog.base.exception.NotFoundException;
+import cn.bincker.web.blog.base.exception.UnauthorizedException;
 import cn.bincker.web.blog.material.entity.Article;
 import cn.bincker.web.blog.material.entity.Tag;
 import cn.bincker.web.blog.material.repository.IArticleClassRepository;
@@ -29,12 +32,14 @@ import java.util.stream.Collectors;
 
 @Service
 public class ArticleServiceImpl implements IArticleService {
+    private final UserAuditingListener userAuditingListener;
     private final IArticleRepository articleRepository;
     private final ITagRepository tagRepository;
     private final IArticleClassRepository articleClassRepository;
     private final INetDiskFileRepository netDiskFileRepository;
 
-    public ArticleServiceImpl(IArticleRepository articleRepository, ITagRepository tagRepository, IArticleClassRepository articleClassRepository, INetDiskFileRepository netDiskFileRepository) {
+    public ArticleServiceImpl(UserAuditingListener userAuditingListener, IArticleRepository articleRepository, ITagRepository tagRepository, IArticleClassRepository articleClassRepository, INetDiskFileRepository netDiskFileRepository) {
+        this.userAuditingListener = userAuditingListener;
         this.articleRepository = articleRepository;
         this.tagRepository = tagRepository;
         this.articleClassRepository = articleClassRepository;
@@ -43,27 +48,53 @@ public class ArticleServiceImpl implements IArticleService {
 
     @Override
     public ArticleVo getDetail(Long articleId) {
-        return articleRepository.findById(articleId).map(ArticleVo::new).orElseThrow(NotFoundException::new);
+        var result= articleRepository.findById(articleId).orElseThrow(NotFoundException::new);
+        if(!result.getIsPublic()){
+            var currentUser = userAuditingListener.getCurrentAuditor();
+            if(currentUser.isEmpty()) throw new UnauthorizedException();
+            if(!currentUser.get().getId().equals(result.getCreatedUser().getId())) throw new ForbiddenException();
+        }
+        return new ArticleVo(result);
     }
 
     @Override
     public Page<ArticleListVo> pageAll(Pageable pageable) {
-        return articleRepository.findAll(handlePageable(pageable)).map(ArticleListVo::new);
+        var currentUser = userAuditingListener.getCurrentAuditor();
+        if(currentUser.isEmpty()){
+            return articleRepository.findAll(handlePageable(pageable)).map(ArticleListVo::new);
+        }else{
+            return articleRepository.findAllWithUserId(currentUser.get().getId(), handlePageable(pageable)).map(ArticleListVo::new);
+        }
     }
 
     @Override
     public Page<ArticleListVo> pageByKeywords(String keyword, Pageable pageable) {
-        return articleRepository.findAllByKeyword(keyword, handlePageable(pageable)).map(ArticleListVo::new);
+        var currentUser = userAuditingListener.getCurrentAuditor();
+        if(currentUser.isEmpty()) {
+            return articleRepository.findAllByKeywords(keyword, handlePageable(pageable)).map(ArticleListVo::new);
+        }else{
+            return articleRepository.findAllByKeywordsWithUserId(currentUser.get().getId(), keyword, handlePageable(pageable)).map(ArticleListVo::new);
+        }
     }
 
     @Override
     public Page<ArticleListVo> pageByClass(Long articleClassId, Pageable pageable) {
-        return articleRepository.findAllByArticleClassId(articleClassId, handlePageable(pageable)).map(ArticleListVo::new);
+        var currentUser = userAuditingListener.getCurrentAuditor();
+        if(currentUser.isEmpty()){
+            return articleRepository.findAllByArticleClassIdAndIsPublicTrue(articleClassId, handlePageable(pageable)).map(ArticleListVo::new);
+        }else{
+            return articleRepository.findAllByArticleClassIdWithUserId(currentUser.get().getId(), articleClassId, handlePageable(pageable)).map(ArticleListVo::new);
+        }
     }
 
     @Override
     public Page<ArticleListVo> pageByTag(Long articleTagId, Pageable pageable) {
-        return articleRepository.findAllByTagsId(articleTagId, handlePageable(pageable)).map(ArticleListVo::new);
+        var currentUser = userAuditingListener.getCurrentAuditor();
+        if(currentUser.isEmpty()){
+            return articleRepository.findAllByTagsIdAndIsPublicTrue(articleTagId, handlePageable(pageable)).map(ArticleListVo::new);
+        }else{
+            return articleRepository.findAllByTagsIdWithUserId(currentUser.get().getId(), articleTagId, handlePageable(pageable)).map(ArticleListVo::new);
+        }
     }
 
     private Pageable handlePageable(Pageable pageable){
@@ -81,7 +112,9 @@ public class ArticleServiceImpl implements IArticleService {
 
     @Override
     public ArticleVo update(ArticleDto dto) {
+        var currentUser = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
         var target = articleRepository.findById(dto.getId()).orElseThrow(NotFoundException::new);
+        if(!currentUser.getId().equals(target.getCreatedUser().getId())) throw new ForbiddenException();
         checkDto(dto);
         copyProperties(dto, target);
         return getUpdatedResult(articleRepository.save(target));
@@ -136,6 +169,9 @@ public class ArticleServiceImpl implements IArticleService {
 
     @Override
     public void delete(Long articleId) {
+        var currentUser = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
+        var target = articleRepository.findById(articleId).orElseThrow(NotFoundException::new);
+        if(!currentUser.getId().equals(target.getCreatedUser().getId())) throw new ForbiddenException();
         articleRepository.deleteById(articleId);
     }
 }

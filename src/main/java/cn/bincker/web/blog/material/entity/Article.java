@@ -19,7 +19,8 @@ import java.util.Set;
         @NamedEntityGraph(name = "Article.default", attributeNodes = {
                 @NamedAttributeNode("tags"),
                 @NamedAttributeNode("cover"),
-                @NamedAttributeNode("articleClass")
+                @NamedAttributeNode("articleClass"),
+                @NamedAttributeNode("createdUser"),
         })
 })
 public class Article extends AuditEntity {

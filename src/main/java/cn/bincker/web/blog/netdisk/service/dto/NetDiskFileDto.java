@@ -21,7 +21,7 @@ public class NetDiskFileDto {
     private Long id;
 
     @NotEmpty(groups = CreateDirectoryValid.class)
-    @Pattern(regexp = RegexpConstant.FILE_NAME, groups = CreateDirectoryValid.class)
+    @Pattern(regexp = RegexpConstant.FILE_NAME_VALUE, groups = CreateDirectoryValid.class)
     @Length(max = 255, groups = CreateDirectoryValid.class)
     @Null(groups = UploadFileValid.class)
     private String name;

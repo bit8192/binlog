@@ -10,6 +10,7 @@ import org.springframework.data.annotation.LastModifiedBy;
 import javax.persistence.EntityListeners;
 import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
+import javax.validation.constraints.NotNull;
 
 @EqualsAndHashCode(callSuper = true)
 @MappedSuperclass
@@ -18,9 +19,11 @@ import javax.persistence.MappedSuperclass;
 public class AuditEntity extends BaseEntity{
     @CreatedBy
     @ManyToOne
+    @NotNull
     private BaseUser createdUser;
 
     @LastModifiedBy
     @ManyToOne
+    @NotNull
     private BaseUser lastModifiedUser;
 }
