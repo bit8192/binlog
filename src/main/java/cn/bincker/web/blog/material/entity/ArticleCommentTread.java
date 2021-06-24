@@ -23,5 +23,5 @@ public class ArticleCommentTread extends BaseEntity {
 
     @NotNull
     @ManyToOne
-    private ArticleComment articleComment;
+    private ArticleComment comment;
 }

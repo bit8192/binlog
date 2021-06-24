@@ -6,6 +6,7 @@ import cn.bincker.web.blog.netdisk.vo.NetDiskFileListVo;
 import lombok.Data;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.stream.Collectors;
 
 @Data
@@ -26,6 +27,9 @@ public class ArticleListVo {
     private Long commentNum;
     private Long forwardingNum;
     private BaseUserVo createdUser;
+    private Date createdDate;
+    private Date lastModifiedDate;
+    private Boolean isAgreed;
 
     public ArticleListVo(Article article) {
         id = article.getId();
@@ -43,5 +47,7 @@ public class ArticleListVo {
         commentNum = article.getCommentNum();
         forwardingNum = article.getForwardingNum();
         createdUser = new BaseUserVo(article.getCreatedUser());
+        createdDate = article.getCreatedDate();
+        lastModifiedDate = article.getLastModifiedDate();
     }
 }

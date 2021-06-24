@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.material.service;
 
+import cn.bincker.web.blog.base.vo.ValueVo;
 import cn.bincker.web.blog.material.dto.ArticleDto;
 import cn.bincker.web.blog.material.vo.ArticleListVo;
 import cn.bincker.web.blog.material.vo.ArticleVo;
@@ -22,4 +23,10 @@ public interface IArticleService {
     ArticleVo insert(ArticleDto articleDto);
 
     void delete(Long articleId);
+
+    /**
+     * 切换点赞
+     * 返回当前是否已点赞
+     */
+    ValueVo<Boolean> toggleAgreed(Long articleId);
 }

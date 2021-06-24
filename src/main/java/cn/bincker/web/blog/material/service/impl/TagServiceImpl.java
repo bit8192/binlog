@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class TagServiceImpl implements ITagService {
@@ -23,6 +24,14 @@ public class TagServiceImpl implements ITagService {
     @Override
     public List<TagVo> listAll() {
         return tagRepository.findAllVo();
+    }
+
+    @Override
+    public List<TagVo> getHotList() {
+        var result = tagRepository.findAllOrderByArticleListSize();
+        if(result.size() > 10)
+            result = result.subList(0, 10);
+        return result.stream().map(i->new TagVo(i, (long) i.getArticleList().size())).collect(Collectors.toList());
     }
 
     @Override

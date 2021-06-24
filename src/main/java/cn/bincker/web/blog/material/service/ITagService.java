@@ -10,6 +10,8 @@ import java.util.Optional;
 public interface ITagService {
     List<TagVo> listAll();
 
+    List<TagVo> getHotList();
+
     Optional<TagVo> findById(Long id);
 
     TagVo add(TagPostDto tag);

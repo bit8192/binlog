@@ -2,6 +2,7 @@ package cn.bincker.web.blog.material.repository;
 
 import cn.bincker.web.blog.material.entity.Tag;
 import cn.bincker.web.blog.material.vo.TagVo;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -42,4 +43,8 @@ public interface ITagRepository extends JpaRepository<Tag, Long> {
     join article.tags tag on tag.id = :id
     """)
     Long countArticleNum(@Param("id") Long id);
+
+    @Query("from Tag t order by t.articleList.size desc")
+    @EntityGraph("Tag.articleList")
+    List<Tag> findAllOrderByArticleListSize();
 }

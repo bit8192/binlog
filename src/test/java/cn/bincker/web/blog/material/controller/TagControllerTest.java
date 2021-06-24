@@ -81,6 +81,26 @@ class TagControllerTest {
     }
 
     @Test
+    void hotList() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            var tag = new Tag();
+            tag.setTitle("test tag " + i);
+            tagRepository.save(tag);
+        }
+        mockMvc.perform(
+                get(basePath + "/tags/hot")
+        )
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andDo(
+                        document(
+                                "{ClassName}/{methodName}",
+                                responseFields(getTagFields("[]."))
+                        )
+                );
+    }
+
+    @Test
     void getItem() throws Exception {
         var tag = new Tag();
         tag.setTitle("标题");

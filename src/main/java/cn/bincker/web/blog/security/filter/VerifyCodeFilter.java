@@ -3,6 +3,7 @@ package cn.bincker.web.blog.security.filter;
 import cn.bincker.web.blog.base.vo.SuccessMsgVo;
 import cn.bincker.web.blog.security.machine.IVerifyCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -18,10 +19,12 @@ import java.nio.charset.StandardCharsets;
 public class VerifyCodeFilter implements Filter {
     private final IVerifyCode<?> verifyCode;
     private final ObjectMapper objectMapper;
+    private final String basePath;
 
-    public VerifyCodeFilter(IVerifyCode<?> verifyCode, ObjectMapper objectMapper) {
+    public VerifyCodeFilter(IVerifyCode<?> verifyCode, ObjectMapper objectMapper, @Value("${system.base-path}") String basePath) {
         this.verifyCode = verifyCode;
         this.objectMapper = objectMapper;
+        this.basePath = basePath;
     }
 
     @Override
@@ -51,7 +54,7 @@ public class VerifyCodeFilter implements Filter {
 
     private boolean isNeedVerifyRequest(HttpServletRequest request){
         if(!request.getMethod().equals(RequestMethod.POST.name())) return false;
-        return request.getRequestURI().startsWith("/authentication");
+        return request.getRequestURI().startsWith(basePath + "/authentication");
     }
 
     private boolean verify(HttpServletRequest request){

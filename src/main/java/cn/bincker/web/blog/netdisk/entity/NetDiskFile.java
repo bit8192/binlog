@@ -10,6 +10,7 @@ import lombok.EqualsAndHashCode;
 
 import javax.persistence.*;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -59,11 +60,11 @@ public class NetDiskFile extends AuditEntity {
      * 可读用户
      */
     @ManyToMany
-    private Set<BaseUser> readableUserList = Collections.emptySet();
+    private Set<BaseUser> readableUserList = new HashSet<>();
 
     /**
      * 可写用户
      */
     @ManyToMany
-    private Set<BaseUser> writableUserList = Collections.emptySet();
+    private Set<BaseUser> writableUserList = new HashSet<>();
 }

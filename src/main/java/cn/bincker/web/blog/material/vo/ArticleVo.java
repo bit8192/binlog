@@ -6,6 +6,7 @@ import cn.bincker.web.blog.netdisk.vo.NetDiskFileListVo;
 import lombok.Data;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.stream.Collectors;
 
 @Data
@@ -14,6 +15,7 @@ public class ArticleVo {
     private String title;
     private Boolean recommend;
     private Boolean top;
+    private Boolean isPublic;
     private String describe;
     private String content;
     private Collection<TagVo> tags;
@@ -27,6 +29,9 @@ public class ArticleVo {
     private Long commentNum;
     private Long forwardingNum;
     private BaseUserVo createdUser;
+    private Date createdDate;
+    private Date lastModifiedDate;
+    private Boolean isAgreed;
 
     public ArticleVo() {
     }
@@ -36,6 +41,7 @@ public class ArticleVo {
         title = article.getTitle();
         recommend = article.getRecommend();
         top = article.getTop();
+        isPublic = article.getIsPublic();
         describe = article.getDescribe();
         content = article.getContent();
         tags = article.getTags().stream().map(t->new TagVo(t, null)).collect(Collectors.toSet());
@@ -48,5 +54,7 @@ public class ArticleVo {
         commentNum = article.getCommentNum();
         forwardingNum = article.getForwardingNum();
         createdUser = new BaseUserVo(article.getCreatedUser());
+        createdDate = article.getCreatedDate();
+        lastModifiedDate = article.getLastModifiedDate();
     }
 }

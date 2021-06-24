@@ -25,6 +25,11 @@ public class TagController {
         return tagService.listAll();
     }
 
+    @GetMapping("hot")
+    public Collection<TagVo> hotList(){
+        return tagService.getHotList();
+    }
+
     @GetMapping("{id}")
     public TagVo get(@PathVariable Long id){
         return tagService.findById(id).orElseThrow(NotFoundException::new);

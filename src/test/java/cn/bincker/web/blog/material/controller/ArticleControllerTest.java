@@ -271,6 +271,32 @@ class ArticleControllerTest {
                 ));
     }
 
+    @Test
+    @WithUserDetails("admin")
+    void toggleAgree() throws Exception {
+        var articleClass = ArticleClassControllerTest.newArticleClass("test-class", 0, true, null);
+        articleClassRepository.save(articleClass);
+        var tag = TagControllerTest.newTag("t");
+        tagRepository.save(tag);
+        var cover = newCover();
+        netDiskFileRepository.save(cover);
+        var tags = new HashSet<Tag>();
+        tags.add(tag);
+        var article = newArticle("test", "content", tags, cover, articleClass);
+        articleRepository.save(article);
+
+        mockMvc.perform(
+                post(basePath + "/article/{id}/toggle-agree", article.getId())
+        )
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andDo(document(
+                        "{ClassName}/{methodName}",
+                        pathParameters(parameterWithName("id").description("id")),
+                        responseFields(fieldWithPath("value").type(JsonFieldType.BOOLEAN).description("操作后的状态"))
+                ));
+    }
+
     private void buildPageData(int size, ArticleClass articleClass, Set<Tag> tags){
         var user = baseUserRepository.findByUsername("admin").orElseThrow();
         var cover = newCover();
@@ -317,6 +343,7 @@ class ArticleControllerTest {
         result.add(fieldWithPath(prefix + "title").type(JsonFieldType.STRING).description("标题"));
         result.add(fieldWithPath(prefix + "recommend").type(JsonFieldType.BOOLEAN).optional().description("是否推荐"));
         result.add(fieldWithPath(prefix + "top").type(JsonFieldType.BOOLEAN).optional().description("是否置顶"));
+        result.add(fieldWithPath(prefix + "isPublic").type(JsonFieldType.BOOLEAN).optional().description("是否公开"));
         result.add(fieldWithPath(prefix + "describe").type(JsonFieldType.STRING).description("简述"));
         result.add(fieldWithPath(prefix + "content").type(JsonFieldType.STRING).description("文章内容"));
         result.add(fieldWithPath(prefix + "tags").type(JsonFieldType.ARRAY).optional().description("标签列表"));
@@ -331,6 +358,8 @@ class ArticleControllerTest {
         result.add(fieldWithPath(prefix + "commentNum").type(JsonFieldType.NUMBER).description("评论量"));
         result.add(fieldWithPath(prefix + "forwardingNum").type(JsonFieldType.NUMBER).description("转发量"));
         result.addAll(AuthenticationTests.getBaseUserVoFields(prefix + "createdUser."));
+        result.add(fieldWithPath(prefix + "createdDate").type(JsonFieldType.STRING).description("创建时间"));
+        result.add(fieldWithPath(prefix + "lastModifiedDate").type(JsonFieldType.STRING).description("最后修改时间"));
         return result;
     }
 
@@ -356,6 +385,8 @@ class ArticleControllerTest {
         result.add(fieldWithPath(prefix + "commentNum").type(JsonFieldType.NUMBER).description("评论量"));
         result.add(fieldWithPath(prefix + "forwardingNum").type(JsonFieldType.NUMBER).description("转发量"));
         result.addAll(AuthenticationTests.getBaseUserVoFields(prefix + "createdUser."));
+        result.add(fieldWithPath(prefix + "createdDate").type(JsonFieldType.STRING).description("创建时间"));
+        result.add(fieldWithPath(prefix + "lastModifiedDate").type(JsonFieldType.STRING).description("最后修改时间"));
         return result;
     }
 

@@ -5,13 +5,13 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import javax.persistence.Entity;
-import javax.persistence.OneToMany;
-import java.util.List;
 
+/**
+ * 子评论
+ */
 @EqualsAndHashCode(callSuper = true)
-@Entity
 @Data
-public class ArticleComment extends Comment<Article> {
-    @OneToMany
-    private List<ArticleSubComment> subCommentList;
+@Entity
+public class ArticleSubComment extends Comment<ArticleComment> {
+    private Boolean recommend;
 }

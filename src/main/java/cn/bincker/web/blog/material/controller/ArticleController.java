@@ -2,13 +2,13 @@ package cn.bincker.web.blog.material.controller;
 
 import cn.bincker.web.blog.base.dto.valid.InsertValid;
 import cn.bincker.web.blog.base.dto.valid.UpdateValid;
+import cn.bincker.web.blog.base.vo.ValueVo;
 import cn.bincker.web.blog.material.dto.ArticleDto;
 import cn.bincker.web.blog.material.service.IArticleService;
 import cn.bincker.web.blog.material.vo.ArticleListVo;
 import cn.bincker.web.blog.material.vo.ArticleVo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +27,14 @@ public class ArticleController {
     @GetMapping("{id}")
     public ArticleVo getDetail(@PathVariable Long id){
         return articleService.getDetail(id);
+    }
+
+    /**
+     * 点击和取消赞
+     */
+    @PostMapping("{id}/toggle-agree")
+    public ValueVo<Boolean> toggleAgree(@PathVariable Long id){
+        return articleService.toggleAgreed(id);
     }
 
     @GetMapping
