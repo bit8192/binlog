@@ -21,4 +21,6 @@ public class SystemProfile {
     private String dateFormat;
     @JsonIgnore
     private String timeFormat;
+    @JsonIgnore
+    private QQAuthorizeConfig qqAuthorizeConfig;
 }

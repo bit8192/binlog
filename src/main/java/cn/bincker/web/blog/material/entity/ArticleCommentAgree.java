@@ -5,6 +5,7 @@ import cn.bincker.web.blog.base.entity.BaseEntity;
 import cn.bincker.web.blog.base.entity.BaseUser;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.data.annotation.CreatedBy;
 
 import javax.persistence.Entity;
 import javax.persistence.EntityListeners;
@@ -16,6 +17,7 @@ import javax.persistence.MappedSuperclass;
 @Data
 @Entity
 public class ArticleCommentAgree extends BaseEntity {
+    @CreatedBy
     @ManyToOne
     private BaseUser createdUser;
 

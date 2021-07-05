@@ -7,7 +7,6 @@ import lombok.Data;
 public class BaseUserVo {
     private Long id;
     private String username;
-    private String nickname;
     private String headImg;
 
     public BaseUserVo() {
@@ -16,7 +15,6 @@ public class BaseUserVo {
     public BaseUserVo(BaseUser user) {
         this.id = user.getId();
         this.username = user.getUsername();
-        this.nickname = user.getNickname();
         this.headImg = user.getHeadImg();
     }
 }

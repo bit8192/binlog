@@ -20,9 +20,6 @@ public class BaseUser extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String username;
 
-    private String nickname;
-
-    @NotNull
     @Column(nullable = false)
     @JsonIgnore
     private String encodedPasswd;
@@ -39,4 +36,10 @@ public class BaseUser extends BaseEntity {
     @Column
     @ColumnDefault("false")
     private Boolean locked = false;
+
+    @Column(unique = true)
+    private String qqOpenId;
+
+    @Column(unique = true)
+    private String wechatOpenId;
 }

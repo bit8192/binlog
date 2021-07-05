@@ -1,10 +1,13 @@
 package cn.bincker.web.blog.material.service.impl;
 
 import cn.bincker.web.blog.base.UserAuditingListener;
+import cn.bincker.web.blog.base.constant.RegexpConstant;
+import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.exception.ForbiddenException;
 import cn.bincker.web.blog.base.exception.NotFoundException;
 import cn.bincker.web.blog.base.exception.SystemException;
 import cn.bincker.web.blog.base.exception.UnauthorizedException;
+import cn.bincker.web.blog.base.repository.IBaseUserRepository;
 import cn.bincker.web.blog.base.vo.BaseUserVo;
 import cn.bincker.web.blog.base.vo.ValueVo;
 import cn.bincker.web.blog.material.constant.SynchronizedPrefixConstant;
@@ -12,10 +15,12 @@ import cn.bincker.web.blog.material.dto.ArticleCommentDto;
 import cn.bincker.web.blog.material.entity.ArticleComment;
 import cn.bincker.web.blog.material.entity.ArticleCommentAgree;
 import cn.bincker.web.blog.material.entity.ArticleCommentTread;
+import cn.bincker.web.blog.material.entity.ArticleSubComment;
 import cn.bincker.web.blog.material.repository.*;
 import cn.bincker.web.blog.material.service.IArticleCommentService;
 import cn.bincker.web.blog.material.vo.ArticleCommentListVo;
 import cn.bincker.web.blog.material.vo.ArticleCommentVo;
+import cn.bincker.web.blog.material.vo.IArticleMemberCommentVo;
 import cn.bincker.web.blog.material.vo.RepliesTotalVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +29,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,8 +44,9 @@ public class ArticleCommentServiceImpl implements IArticleCommentService {
     private final IArticleSubCommentRepository articleSubCommentRepository;
     private final IArticleSubCommentAgreeRepository articleSubCommentAgreeRepository;
     private final IArticleSubCommentTreadRepository articleSubCommentTreadRepository;
+    private final IBaseUserRepository baseUserRepository;
 
-    public ArticleCommentServiceImpl(IArticleCommentRepository articleCommentRepository, UserAuditingListener userAuditingListener, IArticleRepository articleRepository, IArticleCommentAgreeRepository articleCommentAgreeRepository, IArticleCommentTreadRepository articleCommentTreadRepository, IArticleSubCommentRepository articleSubCommentRepository, IArticleSubCommentAgreeRepository articleSubCommentAgreeRepository, IArticleSubCommentTreadRepository articleSubCommentTreadRepository) {
+    public ArticleCommentServiceImpl(IArticleCommentRepository articleCommentRepository, UserAuditingListener userAuditingListener, IArticleRepository articleRepository, IArticleCommentAgreeRepository articleCommentAgreeRepository, IArticleCommentTreadRepository articleCommentTreadRepository, IArticleSubCommentRepository articleSubCommentRepository, IArticleSubCommentAgreeRepository articleSubCommentAgreeRepository, IArticleSubCommentTreadRepository articleSubCommentTreadRepository, IBaseUserRepository baseUserRepository) {
         this.articleCommentRepository = articleCommentRepository;
         this.userAuditingListener = userAuditingListener;
         this.articleRepository = articleRepository;
@@ -48,6 +55,7 @@ public class ArticleCommentServiceImpl implements IArticleCommentService {
         this.articleSubCommentRepository = articleSubCommentRepository;
         this.articleSubCommentAgreeRepository = articleSubCommentAgreeRepository;
         this.articleSubCommentTreadRepository = articleSubCommentTreadRepository;
+        this.baseUserRepository = baseUserRepository;
     }
 
     @Override
@@ -59,7 +67,10 @@ public class ArticleCommentServiceImpl implements IArticleCommentService {
         comment.setTarget(article);
         articleCommentRepository.save(comment);
         comment.setCreatedUser(user);
-        return new ArticleCommentVo(comment);
+        var vo = new ArticleCommentVo(comment);
+        //处理被@的用户
+        handleMember(Collections.singletonList(vo));
+        return vo;
     }
 
     @Override
@@ -95,10 +106,7 @@ public class ArticleCommentServiceImpl implements IArticleCommentService {
                 agree.setComment(comment);
                 articleCommentAgreeRepository.save(agree);
             }else{
-                agreeOptional.ifPresent(articleCommentAgreeRepository::delete);
-                var tread = new ArticleCommentTread();
-                tread.setComment(comment);
-                articleCommentTreadRepository.save(tread);
+                articleCommentAgreeRepository.delete(agreeOptional.get());
             }
 
             //更新点赞数和踩数量
@@ -124,10 +132,7 @@ public class ArticleCommentServiceImpl implements IArticleCommentService {
                 tread.setComment(comment);
                 articleCommentTreadRepository.save(tread);
             }else{
-                treadOptional.ifPresent(articleCommentTreadRepository::delete);
-                var agree = new ArticleCommentAgree();
-                agree.setComment(comment);
-                articleCommentAgreeRepository.save(agree);
+                articleCommentTreadRepository.delete(treadOptional.get());
             }
 
             //更新点赞数和踩数量
@@ -136,7 +141,7 @@ public class ArticleCommentServiceImpl implements IArticleCommentService {
             comment.setAgreedNum(agreeNum);
             comment.setTreadNum(treadNum);
             articleCommentRepository.save(comment);
-            return new ValueVo<>(agreeOptional.isEmpty());
+            return new ValueVo<>(treadOptional.isEmpty());
         }
     }
 
@@ -146,6 +151,7 @@ public class ArticleCommentServiceImpl implements IArticleCommentService {
         var contentIdList = page.getContent().stream().map(ArticleComment::getId).collect(Collectors.toList());
         //子评论
         var replies = articleSubCommentRepository.findAllByRecommendIsTrueAndTargetIn(page.getContent());
+        var repliesIdList = replies.stream().map(ArticleSubComment::getId).collect(Collectors.toList());
         //子评论数量统计
         var repliesTotalMap = articleCommentRepository
                 .getRepliesTotals(contentIdList)
@@ -155,7 +161,7 @@ public class ArticleCommentServiceImpl implements IArticleCommentService {
             var vo = new ArticleCommentListVo();
             vo.setId(comment.getId());
             vo.setContent(comment.getContent());
-            vo.setAgreeNum(comment.getAgreedNum());
+            vo.setAgreedNum(comment.getAgreedNum());
             vo.setTreadNum(comment.getTreadNum());
             vo.setCreatedUser(new BaseUserVo(comment.getCreatedUser()));
             vo.setCreatedDate(comment.getCreatedDate());
@@ -171,9 +177,9 @@ public class ArticleCommentServiceImpl implements IArticleCommentService {
                     .stream().map(a->a.getComment().getId()).collect(Collectors.toSet());
             var articleCommentIsTrodSet = articleCommentTreadRepository.findByCreatedUserIdAndCommentIdIn(user.getId(), contentIdList)
                     .stream().map(t->t.getComment().getId()).collect(Collectors.toSet());
-            var articleSubCommentIsAgreedSet = articleSubCommentAgreeRepository.findByCreatedUserIdAndCommentIdIn(user.getId(), contentIdList)
+            var articleSubCommentIsAgreedSet = articleSubCommentAgreeRepository.findByCreatedUserIdAndCommentIdIn(user.getId(), repliesIdList)
                     .stream().map(a->a.getComment().getId()).collect(Collectors.toSet());
-            var articleSubCommentIsTrodSet = articleSubCommentTreadRepository.findByCreatedUserIdAndCommentIdIn(user.getId(), contentIdList)
+            var articleSubCommentIsTrodSet = articleSubCommentTreadRepository.findByCreatedUserIdAndCommentIdIn(user.getId(), repliesIdList)
                     .stream().map(a->a.getComment().getId()).collect(Collectors.toSet());
             voPage.forEach(v->{
                 v.setIsAgreed(articleCommentIsAgreedSet.contains(v.getId()));
@@ -183,7 +189,40 @@ public class ArticleCommentServiceImpl implements IArticleCommentService {
                     c.setIsTrod(articleSubCommentIsTrodSet.contains(c.getId()));
                 });
             });
+        }else {
+            for (ArticleCommentListVo comment : voPage) {
+                comment.setIsAgreed(false);
+                comment.setIsTrod(false);
+            }
         }
+        //合并一起处理
+        var memberCommentList = new ArrayList<IArticleMemberCommentVo>(voPage.getContent().size() + replies.size());
+        memberCommentList.addAll(voPage.getContent());
+        memberCommentList.addAll(replies.stream().map(ArticleCommentVo::new).collect(Collectors.toList()));
+        handleMember(memberCommentList);
         return voPage;
+    }
+
+    /**
+     * 查询@的用户, 并设置到Vo中
+     */
+    @SuppressWarnings("DuplicatedCode")//service最好不互相调用，所以还是拷贝一份
+    private void handleMember(List<? extends IArticleMemberCommentVo> commentVos){
+        var commentMembersMap = new HashMap<String, Set<IArticleMemberCommentVo>>();
+        for (var comment : commentVos) {
+            var matcher = RegexpConstant.COMMENT_MEMBER.matcher(comment.getContent());
+            while (matcher.find()){
+                var username = matcher.group(2);
+                var list = commentMembersMap.computeIfAbsent(username, k -> new HashSet<>());
+                list.add(comment);
+            }
+        }
+        var members = baseUserRepository.findAllByUsernameIn(commentMembersMap.keySet());
+        for (BaseUser member : members) {
+            var userVo = new BaseUserVo(member);
+            for (var vo : commentMembersMap.get(member.getUsername())) {
+                vo.getMembers().add(userVo);
+            }
+        }
     }
 }

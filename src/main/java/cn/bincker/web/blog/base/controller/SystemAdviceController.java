@@ -61,6 +61,12 @@ public class SystemAdviceController {
         return new ErrorResult("您没有权限访问");
     }
 
+    @ResponseStatus(HttpStatus.NOT_IMPLEMENTED)
+    @ExceptionHandler(NotImplementedException.class)
+    public ErrorResult notImplementedExceptionHandle(){
+        return new ErrorResult("该功能未实现，请联系管理员");
+    }
+
     private void printLog(Exception exception, HttpServletRequest request, String msg){
         Optional<BaseUser> userOptional = userAuditingListener.getCurrentAuditor();
         Long userId = -1L;

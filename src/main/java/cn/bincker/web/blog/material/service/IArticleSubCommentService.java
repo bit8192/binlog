@@ -13,6 +13,11 @@ public interface IArticleSubCommentService {
     ArticleCommentVo comment(Long articleCommentId, ArticleCommentDto dto);
 
     /**
+     * 对子评论进行评论
+     */
+    ArticleCommentVo subComment(Long subCommentId, ArticleCommentDto dto);
+
+    /**
      * 删除评论
      */
     void del(Long id);

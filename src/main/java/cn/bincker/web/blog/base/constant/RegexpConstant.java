@@ -19,4 +19,15 @@ public class RegexpConstant {
     public static final String MARKDOWN_IMAGE_VALUE = "!\\[[^]]+]\\(([^)\s]+)\s?(.*?)\\)";
 
     public static final Pattern MARKDOWN_IMAGE = Pattern.compile(MARKDOWN_IMAGE_VALUE);
+
+    /**
+     * 匹配评论中@的用户
+     */
+    public static final String COMMENT_MEMBER_VALUE = "(^|\\s)@(\\S+)($|\\s)";
+
+    public static final Pattern COMMENT_MEMBER = Pattern.compile(COMMENT_MEMBER_VALUE);
+
+    public static final String ILLEGAL_USERNAME_VALUE = "[^_\\-\\d\\w\\u4e00-\\u9fa5]";
+
+    public static final Pattern ILLEGAL_USERNAME = Pattern.compile(ILLEGAL_USERNAME_VALUE);
 }

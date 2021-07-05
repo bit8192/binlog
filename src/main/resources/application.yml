@@ -9,6 +9,9 @@ system:
   datetime-format: yyyy-MM-dd HH:mm:ss
   date-format: yyyy-MM-dd
   time-format: HH:mm:ss
+  qq-authorize-config:
+    appId: 101957377
+    appKey: 93256862212a9cdb4dce4dfbfdba5a01
 netdisk:
   type: local
 spring:

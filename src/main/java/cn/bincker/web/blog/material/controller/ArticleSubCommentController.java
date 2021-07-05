@@ -24,6 +24,14 @@ public class ArticleSubCommentController {
         return articleSubCommentService.comment(commentId, dto);
     }
 
+    /**
+     * 对子评论进行评论
+     */
+    @PostMapping("{subCommentId}/comment")
+    public ArticleCommentVo subComment(@PathVariable Long subCommentId, @RequestBody @Validated ArticleCommentDto dto){
+        return articleSubCommentService.subComment(subCommentId, dto);
+    }
+
     @DeleteMapping("{id}")
     public void del(@PathVariable Long id){
         articleSubCommentService.del(id);

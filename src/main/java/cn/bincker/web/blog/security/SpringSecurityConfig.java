@@ -37,11 +37,11 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
-                .antMatchers(HttpMethod.POST, "/api/authentication").permitAll()
+                .antMatchers(HttpMethod.POST, "/api/authorize").permitAll()
                 .anyRequest().permitAll()
                 .and()
                 .formLogin()
-                .loginProcessingUrl("/api/authentication")
+                .loginProcessingUrl("/api/authorize")
                 .successHandler(authenticationHandler)
                 .failureHandler(authenticationHandler)
                 .and()

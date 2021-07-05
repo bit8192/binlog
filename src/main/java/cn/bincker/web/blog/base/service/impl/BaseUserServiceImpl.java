@@ -25,6 +25,16 @@ public class BaseUserServiceImpl implements IBaseUserService {
     }
 
     @Override
+    public Optional<BaseUser> findByUsername(String userName) {
+        return repository.findByUsername(userName);
+    }
+
+    @Override
+    public Optional<BaseUser> findByQQOpenId(String openId) {
+        return repository.findByQqOpenId(openId);
+    }
+
+    @Override
     public BaseUser getByUsername(String username) {
         return repository.findByUsername(username).orElse(null);
     }

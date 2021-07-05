@@ -12,6 +12,6 @@ import java.util.List;
 @Entity
 @Data
 public class ArticleComment extends Comment<Article> {
-    @OneToMany
+    @OneToMany(mappedBy = "target")
     private List<ArticleSubComment> subCommentList;
 }
