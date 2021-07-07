@@ -4,13 +4,13 @@ import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.constant.SessionKeyConstant;
 import cn.bincker.web.blog.base.entity.AuthorizationUser;
 import cn.bincker.web.blog.base.entity.BaseUser;
-import cn.bincker.web.blog.base.entity.QQUserInfo;
 import cn.bincker.web.blog.base.exception.BadRequestException;
 import cn.bincker.web.blog.base.service.IBaseUserService;
 import cn.bincker.web.blog.base.service.IQQAuthorizeService;
-import cn.bincker.web.blog.base.vo.BaseUserVo;
 import cn.bincker.web.blog.base.vo.ValueVo;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -26,9 +26,10 @@ import java.util.*;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+@ConditionalOnBean(IQQAuthorizeService.class)
 @Controller
 @RequestMapping("${system.base-path}/authorize/qq")
-public class QQAuthorizeController {
+public class QQAuthorizeController implements DisposableBean {
     private final String basePath;
     private final Map<String, Optional<BaseUser>> authorizationMap;//用于存储授权信息和判断是否存在
     private final PriorityQueue<StateInfo> stateInfoPriorityQueue;//存储state和其创建时间信息，定时删除
@@ -136,6 +137,14 @@ public class QQAuthorizeController {
             return scheme + "://" + serverName + path;
         }
         return scheme + "://" + serverName + ":" + port + path;
+    }
+
+    /**
+     * bean被销毁时关闭state清除线程池
+     */
+    @Override
+    public void destroy() {
+        scheduledThreadPoolExecutor.shutdown();
     }
 
     private static class StateInfo{

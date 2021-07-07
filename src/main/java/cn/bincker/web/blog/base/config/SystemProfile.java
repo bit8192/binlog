@@ -1,6 +1,5 @@
-package cn.bincker.web.blog.base.entity;
+package cn.bincker.web.blog.base.config;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -9,18 +8,30 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties("system")
 @Data
 public class SystemProfile {
+    /**
+     * 站点名称
+     */
     private String name;
+    /**
+     * 展示版权
+     */
     private String copyRight;
+    /**
+     * 展示ipc
+     */
     private String ipc;
+    /**
+     * 展示github
+     */
     private String github;
-    @JsonIgnore
+    /**
+     * url前缀
+     */
     private String basePath;
-    @JsonIgnore
+    /**
+     * 时间格式化
+     */
     private String datetimeFormat;
-    @JsonIgnore
     private String dateFormat;
-    @JsonIgnore
     private String timeFormat;
-    @JsonIgnore
-    private QQAuthorizeConfig qqAuthorizeConfig;
 }

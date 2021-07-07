@@ -112,10 +112,12 @@ class ArticleCommentControllerTest {
         fields.add(fieldWithPath(prefix + "content").type(JsonFieldType.STRING).description("内容"));
         fields.addAll(AuthenticationTests.getBaseUserVoFields(prefix + "createdUser."));
         fields.add(fieldWithPath(prefix + "createdDate").type(JsonFieldType.STRING).description("评论时间"));
-        fields.add(fieldWithPath(prefix + "agreeNum").type(JsonFieldType.NUMBER).description("获赞数量"));
+        fields.add(fieldWithPath(prefix + "agreedNum").type(JsonFieldType.NUMBER).description("获赞数量"));
         fields.add(fieldWithPath(prefix + "treadNum").type(JsonFieldType.NUMBER).description("获踩数量"));
         fields.add(fieldWithPath(prefix + "isAgreed").type(JsonFieldType.BOOLEAN).optional().description("是否已点赞"));
         fields.add(fieldWithPath(prefix + "isTrod").type(JsonFieldType.BOOLEAN).optional().description("是否已点踩"));
+        fields.add(fieldWithPath(prefix + "members").type(JsonFieldType.ARRAY).optional().description("评论中@的用户"));
+        fields.addAll(AuthenticationTests.getBaseUserVoFields(prefix + "members[]."));
         return fields;
     }
 
@@ -127,6 +129,8 @@ class ArticleCommentControllerTest {
         fields.add(fieldWithPath(prefix + "replies").type(JsonFieldType.ARRAY).description("子评论"));
         fields.addAll(getArticleCommentVoFieldsDescriptor(prefix + "replies[]."));
         fields.add(fieldWithPath(prefix + "repliesNum").type(JsonFieldType.NUMBER).description("下级评论总数"));
+        fields.add(fieldWithPath(prefix + "members").type(JsonFieldType.ARRAY).optional().description("评论中@的用户"));
+        fields.addAll(AuthenticationTests.getBaseUserVoFields(prefix + "members[]."));
         return fields;
     }
 

@@ -1,15 +1,15 @@
 package cn.bincker.web.blog.base.service.impl;
 
+import cn.bincker.web.blog.base.config.QQAuthorizeConfigProperties;
 import cn.bincker.web.blog.base.entity.QQAccessToken;
 import cn.bincker.web.blog.base.entity.QQUserInfo;
-import cn.bincker.web.blog.base.entity.SystemProfile;
-import cn.bincker.web.blog.base.exception.NotImplementedException;
 import cn.bincker.web.blog.base.exception.SystemException;
 import cn.bincker.web.blog.base.service.IQQAuthorizeService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
+@ConditionalOnProperty(value = "system.qq-authorize.use", havingValue = "true")
 @Service
 public class QQAuthorizeServiceImpl implements IQQAuthorizeService {
     private static final Logger log = LoggerFactory.getLogger(QQAuthorizeServiceImpl.class);
@@ -30,30 +31,27 @@ public class QQAuthorizeServiceImpl implements IQQAuthorizeService {
     private static final String URL_GET_ACCESS_TOKEN = "https://graph.qq.com/oauth2.0/token?grant_type=authorization_code&client_id=%s&client_secret=%s&code=%s&redirect_uri=%s&fmt=json";
     private static final String URL_GET_OPEN_ID = "https://graph.qq.com/oauth2.0/me?access_token=%s&fmt=json";
     private static final String URL_GET_USER_INFO = "https://graph.qq.com/user/get_user_info?access_token=%s&oauth_consumer_key=%s&openid=%s";
-    private final SystemProfile systemProfile;
+    private final QQAuthorizeConfigProperties configProperties;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
-    public QQAuthorizeServiceImpl(SystemProfile systemProfile, ObjectMapper objectMapper) {
-        this.systemProfile = systemProfile;
+    public QQAuthorizeServiceImpl(QQAuthorizeConfigProperties configProperties, ObjectMapper objectMapper) {
+        this.configProperties = configProperties;
         this.objectMapper = objectMapper;
         httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
     }
 
     @Override
     public String getAuthorizeUrl(String redirectUrl, String state) {
-        var config = systemProfile.getQqAuthorizeConfig();
-        if(config == null) throw new NotImplementedException();
-        return String.format(URL_AUTHORIZE, config.getAppId(), URLEncoder.encode(redirectUrl, StandardCharsets.UTF_8), state);
+        return String.format(URL_AUTHORIZE, configProperties, URLEncoder.encode(redirectUrl, StandardCharsets.UTF_8), state);
     }
 
     @Override
     public QQAccessToken getAccessToken(String code, String redirectUrl) {
-        var config = systemProfile.getQqAuthorizeConfig();
         var request = HttpRequest.newBuilder(URI.create(String.format(
                 URL_GET_ACCESS_TOKEN,
-                config.getAppId(),
-                config.getAppKey(),
+                configProperties.getAppId(),
+                configProperties.getAppKey(),
                 code,
                 URLEncoder.encode(redirectUrl, StandardCharsets.UTF_8)
         ))).GET().build();
@@ -100,11 +98,10 @@ public class QQAuthorizeServiceImpl implements IQQAuthorizeService {
 
     @Override
     public QQUserInfo getUserInfo(String accessToken, String openId) {
-        var config = systemProfile.getQqAuthorizeConfig();
         var request = HttpRequest.newBuilder(URI.create(String.format(
                 URL_GET_USER_INFO,
                 accessToken,
-                config.getAppId(),
+                configProperties.getAppId(),
                 openId
         ))).build();
         try {

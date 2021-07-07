@@ -1,4 +1,3 @@
-debug: true
 server:
   port: 8080
 system:
@@ -10,6 +9,8 @@ system:
   datetime-format: yyyy-MM-dd HH:mm:ss
   date-format: yyyy-MM-dd
   time-format: HH:mm:ss
+  verify-code:
+    image-path: verify-code-images
 netdisk:
   type: LOCAL
 spring:

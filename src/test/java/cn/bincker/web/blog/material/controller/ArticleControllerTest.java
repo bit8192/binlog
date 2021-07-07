@@ -142,7 +142,7 @@ class ArticleControllerTest {
                 .andExpect(status().isCreated())
                 .andDo(document(
                         "{ClassName}/insert",
-                        requestFields(REQUEST_FIELDS),
+                        requestFields(REQUEST_FIELDS).and(fieldWithPath("tags[].articleList").ignored()),
                         responseFields(getArticleDetailFieldDescriptors("").toArray(new FieldDescriptor[]{}))
                 ))
                 .andReturn();
@@ -162,7 +162,9 @@ class ArticleControllerTest {
                 .andExpect(jsonPath("title").value(dto.getTitle()))
                 .andDo(document(
                         "{ClassName}/update",
-                        requestFields(fieldWithPath("id").type(JsonFieldType.NUMBER).description("修改用的id")).and(REQUEST_FIELDS),
+                        requestFields(fieldWithPath("id").type(JsonFieldType.NUMBER).description("修改用的id"))
+                                .and(REQUEST_FIELDS)
+                                .and(fieldWithPath("tags[].articleList").ignored()),
                         responseFields(getArticleDetailFieldDescriptors(""))
                 ));
     }
@@ -360,6 +362,7 @@ class ArticleControllerTest {
         result.addAll(AuthenticationTests.getBaseUserVoFields(prefix + "createdUser."));
         result.add(fieldWithPath(prefix + "createdDate").type(JsonFieldType.STRING).description("创建时间"));
         result.add(fieldWithPath(prefix + "lastModifiedDate").type(JsonFieldType.STRING).description("最后修改时间"));
+        result.add(fieldWithPath(prefix + "isAgreed").type(JsonFieldType.BOOLEAN).optional().description("是否已经点赞"));
         return result;
     }
 
@@ -387,6 +390,7 @@ class ArticleControllerTest {
         result.addAll(AuthenticationTests.getBaseUserVoFields(prefix + "createdUser."));
         result.add(fieldWithPath(prefix + "createdDate").type(JsonFieldType.STRING).description("创建时间"));
         result.add(fieldWithPath(prefix + "lastModifiedDate").type(JsonFieldType.STRING).description("最后修改时间"));
+        result.add(fieldWithPath(prefix + "isAgreed").type(JsonFieldType.BOOLEAN).optional().description("是否已经点赞"));
         return result;
     }
 

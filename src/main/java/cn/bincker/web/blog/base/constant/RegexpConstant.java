@@ -27,7 +27,17 @@ public class RegexpConstant {
 
     public static final Pattern COMMENT_MEMBER = Pattern.compile(COMMENT_MEMBER_VALUE);
 
+    /**
+     * 无效用户名
+     */
     public static final String ILLEGAL_USERNAME_VALUE = "[^_\\-\\d\\w\\u4e00-\\u9fa5]";
 
     public static final Pattern ILLEGAL_USERNAME = Pattern.compile(ILLEGAL_USERNAME_VALUE);
+
+    /**
+     * 图片文件
+     */
+    public static final String IMAGE_FILE_VALUE = "\\.((jpg)|(jpeg)|(bmp)|(png)|(icon)|(svg)|(webp))$";
+
+    public static final Pattern IMAGE_FILE = Pattern.compile(IMAGE_FILE_VALUE, Pattern.CASE_INSENSITIVE);
 }

@@ -1,7 +1,7 @@
 server:
   port: 80
 system:
-  name: Bincker的博客
+  name: Bincker的个人博客
   copy-right: copyright @2021 Bincker
   ipc: 京ICP备1234567890号
   github: https://github.com/Bincker1973
@@ -9,9 +9,8 @@ system:
   datetime-format: yyyy-MM-dd HH:mm:ss
   date-format: yyyy-MM-dd
   time-format: HH:mm:ss
-  qq-authorize-config:
-    appId: 101957377
-    appKey: 93256862212a9cdb4dce4dfbfdba5a01
+  verify-code:
+    image-path: ./verify-images
 netdisk:
   type: local
 spring:
@@ -20,11 +19,14 @@ spring:
     url: jdbc:mysql://localhost:3306/blog?createDatabaseIfNotExist=true&serverTime=Asia/Shanghai&useUnicode=true&useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: 123456
+  jpa:
+    hibernate:
+      ddl-auto: update
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     default-property-inclusion: non_null
   profiles:
-    active: debug
+    active: @profiles.active@
   servlet:
     multipart:
       location: upload-file

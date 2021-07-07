@@ -1,6 +1,6 @@
 package cn.bincker.web.blog.utils;
 
-import cn.bincker.web.blog.base.entity.SystemProfile;
+import cn.bincker.web.blog.base.config.SystemProfile;
 import lombok.Getter;
 import org.springframework.stereotype.Component;
 

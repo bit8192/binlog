@@ -65,7 +65,7 @@ public class AuthenticationTests {
         System.out.println(verifyQuestion);
 
         MockHttpServletRequestBuilder requestBuilder =
-                post(basePath + "/authentication")
+                post(basePath + "/authorize")
                         .param("username", "admin")
                         .param("password", "123456")
                 .session(session);

@@ -34,9 +34,11 @@ public class ArticleClassServiceImpl implements IArticleClassService {
         target.setOrderNum(articleClass.getOrderNum());
         target.setVisible(articleClass.getVisible());
 
-        ArticleClass parent = new ArticleClass();
-        parent.setId(articleClass.getParentId());
-        target.setParent(parent);
+        if(articleClass.getParentId() != null) {
+            ArticleClass parent = new ArticleClass();
+            parent.setId(articleClass.getParentId());
+            target.setParent(parent);
+        }
 
         return new ArticleClassVo(repository.save(target), 0L);
     }

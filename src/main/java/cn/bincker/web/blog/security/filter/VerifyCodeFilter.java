@@ -54,7 +54,7 @@ public class VerifyCodeFilter implements Filter {
 
     private boolean isNeedVerifyRequest(HttpServletRequest request){
         if(!request.getMethod().equals(RequestMethod.POST.name())) return false;
-        return request.getRequestURI().startsWith(basePath + "/authentication");
+        return request.getRequestURI().startsWith(basePath + "/authorize");
     }
 
     private boolean verify(HttpServletRequest request){

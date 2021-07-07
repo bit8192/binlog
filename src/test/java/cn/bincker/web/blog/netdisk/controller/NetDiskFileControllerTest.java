@@ -281,7 +281,7 @@ public class NetDiskFileControllerTest {
         var user = userAuditingListener.getCurrentAuditor().orElseThrow();
         var file = createFile("test.txt", "hello world", user, null);
         mockMvc.perform(
-                get(basePath + "/net-disk-files/{id}/file", file.getId())
+                get(basePath + "/net-disk-files/download/{id}", file.getId())
         )
                 .andDo(print())
                 .andExpect(status().isOk());

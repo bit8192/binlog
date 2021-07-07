@@ -1,4 +1,4 @@
-package cn.bincker.web.blog.security;
+package cn.bincker.web.blog.security.config;
 
 import cn.bincker.web.blog.base.vo.SuccessMsgVo;
 import com.fasterxml.jackson.databind.ObjectMapper;

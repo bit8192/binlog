@@ -20,6 +20,7 @@ public class Role  implements GrantedAuthority {
 
     public enum RoleEnum{
         ADMIN("管理员"),
+        BLOGGER("博主"),
         VISITOR("游客");
         @Getter
         private final String name;

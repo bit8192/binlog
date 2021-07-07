@@ -182,7 +182,7 @@ public class ChineseVerifyCode implements IVerifyCode<ChineseVerifyCode.ChineseV
             }
         }catch (ArrayIndexOutOfBoundsException e){
             log.error(
-                    "point.x=" + point.x +
+                    "计算平均色值超出范围，请调整字体大小和边距 point.x=" + point.x +
                             "\tpoint.y=" + point.y +
                             "\tstartX=" + startX +
                             "\tstartY=" + startY +

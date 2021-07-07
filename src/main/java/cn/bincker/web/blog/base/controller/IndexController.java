@@ -1,10 +1,12 @@
 package cn.bincker.web.blog.base.controller;
 
+import cn.bincker.web.blog.base.config.QQAuthorizeConfigProperties;
 import cn.bincker.web.blog.base.entity.BaseUser;
-import cn.bincker.web.blog.base.entity.SystemProfile;
+import cn.bincker.web.blog.base.config.SystemProfile;
 import cn.bincker.web.blog.base.vo.SuccessMsgVo;
 import cn.bincker.web.blog.base.exception.SystemException;
 import cn.bincker.web.blog.base.exception.UnauthorizedException;
+import cn.bincker.web.blog.base.vo.SystemProfileVo;
 import cn.bincker.web.blog.security.machine.IVerifyCode;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContext;
@@ -20,10 +22,12 @@ import java.io.IOException;
 public class IndexController {
     private final IVerifyCode<?> verifyCode;
     private final SystemProfile profile;
+    private final QQAuthorizeConfigProperties qqAuthorizeConfigProperties;
 
-    public IndexController(IVerifyCode<?> verifyCode, SystemProfile profile) {
+    public IndexController(IVerifyCode<?> verifyCode, SystemProfile profile, QQAuthorizeConfigProperties qqAuthorizeConfigProperties) {
         this.verifyCode = verifyCode;
         this.profile = profile;
+        this.qqAuthorizeConfigProperties = qqAuthorizeConfigProperties;
     }
 
     @GetMapping(value = "verify-code", produces = MediaType.IMAGE_JPEG_VALUE)
@@ -32,8 +36,8 @@ public class IndexController {
     }
 
     @GetMapping("profile")
-    public SystemProfile profile(){
-        return profile;
+    public SystemProfileVo profile(){
+        return new SystemProfileVo(profile, qqAuthorizeConfigProperties.isUse());
     }
 
     @GetMapping("self-info")
