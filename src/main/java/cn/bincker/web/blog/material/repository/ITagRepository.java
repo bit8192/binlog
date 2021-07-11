@@ -47,4 +47,6 @@ public interface ITagRepository extends JpaRepository<Tag, Long> {
     @Query("from Tag t order by t.articleList.size desc")
     @EntityGraph("Tag.articleList")
     List<Tag> findAllOrderByArticleListSize();
+
+    boolean existsByTitle(String title);
 }

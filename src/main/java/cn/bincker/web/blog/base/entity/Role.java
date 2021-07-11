@@ -18,6 +18,18 @@ public class Role  implements GrantedAuthority {
         return "ROLE_" + code;
     }
 
+    @Override
+    public boolean equals(Object obj){
+        if(obj == null) return false;
+        if(obj instanceof RoleEnum){
+            return this.code.equals(obj.toString());
+        }
+        if(obj instanceof Role){
+            return this.code.equals(((Role) obj).code);
+        }
+        return false;
+    }
+
     public enum RoleEnum{
         ADMIN("管理员"),
         BLOGGER("博主"),

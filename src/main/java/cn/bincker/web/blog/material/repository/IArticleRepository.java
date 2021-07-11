@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.material.repository;
 
+import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.material.entity.Article;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -44,4 +45,6 @@ public interface IArticleRepository extends JpaRepository<Article, Long> {
     @Query("from Article a join a.tags tag where ( a.isPublic = true or a.createdUser.id = ?1 ) and tag.id = ?2")
     @EntityGraph("Article.default")
     Page<Article> findAllByTagsIdWithUserId(Long userId, Long tagId, Pageable pageable);
+
+    Long countByCreatedUser(BaseUser user);
 }

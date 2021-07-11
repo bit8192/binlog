@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.material.repository;
 
+import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.material.entity.ArticleCommentAgree;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -12,4 +13,6 @@ public interface IArticleCommentAgreeRepository extends JpaRepository<ArticleCom
     Long countByCommentId(Long commentId);
 
     List<ArticleCommentAgree> findByCreatedUserIdAndCommentIdIn(Long uid, List<Long> commentIds);
+
+    Long countByCommentCreatedUser(BaseUser user);
 }

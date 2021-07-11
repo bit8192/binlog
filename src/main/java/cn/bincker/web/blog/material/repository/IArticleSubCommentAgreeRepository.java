@@ -14,4 +14,6 @@ public interface IArticleSubCommentAgreeRepository extends CrudRepository<Articl
     Long countByComment(ArticleSubComment comment);
 
     List<ArticleSubCommentAgree> findByCreatedUserIdAndCommentIdIn(Long uid, List<Long> commentIds);
+
+    Long countByCommentCreatedUser(BaseUser user);
 }

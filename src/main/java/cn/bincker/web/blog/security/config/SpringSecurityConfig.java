@@ -3,12 +3,12 @@ package cn.bincker.web.blog.security.config;
 import cn.bincker.web.blog.base.entity.Role;
 import cn.bincker.web.blog.security.filter.VerifyCodeFilter;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -19,17 +19,25 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     private final VerifyCodeFilter verifyCodeFilter;
     private final String basePath;
     private final SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer;
+    private final UserDetailsService userDetailsService;
+    private final PasswordEncoder passwordEncoder;
 
-    public SpringSecurityConfig(AuthenticationHandler authenticationHandler, VerifyCodeFilter verifyCodeFilter, @Value("${system.base-path}") String basePath, SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer) {
+    public SpringSecurityConfig(AuthenticationHandler authenticationHandler, VerifyCodeFilter verifyCodeFilter, @Value("${system.base-path}") String basePath, SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer, UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
         this.authenticationHandler = authenticationHandler;
         this.verifyCodeFilter = verifyCodeFilter;
         this.basePath = basePath;
         this.securityExceptionHandingConfigurer = securityExceptionHandingConfigurer;
+        this.userDetailsService = userDetailsService;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    @Bean
     public PasswordEncoder passwordEncoder(){
-        return new BCryptPasswordEncoder();
+        return passwordEncoder;
+    }
+
+    @Override
+    protected UserDetailsService userDetailsService() {
+        return userDetailsService;
     }
 
     @Override
@@ -47,13 +55,23 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.DELETE, basePath + "/article").hasRole(blogger)
                 .antMatchers(HttpMethod.DELETE, basePath + "/article-classes", basePath + "/tags").hasRole(admin)
                 .anyRequest().permitAll()
-                .and()
-                .formLogin()
+
+                .and().formLogin()
                 .loginProcessingUrl(basePath + "/authorize")
                 .successHandler(authenticationHandler)
                 .failureHandler(authenticationHandler)
-                .and()
-                .exceptionHandling(securityExceptionHandingConfigurer)
+
+                .and().logout()
+                .logoutUrl(basePath + "/logout")
+                .logoutSuccessHandler(new CustomLogoutSuccessHandler())
+
+                .and().rememberMe()
+                .rememberMeParameter("remember-me")
+                .tokenValiditySeconds(30 * 24 * 60 * 60)
+                .userDetailsService(userDetailsService)
+                .authenticationSuccessHandler(new RememberMeAuthenticationSuccessHandler())
+
+                .and().exceptionHandling(securityExceptionHandingConfigurer)
                 .httpBasic(Customizer.withDefaults())
                 .cors().disable()
                 .csrf().disable()

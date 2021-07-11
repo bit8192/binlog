@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.material.service.impl;
 
+import cn.bincker.web.blog.base.exception.BadRequestException;
 import cn.bincker.web.blog.base.exception.NotFoundException;
 import cn.bincker.web.blog.material.entity.Tag;
 import cn.bincker.web.blog.material.repository.ITagRepository;
@@ -41,6 +42,7 @@ public class TagServiceImpl implements ITagService {
 
     @Override
     public TagVo add(TagPostDto dto) {
+        if(tagRepository.existsByTitle(dto.getTitle())) throw new BadRequestException("创建相同标题的标签: title=" + dto.getTitle(), "该标签已存在");
         var tag = new Tag();
         tag.setTitle(dto.getTitle());
         tagRepository.save(tag);

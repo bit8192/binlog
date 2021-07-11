@@ -8,6 +8,7 @@ import cn.bincker.web.blog.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -36,7 +37,12 @@ public class SystemAdviceController {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(BadRequestException.class)
     public ErrorResult badRequestExceptionHandle(BadRequestException exception, HttpServletRequest request){
-        String msg = "无效请求";
+        String msg;
+        if(StringUtils.hasText(exception.getTip())){
+            msg = exception.getTip();
+        }else{
+            msg = "无效请求";
+        }
         printLog(exception, request, msg);
         return new ErrorResult(msg);
     }

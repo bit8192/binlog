@@ -1,3 +1,10 @@
 logging:
   file:
     name: ./logs/binlog.log
+server:
+  servlet:
+    session:
+      cookie:
+        domain: .bincker.cn
+        http-only: true
+        path: /

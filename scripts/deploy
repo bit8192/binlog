@@ -1,2 +1,111 @@
-#!/bin/expect
-set location []
+#!/bin/env expect
+set server [lindex $argv 0]
+set workdir [pwd]
+set remote_location "~/"
+set locale_location "target"
+set target_file "binlog-0.0.1-SNAPSHOT.jar"
+set frontend_project_dir "../binlog-frontend"
+
+if { $server == "" } {
+    puts "用法：$argv0 [-b 总是进行打包，否则如果jar包存在则直接上传] [-bf 总是对前端进行打包] user@server"
+    exit 1
+}
+
+# 检测是否有选项
+proc has_arg {arg} {
+    global argc argv
+    for {set i 0} {$i < $argc} {incr i} {
+        if { [lindex $argv $i]==$arg } {
+            return 1
+        }
+    }
+    return 0
+}
+
+# 上传文件
+proc upload {} {
+    global locale_location target_file server remote_location server_password
+    puts "上传开始..."
+    spawn scp "$locale_location/$target_file" "$server:$remote_location"
+    set pass_match_times 0
+    expect {
+        -timeout -1
+        "password: " {
+            send "$server_password\r"
+            incr pass_match_times
+            if $pass_match_times>1 {
+                close
+                puts "密码错误"
+                exit 1
+            }
+            exp_continue
+        }
+        fail {
+            puts $expect_out(buffer)
+            puts "上传失败"
+            exit 1
+        }
+        -re "scp: (.+)$" {
+            puts $expect_out(buffer)
+            puts "上传失败"
+            exit 1
+        }
+    }
+    puts "上传成功"
+}
+
+# 打包后台
+proc package_service {} {
+    global locale_location
+    # 如果没有打包前端或需要进行打包则进行前端打包
+    if { ![file exists "$locale_location/classes/static/index.html"] || [has_arg "-bf"] } package_frontend
+    puts "打包开始..."
+    spawn mvn -DskipTests -Dprofiles.active=prod package
+    set errorCode [lindex [wait] 3]
+    if $errorCode {
+        expect eof
+        puts $expect_out(buffer)
+        puts "打包失败\terrorCode=$errorCode"
+        exit 1
+    }
+    puts "打包完成"
+}
+
+# 打包前端
+proc package_frontend {} {
+    global frontend_project_dir workdir
+    puts "前端打包开始..."
+    cd $frontend_project_dir
+    spawn npm run build
+    set errorCode [lindex [wait] 3]
+    if $errorCode {
+        expect eof
+        puts $expect_out(buffer)
+        puts "前端打包失败\terrorCode=$errorCode"
+        exit 1
+    }
+    cd $workdir
+    puts "前端打包完成"
+}
+
+# 进入工作目录
+cd $workdir
+
+# 读取密码
+send_user "password: "
+stty -echo
+expect_user {
+    -timeout 600
+    -re "(.*)\n" {
+        set server_password $expect_out(1,string)
+    }
+    timeout {
+        exit 1
+    }
+}
+stty echo
+puts ""
+
+# 判断是否已经完成打包
+if { ![file exists "$locale_location/$target_file"] || [has_arg "-b"] || [has_arg "-bf"] } package_service
+upload
