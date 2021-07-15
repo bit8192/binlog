@@ -5,6 +5,7 @@ import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.exception.NotFoundException;
 import cn.bincker.web.blog.base.repository.IBaseUserRepository;
 import cn.bincker.web.blog.base.service.IBaseUserService;
+import cn.bincker.web.blog.base.vo.BaseUserVo;
 import cn.bincker.web.blog.base.vo.UserDetailVo;
 import cn.bincker.web.blog.material.repository.IArticleAgreeRepository;
 import cn.bincker.web.blog.material.repository.IArticleCommentAgreeRepository;
@@ -15,7 +16,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class BaseUserServiceImpl implements IBaseUserService {
@@ -65,12 +68,29 @@ public class BaseUserServiceImpl implements IBaseUserService {
 
     @Override
     public UserDetailVo getUserDetail(BaseUser user) {
-        var vo = new UserDetailVo(user);
+        var vo = new UserDetailVo(repository.findById(user.getId()).orElseThrow(NotFoundException::new));
         vo.setArticleNum(articleRepository.countByCreatedUser(user));
         var articleAgreedNum = articleAgreeRepository.countByArticleCreatedUser(user);
         var articleCommentAgreedNum = articleCommentAgreeRepository.countByCommentCreatedUser(user);
         var articleSubCommentAgreedNum = articleSubCommentAgreeRepository.countByCommentCreatedUser(user);
         vo.setAgreedNum(articleAgreedNum + articleCommentAgreedNum + articleSubCommentAgreedNum);
         return vo;
+    }
+
+    @Override
+    public void changeHeadImg(BaseUser user, String headImgUrl) {
+        var target = repository.findById(user.getId()).orElseThrow(NotFoundException::new);
+        target.setHeadImg(headImgUrl);
+        repository.save(target);
+    }
+
+    @Override
+    public List<BaseUserVo> findAll() {
+        return this.repository.findAll().stream().map(BaseUserVo::new).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<BaseUserVo> findAllById(List<Long> ids) {
+        return this.repository.findAllById(ids).stream().map(BaseUserVo::new).collect(Collectors.toList());
     }
 }

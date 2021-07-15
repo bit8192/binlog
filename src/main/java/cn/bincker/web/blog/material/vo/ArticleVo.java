@@ -2,7 +2,7 @@ package cn.bincker.web.blog.material.vo;
 
 import cn.bincker.web.blog.base.vo.BaseUserVo;
 import cn.bincker.web.blog.material.entity.Article;
-import cn.bincker.web.blog.netdisk.vo.NetDiskFileListVo;
+import cn.bincker.web.blog.netdisk.vo.NetDiskFileVo;
 import lombok.Data;
 
 import java.util.Collection;
@@ -19,7 +19,7 @@ public class ArticleVo {
     private String describe;
     private String content;
     private Collection<TagVo> tags;
-    private NetDiskFileListVo cover;
+    private NetDiskFileVo cover;
     private String[] images;
     private ArticleClassVo articleClass;
     private String className;
@@ -33,9 +33,6 @@ public class ArticleVo {
     private Date lastModifiedDate;
     private Boolean isAgreed;
 
-    public ArticleVo() {
-    }
-
     public ArticleVo(Article article) {
         id = article.getId();
         title = article.getTitle();
@@ -45,7 +42,7 @@ public class ArticleVo {
         describe = article.getDescribe();
         content = article.getContent();
         tags = article.getTags().stream().map(t->new TagVo(t, null)).collect(Collectors.toSet());
-        cover = new NetDiskFileListVo(article.getCover(), null);
+        cover = new NetDiskFileVo(article.getCover());
         images = article.getImages();
         articleClass = new ArticleClassVo(article.getArticleClass(), null);
         isOriginal = article.getIsOriginal();

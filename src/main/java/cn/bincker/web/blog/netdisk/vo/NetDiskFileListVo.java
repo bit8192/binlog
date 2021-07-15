@@ -13,29 +13,19 @@ public class NetDiskFileListVo {
 
     private Boolean isDirectory;
 
-    private Long size = 0L;
+    private Long size;
 
     private Date createdDate;
 
     private Date lastModifiedDate;
 
-    public NetDiskFileListVo() {
-    }
+    private Long childrenNum;
 
-    public NetDiskFileListVo(Long id, String name, Boolean isDirectory, Long size, Date createdDate, Date lastModifiedDate) {
-        this.id = id;
-        this.name = name;
-        this.isDirectory = isDirectory;
-        this.size = size;
-        this.createdDate = createdDate;
-        this.lastModifiedDate = lastModifiedDate;
-    }
-
-    public NetDiskFileListVo(NetDiskFile file, Long size) {
+    public NetDiskFileListVo(NetDiskFile file) {
         this.id = file.getId();
         this.name = file.getName();
         this.isDirectory = file.getIsDirectory();
-        this.size = size;
+        this.size = file.getSize();
         this.createdDate = file.getCreatedDate();
         this.lastModifiedDate = file.getLastModifiedDate();
     }

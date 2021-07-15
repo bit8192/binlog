@@ -1,5 +1,5 @@
 #!/bin/env expect
-set server [lindex $argv 0]
+set server [lindex $argv [expr $argc - 1]]
 set workdir [pwd]
 set remote_location "~/"
 set locale_location "target"

@@ -3,9 +3,7 @@ package cn.bincker.web.blog.netdisk.controller;
 import cn.bincker.web.blog.AuthenticationTests;
 import cn.bincker.web.blog.base.UserAuditingListener;
 import cn.bincker.web.blog.base.entity.BaseUser;
-import cn.bincker.web.blog.base.entity.UploadFile;
 import cn.bincker.web.blog.base.repository.IBaseUserRepository;
-import cn.bincker.web.blog.base.repository.IUploadFileRepository;
 import cn.bincker.web.blog.netdisk.config.properties.NetDiskFileSystemProperties;
 import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
 import cn.bincker.web.blog.netdisk.repository.INetDiskFileRepository;
@@ -67,8 +65,6 @@ public class NetDiskFileControllerTest {
     private SystemResourceUtils systemResourceUtils;
     @Autowired
     private NetDiskFileSystemProperties netDiskFileSystemProperties;
-    @Autowired
-    private IUploadFileRepository uploadFileRepository;
     @Autowired
     private UserAuditingListener userAuditingListener;
     @Autowired
@@ -315,7 +311,6 @@ public class NetDiskFileControllerTest {
         result.addAll(AuthenticationTests.getBaseUserVoFields(prefix + "createdUser."));
         result.add(fieldWithPath(prefix + "lastModifiedUser").type(JsonFieldType.OBJECT).description("最后修改人"));
         result.addAll(AuthenticationTests.getBaseUserVoFields(prefix + "lastModifiedUser."));
-        result.add(fieldWithPath(prefix + "childrenNum").type(JsonFieldType.NUMBER).description("子节点数量"));
         result.add(fieldWithPath(prefix + "everyoneReadable").type(JsonFieldType.BOOLEAN).optional().description("任何人可读（所有者可见）"));
         result.add(fieldWithPath(prefix + "everyoneWritable").type(JsonFieldType.BOOLEAN).optional().description("任何人可写（所有者可见）"));
         result.add(fieldWithPath(prefix + "readableUserList").type(JsonFieldType.ARRAY).optional().description("可读用户列表"));
@@ -333,6 +328,7 @@ public class NetDiskFileControllerTest {
         result.add(fieldWithPath(prefix + "size").optional().type(JsonFieldType.NUMBER).description("大小，目录为0"));
         result.add(fieldWithPath(prefix + "createdDate").type(JsonFieldType.STRING).description("创建日期"));
         result.add(fieldWithPath(prefix + "lastModifiedDate").type(JsonFieldType.STRING).description("最后修改日期"));
+        result.add(fieldWithPath(prefix + "childrenNum").type(JsonFieldType.NUMBER).optional().description("子节点数量"));
         return result;
     }
 
@@ -360,27 +356,21 @@ public class NetDiskFileControllerTest {
      * 写出文件
      */
     private NetDiskFile createFile(String name, String content, BaseUser user, NetDiskFile parent){
-        var uploadFile = new UploadFile();
         var netDiskFile = new NetDiskFile();
-        uploadFile.setName(name);
         netDiskFile.setName(name);
         netDiskFile.setIsDirectory(false);
-        uploadFile.setStorageLocation(netDiskFileSystemProperties.getType());
+        netDiskFile.setStorageLocation(netDiskFileSystemProperties.getType());
         if(parent != null){
-            uploadFile.setPath(parent.getPath() + File.separator + name);
-            netDiskFile.setPath(uploadFile.getPath());
+            netDiskFile.setPath(parent.getPath() + File.separator + name);
             netDiskFile.setParent(parent);
             setParent(netDiskFile, parent);
         }else{
-            uploadFile.setPath(systemResourceUtils.getUploadPath(user.getUsername()).getPath() + File.separator + name);
-            netDiskFile.setPath(uploadFile.getPath());
+            netDiskFile.setPath(systemResourceUtils.getUploadPath(user.getUsername()).getPath() + File.separator + name);
         }
-        uploadFile.setMediaType("");
-        uploadFile.setSize(content.length());
-        uploadFile.setSha256("");
-        uploadFile.setSuffix(CommonUtils.getStringSuffix(name, "."));
-        uploadFile.setIsPublic(false);
-        netDiskFile.setUploadFile(uploadFile);
+        netDiskFile.setMediaType("");
+        netDiskFile.setSize(content.length());
+        netDiskFile.setSha256("");
+        netDiskFile.setSuffix(CommonUtils.getStringSuffix(name, "."));
         netDiskFile.setPossessor(user);
         var file = systemFileFactory.fromNetDiskFile(netDiskFile);
         try(
@@ -392,7 +382,6 @@ public class NetDiskFileControllerTest {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
-        uploadFileRepository.save(uploadFile);
         return netDiskFileRepository.save(netDiskFile);
     }
 

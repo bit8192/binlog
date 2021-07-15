@@ -10,15 +10,17 @@ public class BaseUserVo {
     private String username;
     private String headImg;
     private Boolean isBlogger;
+    private Boolean isAdmin;
 
     public BaseUserVo() {
     }
 
+    @SuppressWarnings("EqualsBetweenInconvertibleTypes")
     public BaseUserVo(BaseUser user) {
         this.id = user.getId();
         this.username = user.getUsername();
         this.headImg = user.getHeadImg();
-        //noinspection EqualsBetweenInconvertibleTypes
         this.isBlogger = user.getRoles().stream().anyMatch(r->r.equals(Role.RoleEnum.BLOGGER));
+        this.isAdmin = user.getRoles().stream().anyMatch(r->r.equals(Role.RoleEnum.ADMIN));
     }
 }

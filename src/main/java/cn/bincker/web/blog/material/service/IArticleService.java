@@ -29,4 +29,9 @@ public interface IArticleService {
      * 返回当前是否已点赞
      */
     ValueVo<Boolean> toggleAgreed(Long articleId);
+
+    /**
+     * 提交阅读，增加阅读量
+     */
+    void view(Long articleId);
 }

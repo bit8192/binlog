@@ -5,6 +5,8 @@ import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
 import cn.bincker.web.blog.netdisk.dto.NetDiskFileDto;
 import cn.bincker.web.blog.netdisk.vo.NetDiskFileListVo;
 import cn.bincker.web.blog.netdisk.vo.NetDiskFileVo;
+import org.springframework.data.domain.Sort;
+import org.springframework.lang.Nullable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collection;
@@ -35,28 +37,15 @@ public interface INetDiskFileService {
     NetDiskFileVo save(NetDiskFileDto dto);
 
     /**
-     * 列出用户根目录
-     * @return
-     */
-    List<NetDiskFileListVo> listUserRootVo(Long userId);
-
-    /**
-     * 列出当前用户根目录
-     * @return
-     */
-    List<NetDiskFileListVo> listCurrentUserRootVo();
-
-    /**
      * 列出子节点
-     * @return
+     * @param user 列出的文件将计算该用户的权限，若参数id为空，则列出该用户的根目录，可为空
+     * @param id 将要列出该项目的子节点
+     * @param isDirectory 是否是文件夹，为空则都列出
+     * @param mediaType 对mediaType进行like查询
+     * @param suffix 文件后缀限制
+     * @param sort 排序
      */
-    List<NetDiskFileListVo> listChildrenVo(Long id);
-
-    /**
-     * 通过id列出所有vo
-     * @return
-     */
-    List<NetDiskFileListVo> findAllVoById(Long[] ids);
+    List<NetDiskFileListVo> listChildrenVo(@Nullable BaseUser user, @Nullable Long id, @Nullable Boolean isDirectory,@Nullable String mediaType,@Nullable String suffix,@Nullable Sort sort);
 
     /**
      * 通过id列出所有对象
@@ -71,12 +60,12 @@ public interface INetDiskFileService {
     /**
      * 检测读取权限
      */
-    void checkReadPermission(Optional<BaseUser> user, NetDiskFile netDiskFile);
+    void checkReadPermission(@Nullable BaseUser user, NetDiskFile netDiskFile);
 
     /**
      * 检测写入权限
      */
-    void checkWritePermission(Optional<BaseUser> user, NetDiskFile netDiskFile);
+    void checkWritePermission(@Nullable BaseUser user, NetDiskFile netDiskFile);
 
     /**
      * 通过id查找vo

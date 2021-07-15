@@ -9,8 +9,6 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
@@ -20,19 +18,13 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     private final String basePath;
     private final SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer;
     private final UserDetailsService userDetailsService;
-    private final PasswordEncoder passwordEncoder;
 
-    public SpringSecurityConfig(AuthenticationHandler authenticationHandler, VerifyCodeFilter verifyCodeFilter, @Value("${system.base-path}") String basePath, SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer, UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+    public SpringSecurityConfig(AuthenticationHandler authenticationHandler, VerifyCodeFilter verifyCodeFilter, @Value("${system.base-path}") String basePath, SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer, UserDetailsService userDetailsService) {
         this.authenticationHandler = authenticationHandler;
         this.verifyCodeFilter = verifyCodeFilter;
         this.basePath = basePath;
         this.securityExceptionHandingConfigurer = securityExceptionHandingConfigurer;
         this.userDetailsService = userDetailsService;
-        this.passwordEncoder = passwordEncoder;
-    }
-
-    public PasswordEncoder passwordEncoder(){
-        return passwordEncoder;
     }
 
     @Override
@@ -54,6 +46,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.PATCH, basePath + "/article-classes", basePath + "/article", basePath + "/tags").hasAnyRole(admin, blogger)
                 .antMatchers(HttpMethod.DELETE, basePath + "/article").hasRole(blogger)
                 .antMatchers(HttpMethod.DELETE, basePath + "/article-classes", basePath + "/tags").hasRole(admin)
+                .antMatchers(HttpMethod.GET, basePath + "/users/all").hasAnyRole(admin, blogger)
                 .anyRequest().permitAll()
 
                 .and().formLogin()
@@ -69,7 +62,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .rememberMeParameter("remember-me")
                 .tokenValiditySeconds(30 * 24 * 60 * 60)
                 .userDetailsService(userDetailsService)
-                .authenticationSuccessHandler(new RememberMeAuthenticationSuccessHandler())
+                .key("d#>bc49c&8475$41d6*ab0a.8ca863588e63")
 
                 .and().exceptionHandling(securityExceptionHandingConfigurer)
                 .httpBasic(Customizer.withDefaults())

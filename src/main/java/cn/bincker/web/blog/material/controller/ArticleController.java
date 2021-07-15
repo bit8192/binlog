@@ -63,6 +63,11 @@ public class ArticleController {
         return articleService.insert(dto);
     }
 
+    @PostMapping("{id}/view")
+    public void view(@PathVariable Long id){
+        articleService.view(id);
+    }
+
     @PutMapping
     public ArticleVo update(@Validated(UpdateValid.class) @RequestBody ArticleDto dto){
         return articleService.update(dto);

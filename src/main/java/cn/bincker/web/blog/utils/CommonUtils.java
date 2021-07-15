@@ -1,9 +1,5 @@
 package cn.bincker.web.blog.utils;
 
-import org.springframework.util.StringUtils;
-
-import javax.servlet.http.HttpServletRequest;
-
 public class CommonUtils {
     /**
      * 获取文本后缀
@@ -36,22 +32,5 @@ public class CommonUtils {
     private static char byte2char(int b){
         if(b < 10) return (char) ('0' + b);
         return (char) ('a' + b - 10);
-    }
-
-    /**
-     * 获取请求ip
-     */
-    public static String getRequestIp(HttpServletRequest request){
-        String ip = request.getHeader("X-Real-IP");
-        if(!StringUtils.hasText(ip) || "unknown".equalsIgnoreCase(ip)) ip = request.getHeader("X-Forwarded-For");
-        if(!StringUtils.hasText(ip) || "unknown".equalsIgnoreCase(ip)) ip = request.getHeader("Proxy-Client-Ip");
-        if(!StringUtils.hasText(ip) || "unknown".equalsIgnoreCase(ip)) ip = request.getHeader("WL-Proxy-Client-Ip");
-        if(!StringUtils.hasText(ip) || "unknown".equalsIgnoreCase(ip)) ip = request.getRemoteAddr();
-        if(StringUtils.hasText(ip) && ip.contains(",")){
-            String[] ips = ip.split(",");
-            if(ips.length < 1) return "";
-            return ips[0];
-        }
-        return ip;
     }
 }

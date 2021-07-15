@@ -8,7 +8,6 @@ import cn.bincker.web.blog.base.exception.SystemException;
 import cn.bincker.web.blog.base.repository.IUploadFileRepository;
 import cn.bincker.web.blog.base.service.IUploadService;
 import cn.bincker.web.blog.base.dto.UploadFileDto;
-import cn.bincker.web.blog.netdisk.enumeration.FileSystemTypeEnum;
 import cn.bincker.web.blog.netdisk.service.ISystemFileFactory;
 import cn.bincker.web.blog.utils.CommonUtils;
 import cn.bincker.web.blog.utils.DateUtils;
@@ -53,7 +52,6 @@ public class UploadServiceImpl implements IUploadService {
         return files.stream().map(multipartFile -> {
             UploadFile uploadFile = new UploadFile();
             uploadFile.setIsPublic(true);
-            uploadFile.setStorageLocation(FileSystemTypeEnum.LOCAL);
             uploadFile.setSize(multipartFile.getSize());
 
             String fileName = multipartFile.getOriginalFilename();

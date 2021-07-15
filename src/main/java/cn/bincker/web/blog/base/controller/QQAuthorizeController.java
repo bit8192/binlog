@@ -8,6 +8,7 @@ import cn.bincker.web.blog.base.exception.BadRequestException;
 import cn.bincker.web.blog.base.service.IBaseUserService;
 import cn.bincker.web.blog.base.service.IQQAuthorizeService;
 import cn.bincker.web.blog.base.vo.ValueVo;
+import cn.bincker.web.blog.utils.RequestUtils;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -80,7 +81,7 @@ public class QQAuthorizeController implements DisposableBean {
             authorizationMap.put(state.state, Optional.empty());
         }
         request.getSession().setAttribute(SessionKeyConstant.SESSION_KEY_QQ_AUTHORIZE_STATE, state.state);
-        String redirectUrl = buildOriginUrl(request.getScheme(), request.getServerName(), request.getServerPort(), basePath + "/authorize/qq/notice");
+        String redirectUrl = RequestUtils.getRequestBaseUrl(request) + basePath + "/authorize/qq/notice";
         response.sendRedirect(qqAuthorizeService.getAuthorizeUrl(redirectUrl, state.state));
     }
 
@@ -130,13 +131,6 @@ public class QQAuthorizeController implements DisposableBean {
             securityContext.setAuthentication(authentication);
         }
         return new ValueVo<>(userOptional.get());
-    }
-
-    private String buildOriginUrl(String scheme, String serverName, int port, String path){
-        if(port == 80 || port == 443){
-            return scheme + "://" + serverName + path;
-        }
-        return scheme + "://" + serverName + ":" + port + path;
     }
 
     /**

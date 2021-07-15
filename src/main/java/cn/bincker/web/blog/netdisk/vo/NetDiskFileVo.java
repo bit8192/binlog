@@ -40,25 +40,14 @@ public class NetDiskFileVo {
 
     private Boolean writable;
 
-    /**
-     * 子节点数量
-     */
-    private Long childrenNum;
-
     public NetDiskFileVo() {
     }
 
     public NetDiskFileVo(NetDiskFile netDiskFile) {
-        this(netDiskFile, 0L);
-    }
-
-    public NetDiskFileVo(NetDiskFile netDiskFile, Long childrenNum) {
         this.id = netDiskFile.getId();
         this.name = netDiskFile.getName();
         this.isDirectory = netDiskFile.getIsDirectory();
-        if(netDiskFile.getUploadFile() != null) {
-            this.size = netDiskFile.getUploadFile().getSize();
-        }
+        this.size = netDiskFile.getSize();
         this.createdDate = netDiskFile.getCreatedDate();
         this.lastModifiedDate = netDiskFile.getLastModifiedDate();
         if(netDiskFile.getPossessor() != null) this.possessor = new BaseUserVo(netDiskFile.getPossessor());
@@ -68,6 +57,5 @@ public class NetDiskFileVo {
         this.everyoneWritable = netDiskFile.getEveryoneWritable();
         this.readableUserList = netDiskFile.getReadableUserList().stream().map(BaseUserVo::new).collect(Collectors.toList());
         this.writableUserList = netDiskFile.getWritableUserList().stream().map(BaseUserVo::new).collect(Collectors.toList());
-        this.childrenNum = childrenNum;
     }
 }

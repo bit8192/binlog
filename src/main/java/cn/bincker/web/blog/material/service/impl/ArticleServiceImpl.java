@@ -23,9 +23,7 @@ import cn.bincker.web.blog.material.vo.ArticleListVo;
 import cn.bincker.web.blog.material.vo.ArticleVo;
 import cn.bincker.web.blog.material.vo.TagVo;
 import cn.bincker.web.blog.netdisk.repository.INetDiskFileRepository;
-import cn.bincker.web.blog.netdisk.vo.NetDiskFileListVo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import cn.bincker.web.blog.netdisk.vo.NetDiskFileVo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -40,7 +38,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class ArticleServiceImpl implements IArticleService {
-    private static final Logger log = LoggerFactory.getLogger(ArticleServiceImpl.class);
 
     private final UserAuditingListener userAuditingListener;
     private final IArticleRepository articleRepository;
@@ -139,9 +136,7 @@ public class ArticleServiceImpl implements IArticleService {
                 userOptional.get().getId(),
                 articlePage.map(ArticleListVo::getId).stream().collect(Collectors.toList())
         ).stream().collect(Collectors.toMap(a->a.getArticle().getId(), a->a));
-        articlePage.forEach(a->{
-            a.setIsAgreed(articleAgreeMap.containsKey(a.getId()));
-        });
+        articlePage.forEach(a->a.setIsAgreed(articleAgreeMap.containsKey(a.getId())));
         return articlePage;
     }
 
@@ -184,7 +179,7 @@ public class ArticleServiceImpl implements IArticleService {
                 )
                         .stream().map(tag -> new TagVo(tag, null)).collect(Collectors.toSet())
         );
-        result.setCover(new NetDiskFileListVo(netDiskFileRepository.getOne(target.getCover().getId()), null));
+        result.setCover(new NetDiskFileVo(netDiskFileRepository.getOne(target.getCover().getId())));
         result.setArticleClass(new ArticleClassVo(articleClassRepository.getOne(target.getArticleClass().getId()), null));
         return result;
     }
@@ -237,5 +232,12 @@ public class ArticleServiceImpl implements IArticleService {
             articleRepository.save(article);
         }
         return new ValueVo<>(articleAgreeOptional.isEmpty());
+    }
+
+    @Override
+    public synchronized void view(Long articleId) {
+        var article = articleRepository.findById(articleId).orElseThrow(NotFoundException::new);
+        article.setViewingNum(article.getViewingNum() + 1);
+        articleRepository.save(article);
     }
 }

@@ -61,9 +61,10 @@ send "cd $workdir\r"
 expect_complete
 puts "查找进程"
 send "ps aux | grep \" -jar $jar_file\"\r"
+set process_regexp "\\w+\\s+(\\d+)\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+$java_path -jar $jar_file"
 expect {
     -timeout 300
-    -re "\\w+\\s+(\\d+)\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+$java_path -jar $jar_file" {
+    -re $process_regexp {
         puts "发现进程"
         puts $expect_out(0,string)
         set pid $expect_out(1,string)
@@ -74,10 +75,18 @@ expect {
     }
     -re "\\\$|# " {}
 }
-sleep 1
+# 等待进程结束
+send "ps aux | grep \" -jar $jar_file\"\r"
+expect {
+    -re $process_regexp {
+        sleep 1
+        exp_continue
+    }
+    -re "\\\$|# " {}
+}
 puts "启动应用..."
 send "nohup $java_path -jar $jar_file > nohup.out &\r"
-sleep 20
+sleep 10
 send "\r"
 expect_complete
 while 1 {
@@ -91,7 +100,15 @@ while 1 {
             expect eof
             exit 1
         }
-        -re "Started \w+ in \S+ seconds" {
+        "Web server failed to start" {
+            expect_complete
+            puts $expect_out(buffer)
+            send "exit\r"
+            expect eof
+            puts "启动失败"
+            exit 1
+        }
+        -re "Started \\w+ in \\S+ seconds" {
             puts "重启成功"
             expect_complete
             send "exit\r"

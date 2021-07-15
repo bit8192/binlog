@@ -1,15 +1,15 @@
 package cn.bincker.web.blog.netdisk.entity;
 
 import cn.bincker.web.blog.base.entity.AuditEntity;
-import cn.bincker.web.blog.base.entity.BaseEntity;
 import cn.bincker.web.blog.base.entity.BaseUser;
-import cn.bincker.web.blog.base.entity.UploadFile;
 import cn.bincker.web.blog.base.entity.converter.LongArrayConverter;
+import cn.bincker.web.blog.netdisk.enumeration.FileSystemTypeEnum;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import javax.persistence.*;
-import java.util.Collections;
+import javax.validation.constraints.Min;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -23,8 +23,21 @@ public class NetDiskFile extends AuditEntity {
     @Column(nullable = false)
     private Boolean isDirectory = true;
 
-    @ManyToOne
-    private UploadFile uploadFile;
+    @JsonIgnore
+    @Enumerated(EnumType.STRING)
+    private FileSystemTypeEnum storageLocation;
+
+    /**
+     * 文件后缀，全用小写，方便查询
+     */
+    private String suffix;
+
+    private String mediaType;
+
+    @Min(0)
+    private long size;
+
+    private String sha256;
 
     @ManyToOne
     private NetDiskFile parent;
