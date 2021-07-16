@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IUploadService {
-    List<UploadFileDto> upload(Collection<MultipartFile> files);
+    List<UploadFileDto> upload(Collection<MultipartFile> files, Boolean isPublic);
 
     Optional<UploadFile> getUploadFile(Long id);
 }

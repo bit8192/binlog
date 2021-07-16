@@ -5,10 +5,12 @@ import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.exception.ForbiddenException;
 import cn.bincker.web.blog.base.exception.NotFoundException;
+import cn.bincker.web.blog.base.exception.NotImplementedException;
 import cn.bincker.web.blog.base.exception.UnauthorizedException;
 import cn.bincker.web.blog.base.repository.IBaseUserRepository;
 import cn.bincker.web.blog.base.vo.BaseUserVo;
 import cn.bincker.web.blog.base.vo.EntityLongValueVo;
+import cn.bincker.web.blog.base.vo.ValueVo;
 import cn.bincker.web.blog.netdisk.config.properties.NetDiskFileSystemProperties;
 import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
 import cn.bincker.web.blog.netdisk.exception.DeleteFileFailException;
@@ -16,7 +18,7 @@ import cn.bincker.web.blog.netdisk.exception.MakeDirectoryFailException;
 import cn.bincker.web.blog.netdisk.exception.RenameFileFailException;
 import cn.bincker.web.blog.netdisk.repository.INetDiskFileRepository;
 import cn.bincker.web.blog.netdisk.service.INetDiskFileService;
-import cn.bincker.web.blog.netdisk.service.ISystemFile;
+import cn.bincker.web.blog.netdisk.entity.ISystemFile;
 import cn.bincker.web.blog.netdisk.service.ISystemFileFactory;
 import cn.bincker.web.blog.netdisk.dto.NetDiskFileDto;
 import cn.bincker.web.blog.netdisk.specification.NetDiskFileSpecification;
@@ -35,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -273,6 +276,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         var currentUser = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
 //        更新对象
         var target = netDiskFileRepository.findById(dto.getId()).orElseThrow(NotFoundException::new);
+        var oldSystemFile = systemFileFactory.fromNetDiskFile(target);
 //        权限判断
         checkUpdatePermission(currentUser, target);
 //        移动操作
@@ -303,7 +307,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         netDiskFileRepository.save(target);
 //        执行实体文件操作
         if(!oldPath.equals(target.getPath())){
-            if(!systemFileFactory.fromPath(oldPath).renameTo(target.getPath()))
+            if(!oldSystemFile.renameTo(target.getPath()))
                 throw new RenameFileFailException(oldPath, target.getPath());
         }
 //        vo
@@ -394,6 +398,14 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
                     throw new ForbiddenException();
             }
         }
+    }
+
+    @Override
+    public ValueVo<String> getDownloadUrl(HttpServletRequest request, Long id, BaseUser user) {
+        var target = netDiskFileRepository.findById(id).orElseThrow(NotFoundException::new);
+        if(target.getIsDirectory()) throw new NotImplementedException();
+        checkReadPermission(user, target);
+        return new ValueVo<>(systemFileFactory.getDownloadUrl(request, target));
     }
 
     @Override

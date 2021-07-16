@@ -1,6 +1,6 @@
 package cn.bincker.web.blog.netdisk.exception;
 
-import cn.bincker.web.blog.netdisk.service.ISystemFile;
+import cn.bincker.web.blog.netdisk.entity.ISystemFile;
 import lombok.Getter;
 
 public class DeleteFileFailException extends RuntimeException{

@@ -1,8 +1,14 @@
 package cn.bincker.web.blog.netdisk.controller;
 
+import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.exception.BadRequestException;
+import cn.bincker.web.blog.base.exception.ForbiddenException;
 import cn.bincker.web.blog.base.exception.NotFoundException;
+import cn.bincker.web.blog.base.service.ISystemCacheService;
+import cn.bincker.web.blog.base.vo.ValueVo;
+import cn.bincker.web.blog.netdisk.config.properties.NetDiskFileSystemProperties;
+import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
 import cn.bincker.web.blog.netdisk.service.INetDiskFileService;
 import cn.bincker.web.blog.netdisk.service.ISystemFileFactory;
 import cn.bincker.web.blog.netdisk.dto.NetDiskFileDto;
@@ -10,20 +16,24 @@ import cn.bincker.web.blog.netdisk.dto.valid.CreateDirectoryValid;
 import cn.bincker.web.blog.netdisk.dto.valid.UploadFileValid;
 import cn.bincker.web.blog.netdisk.vo.NetDiskFileListVo;
 import cn.bincker.web.blog.netdisk.vo.NetDiskFileVo;
+import cn.bincker.web.blog.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static cn.bincker.web.blog.netdisk.service.impl.LocalSystemFileFactoryImpl.CACHE_KEY_DOWNLOAD_CODE;
 
 @RestController
 @RequestMapping("${system.base-path}/net-disk-files")
@@ -32,10 +42,14 @@ public class NetDiskFileController {
 
     private final INetDiskFileService netDiskFileService;
     private final ISystemFileFactory systemFileFactory;
+    private final ISystemCacheService systemCacheService;
+    private final NetDiskFileSystemProperties netDiskFileSystemProperties;
 
-    public NetDiskFileController(INetDiskFileService netDiskFileService, ISystemFileFactory systemFileFactory) {
+    public NetDiskFileController(INetDiskFileService netDiskFileService, ISystemFileFactory systemFileFactory, ISystemCacheService systemCacheService, NetDiskFileSystemProperties netDiskFileSystemProperties) {
         this.netDiskFileService = netDiskFileService;
         this.systemFileFactory = systemFileFactory;
+        this.systemCacheService = systemCacheService;
+        this.netDiskFileSystemProperties = netDiskFileSystemProperties;
     }
 
     @GetMapping(value = "{id}")
@@ -98,25 +112,45 @@ public class NetDiskFileController {
         return netDiskFileService.save(dto);
     }
 
+    /**
+     * 获取下载链接
+     */
+    @GetMapping(value = "download-url/{id}")
+    public ValueVo<String> getDownloadUrl(HttpServletRequest request, @PathVariable Long id, BaseUser user){
+        return netDiskFileService.getDownloadUrl(request, id, user);
+    }
+
     @GetMapping(value = "download/{id}")
-    public void download(@PathVariable Long id, BaseUser user, HttpServletResponse response){
-        outputFile(id, user, response, true);
+    public void download(@PathVariable Long id, BaseUser user, HttpServletResponse response, @RequestParam String code){
+        var netDiskFile = netDiskFileService.findById(id).orElseThrow(NotFoundException::new);
+        if(!systemCacheService.containsKey(CACHE_KEY_DOWNLOAD_CODE + code)) throw new ForbiddenException();
+        systemCacheService.remove(CACHE_KEY_DOWNLOAD_CODE + code);
+        outputFile(netDiskFile, user, response, true);
     }
 
     @GetMapping(value = "get/{id}")
-    public void get(@PathVariable Long id, BaseUser user, HttpServletResponse response){
-        outputFile(id, user, response, false);
+    public void get(@PathVariable Long id, BaseUser user, HttpServletRequest request, HttpServletResponse response){
+        var netDiskFile = netDiskFileService.findById(id).orElseThrow(NotFoundException::new);
+        String referer = request.getHeader(HttpHeaders.REFERER);
+        if(StringUtils.hasText(referer)){
+            var matcher = RegexpConstant.URL_HOST.matcher(referer);
+            if(!matcher.find()) throw new BadRequestException();
+            var host = matcher.group(1);
+            if(Arrays.stream(netDiskFileSystemProperties.getAllowReferer()).noneMatch(p-> CommonUtils.simpleMatch(p, host))){
+                throw new ForbiddenException();
+            }
+        }else if(!netDiskFileSystemProperties.getAllowEmptyReferer()) throw new ForbiddenException();
+        outputFile(netDiskFile, user, response, false);
     }
 
     /**
      * 输出文件
-     * @param id 文件id
+     * @param netDiskFile 输出文件
      * @param user 用户
      * @param response response
      * @param isDownload 是否是下载文件
      */
-    private void outputFile(Long id, BaseUser user, HttpServletResponse response, boolean isDownload){
-        var netDiskFile = netDiskFileService.findById(id).orElseThrow(NotFoundException::new);
+    private void outputFile(NetDiskFile netDiskFile, BaseUser user, HttpServletResponse response, boolean isDownload){
         if(netDiskFile.getIsDirectory()) throw new BadRequestException("暂不支持下载目录");
         if(!netDiskFile.getEveryoneReadable()){
             netDiskFileService.checkReadPermission(user, netDiskFile);

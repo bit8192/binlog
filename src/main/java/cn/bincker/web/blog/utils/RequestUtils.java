@@ -30,9 +30,9 @@ public class RequestUtils {
     public static String getRequestBaseUrl(HttpServletRequest request){
         int port = request.getServerPort();
         if(port == 80 || port == 443){
-            return request.getScheme() + "://" + request.getServerName() + request.getRequestURL();
+            return request.getScheme() + "://" + request.getServerName();
         }else{
-            return request.getScheme() + "://" + request.getServerName() + ":" + port + request.getRequestURL();
+            return request.getScheme() + "://" + request.getServerName() + ":" + port;
         }
     }
 }

@@ -1,6 +1,6 @@
 package cn.bincker.web.blog.netdisk.exception;
 
-import cn.bincker.web.blog.netdisk.service.ISystemFile;
+import cn.bincker.web.blog.netdisk.entity.ISystemFile;
 
 /**
  * 创建目录失败异常

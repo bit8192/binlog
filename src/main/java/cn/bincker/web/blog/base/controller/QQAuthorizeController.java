@@ -7,9 +7,9 @@ import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.exception.BadRequestException;
 import cn.bincker.web.blog.base.service.IBaseUserService;
 import cn.bincker.web.blog.base.service.IQQAuthorizeService;
+import cn.bincker.web.blog.base.service.ISystemCacheService;
 import cn.bincker.web.blog.base.vo.ValueVo;
 import cn.bincker.web.blog.utils.RequestUtils;
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,50 +23,24 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 @ConditionalOnBean(IQQAuthorizeService.class)
 @Controller
 @RequestMapping("${system.base-path}/authorize/qq")
-public class QQAuthorizeController implements DisposableBean {
+public class QQAuthorizeController{
+    private static final String CACHE_KEY_QQ_AUTHORIZE_STATE = "QQ-AUTHORIZE-STATE-";
+    private static final long STATE_ALIVE_TIMEOUT = 10 * 60 * 1000L;
     private final String basePath;
-    private final Map<String, Optional<BaseUser>> authorizationMap;//用于存储授权信息和判断是否存在
-    private final PriorityQueue<StateInfo> stateInfoPriorityQueue;//存储state和其创建时间信息，定时删除
-    @SuppressWarnings("FieldCanBeLocal")
-    private final ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
     private final IQQAuthorizeService qqAuthorizeService;
     private final IBaseUserService userService;
+    private final ISystemCacheService systemCacheService;
 
-    public QQAuthorizeController(@Value("${system.base-path}") String basePath, IQQAuthorizeService qqAuthorizeService, IBaseUserService userService) {
+    public QQAuthorizeController(@Value("${system.base-path}") String basePath, IQQAuthorizeService qqAuthorizeService, IBaseUserService userService, ISystemCacheService systemCacheService) {
         this.basePath = basePath;
         this.qqAuthorizeService = qqAuthorizeService;
         this.userService = userService;
-        authorizationMap = new HashMap<>();
-        stateInfoPriorityQueue = new PriorityQueue<>((a, b)-> (int) (a.time - b.time));
-        scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
-        scheduledThreadPoolExecutor.schedule(getClearStateQueueRunnable(), 30, TimeUnit.MINUTES);
-    }
-
-    /**
-     * 定时清除state
-     */
-    private Runnable getClearStateQueueRunnable(){
-        return ()->{
-            var currentTimeMillis = System.currentTimeMillis();
-            StateInfo state;
-            synchronized (authorizationMap) {
-                while ((state = stateInfoPriorityQueue.peek()) != null) {
-                    if (currentTimeMillis - state.time > 600000) {//超过十分钟则删除
-                        stateInfoPriorityQueue.poll();
-                        authorizationMap.remove(state.state);
-                    } else {//否则跳过，不再进行检查，因为后面的时间都更大
-                        break;
-                    }
-                }
-            }
-        };
+        this.systemCacheService = systemCacheService;
     }
 
     /**
@@ -74,15 +48,12 @@ public class QQAuthorizeController implements DisposableBean {
      */
     @GetMapping("login")
     public void login(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        var state = new StateInfo();
-        while (authorizationMap.containsKey(state.state)) state = new StateInfo();//不能有重复的
-        synchronized (authorizationMap){
-            stateInfoPriorityQueue.add(state);
-            authorizationMap.put(state.state, Optional.empty());
-        }
-        request.getSession().setAttribute(SessionKeyConstant.SESSION_KEY_QQ_AUTHORIZE_STATE, state.state);
+        var state = Long.toHexString(System.nanoTime());
+        while (systemCacheService.containsKey(state)) state = Long.toHexString(System.nanoTime());//不能有重复的
+        systemCacheService.put(CACHE_KEY_QQ_AUTHORIZE_STATE + state, new BaseUser(), Duration.ofMinutes(STATE_ALIVE_TIMEOUT));
+        request.getSession().setAttribute(SessionKeyConstant.SESSION_KEY_QQ_AUTHORIZE_STATE, state);
         String redirectUrl = RequestUtils.getRequestBaseUrl(request) + basePath + "/authorize/qq/notice";
-        response.sendRedirect(qqAuthorizeService.getAuthorizeUrl(redirectUrl, state.state));
+        response.sendRedirect(qqAuthorizeService.getAuthorizeUrl(redirectUrl, state));
     }
 
     /**
@@ -90,7 +61,7 @@ public class QQAuthorizeController implements DisposableBean {
      */
     @GetMapping("notice")
     public void notice(String code, String state){
-        if(!authorizationMap.containsKey(state)) throw new BadRequestException();
+        if(!systemCacheService.containsKey(state)) throw new BadRequestException();
         var accessToken = qqAuthorizeService.getAccessToken(code, state);
         var openId = qqAuthorizeService.getOpenId(accessToken.getAccessToken());
         var userOptional = userService.findByQQOpenId(openId);
@@ -108,13 +79,9 @@ public class QQAuthorizeController implements DisposableBean {
             }else{
                 user.setHeadImg(userInfo.getFigureurl_qq_1());
             }
-            synchronized (authorizationMap){
-                authorizationMap.put(state, Optional.of(user));
-            }
+            systemCacheService.put(CACHE_KEY_QQ_AUTHORIZE_STATE + state, user, Duration.ofMinutes(STATE_ALIVE_TIMEOUT));
         }else{
-            synchronized (authorizationMap){
-                authorizationMap.put(state, userOptional);
-            }
+            systemCacheService.put(CACHE_KEY_QQ_AUTHORIZE_STATE + state, userOptional.get(), Duration.ofMinutes(STATE_ALIVE_TIMEOUT));
         }
     }
 
@@ -122,7 +89,7 @@ public class QQAuthorizeController implements DisposableBean {
     public ValueVo<Object> checkNotice(HttpSession session){
         var state = (String) session.getAttribute(SessionKeyConstant.SESSION_KEY_QQ_AUTHORIZE_STATE);
         if(state == null) return new ValueVo<>(false);
-        var userOptional = authorizationMap.get(state);
+        var userOptional = systemCacheService.getValue(CACHE_KEY_QQ_AUTHORIZE_STATE + state, BaseUser.class);
         if(userOptional.isEmpty()) return new ValueVo<>(false);
         if(userOptional.get().getId() != null){//如果没有id就表示没有注册，注册前需要改用户名
             var securityContext = SecurityContextHolder.getContext();
@@ -131,23 +98,5 @@ public class QQAuthorizeController implements DisposableBean {
             securityContext.setAuthentication(authentication);
         }
         return new ValueVo<>(userOptional.get());
-    }
-
-    /**
-     * bean被销毁时关闭state清除线程池
-     */
-    @Override
-    public void destroy() {
-        scheduledThreadPoolExecutor.shutdown();
-    }
-
-    private static class StateInfo{
-        private final String state;
-        private final long time;
-
-        public StateInfo() {
-            state = Long.toHexString(System.nanoTime());
-            time = System.currentTimeMillis();
-        }
     }
 }

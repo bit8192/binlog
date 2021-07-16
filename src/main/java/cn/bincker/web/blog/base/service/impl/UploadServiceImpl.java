@@ -40,7 +40,7 @@ public class UploadServiceImpl implements IUploadService {
     }
 
     @Override
-    public List<UploadFileDto> upload(Collection<MultipartFile> files) {
+    public List<UploadFileDto> upload(Collection<MultipartFile> files, Boolean isPublic) {
         String uploadDir;
 
         Optional<BaseUser> userOptional = userAuditingListener.getCurrentAuditor();
@@ -51,7 +51,7 @@ public class UploadServiceImpl implements IUploadService {
         String finalUploadDir = uploadDir;
         return files.stream().map(multipartFile -> {
             UploadFile uploadFile = new UploadFile();
-            uploadFile.setIsPublic(true);
+            uploadFile.setIsPublic(userOptional.isPresent() ? isPublic : true);//权限只有登录的用户可以设置, 否则都是公开
             uploadFile.setSize(multipartFile.getSize());
 
             String fileName = multipartFile.getOriginalFilename();

@@ -1,6 +1,5 @@
-package cn.bincker.web.blog.netdisk.service;
+package cn.bincker.web.blog.netdisk.entity;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,7 +12,6 @@ public interface ISystemFile {
     boolean mkdirs();
     OutputStream getOutputStream() throws FileNotFoundException;
     boolean renameTo(String toPath);
-    boolean renameTo(File toFile);
     boolean delete();
 
     InputStream getInputStream() throws FileNotFoundException;

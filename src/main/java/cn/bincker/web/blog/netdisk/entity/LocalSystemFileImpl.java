@@ -1,17 +1,11 @@
-package cn.bincker.web.blog.netdisk.service.impl;
+package cn.bincker.web.blog.netdisk.entity;
 
-import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
-import cn.bincker.web.blog.netdisk.service.ISystemFile;
-import cn.bincker.web.blog.utils.CommonUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import cn.bincker.web.blog.utils.RequestUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.*;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 public class LocalSystemFileImpl implements ISystemFile {
-    private static final Logger log = LoggerFactory.getLogger(LocalSystemFileImpl.class);
     private final File file;
 
     public LocalSystemFileImpl(NetDiskFile netDiskFile) {
@@ -59,11 +53,6 @@ public class LocalSystemFileImpl implements ISystemFile {
     @Override
     public boolean renameTo(String toPath) {
         return file.renameTo(new File(toPath));
-    }
-
-    @Override
-    public boolean renameTo(File toFile) {
-        return file.renameTo(toFile);
     }
 
     @Override

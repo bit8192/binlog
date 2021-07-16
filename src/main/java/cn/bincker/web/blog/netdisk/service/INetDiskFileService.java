@@ -1,6 +1,7 @@
 package cn.bincker.web.blog.netdisk.service;
 
 import cn.bincker.web.blog.base.entity.BaseUser;
+import cn.bincker.web.blog.base.vo.ValueVo;
 import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
 import cn.bincker.web.blog.netdisk.dto.NetDiskFileDto;
 import cn.bincker.web.blog.netdisk.vo.NetDiskFileListVo;
@@ -9,6 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.lang.Nullable;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -71,4 +73,9 @@ public interface INetDiskFileService {
      * 通过id查找vo
      */
     Optional<NetDiskFileVo> findVoById(Long id);
+
+    /**
+     * 获取下载链接
+     */
+    ValueVo<String> getDownloadUrl(HttpServletRequest request, Long id, BaseUser user);
 }

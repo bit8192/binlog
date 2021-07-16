@@ -40,4 +40,11 @@ public class RegexpConstant {
     public static final String IMAGE_FILE_VALUE = "\\.((jpg)|(jpeg)|(bmp)|(png)|(icon)|(svg)|(webp))$";
 
     public static final Pattern IMAGE_FILE = Pattern.compile(IMAGE_FILE_VALUE, Pattern.CASE_INSENSITIVE);
+
+    /**
+     * 匹配URL的server host
+     */
+    public static final String URL_HOST_VALUE = "https?://([^/]+)";
+
+    public static final Pattern URL_HOST = Pattern.compile(URL_HOST_VALUE);
 }
