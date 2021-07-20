@@ -13,6 +13,7 @@ import cn.bincker.web.blog.netdisk.vo.NetDiskFileVo;
 import cn.bincker.web.blog.utils.CommonUtils;
 import cn.bincker.web.blog.utils.SystemResourceUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -235,6 +236,18 @@ public class NetDiskFileControllerTest {
         assertTrue(topDir.delete());
     }
 
+    private static FieldDescriptor[] getNetDiskFileDtoFields(String prefix){
+        return new FieldDescriptor[]{
+                fieldWithPath(prefix + "id").type(JsonFieldType.NUMBER).optional().description("上级目录id[可选]"),
+                fieldWithPath(prefix + "name").type(JsonFieldType.STRING).optional().description("上级目录id[可选]"),
+                fieldWithPath(prefix + "parentId").type(JsonFieldType.NUMBER).optional().description("上级目录id[可选]"),
+                fieldWithPath(prefix + "everyoneReadable").type(JsonFieldType.BOOLEAN).optional().description("任何人可读, 默认为假[可选]"),
+                fieldWithPath(prefix + "everyoneWritable").type(JsonFieldType.BOOLEAN).optional().description("任何人可写，默认为假[可选]"),
+                fieldWithPath(prefix + "readableUserList").type(JsonFieldType.ARRAY).optional().description("可读用户id列表[可选]"),
+                fieldWithPath(prefix + "writableUserList").type(JsonFieldType.ARRAY).optional().description("可写用户id列表[可选]")
+        };
+    }
+
     @Test
     @WithUserDetails("admin")
     void uploadFile() throws Exception{
@@ -250,13 +263,7 @@ public class NetDiskFileControllerTest {
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andDo(document("{ClassName}/{methodName}",
-                        requestPartFields("fileInfo",
-                                fieldWithPath("parentId").type(JsonFieldType.NUMBER).optional().description("上级目录id[可选]"),
-                                fieldWithPath("everyoneReadable").type(JsonFieldType.BOOLEAN).optional().description("任何人可读, 默认为假[可选]"),
-                                fieldWithPath("everyoneWritable").type(JsonFieldType.BOOLEAN).optional().description("任何人可写，默认为假[可选]"),
-                                fieldWithPath("readableUserList").type(JsonFieldType.ARRAY).optional().description("可读用户id列表[可选]"),
-                                fieldWithPath("writableUserList").type(JsonFieldType.ARRAY).optional().description("可写用户id列表[可选]")
-                        ),
+                        requestPartFields("fileInfo", getNetDiskFileDtoFields("")),
                         responseFields(getNetDiskFileFields("[].").toArray(new FieldDescriptor[]{}))
                 ))
                 .andReturn();
@@ -269,6 +276,35 @@ public class NetDiskFileControllerTest {
         var targetFile = systemFileFactory.fromNetDiskFile(target);
         assertTrue(targetFile.exists());
         assertTrue(targetFile.delete());
+    }
+
+    @Test
+    @WithUserDetails("admin")
+    void move() throws Exception {
+        var user = userAuditingListener.getCurrentAuditor().orElseThrow();
+        var topDir = createDirectory("top-dir", user, null);
+        var subDir = createDirectory("sub-dir", user, topDir);
+        var childFile = createFile("child-file", "content", user, subDir);
+        var dto = new NetDiskFileDto();
+        dto.setId(childFile.getId());
+        dto.setName(childFile.getName());
+        dto.setParentId(topDir.getId());
+        mockMvc.perform(
+                put(basePath + "/net-disk-files").contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto))
+        )
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andDo(document(
+                        "{ClassName}/{methodName}",
+                        requestFields(getNetDiskFileDtoFields("")),
+                        responseFields(getNetDiskFileFields("").toArray(new FieldDescriptor[]{}))
+                ));
+        childFile = netDiskFileRepository.findById(childFile.getId()).orElseThrow();
+        assertEquals(childFile.getPath(), new File(childFile.getParent().getPath(), childFile.getName()).getPath());
+        assertTrue(systemFileFactory.fromNetDiskFile(childFile).delete());
+        assertTrue(systemFileFactory.fromNetDiskFile(subDir).delete());
+        assertTrue(systemFileFactory.fromNetDiskFile(topDir).delete());
     }
 
     @Test
@@ -390,9 +426,14 @@ public class NetDiskFileControllerTest {
      * 设置父级
      */
     private void setParent(NetDiskFile netDiskFile, NetDiskFile parent) {
-        var parents = new Long[parent.getParents().length + 1];
-        if(parents.length > 1) System.arraycopy(parent.getParents(), 0, parents, 0, parent.getParents().length);
-        parents[parents.length - 1] = parent.getId();
-        netDiskFile.setParents(parents);
+        var parents = netDiskFile.getParents();
+        if(parents == null){
+            parents = new ArrayList<>((parent.getParents() == null ? 0 : parent.getParents().size()) + 1);
+            netDiskFile.setParents(parents);
+        }
+        if(parent.getParents() != null){
+            parents.addAll(parent.getParents());
+        }
+        parents.add(parent.getId());
     }
 }

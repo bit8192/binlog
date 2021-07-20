@@ -2,17 +2,20 @@ package cn.bincker.web.blog.netdisk.entity;
 
 import cn.bincker.web.blog.base.entity.AuditEntity;
 import cn.bincker.web.blog.base.entity.BaseUser;
-import cn.bincker.web.blog.base.entity.converter.LongArrayConverter;
 import cn.bincker.web.blog.netdisk.enumeration.FileSystemTypeEnum;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.util.StringUtils;
 
 import javax.persistence.*;
 import javax.validation.constraints.Min;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -45,8 +48,8 @@ public class NetDiskFile extends AuditEntity {
     /**
      * 所有父级节点
      */
-    @Convert(converter = LongArrayConverter.class)
-    private Long[] parents = new Long[]{};
+    @Convert(converter = ParentsConverter.class)
+    private List<Long> parents;
 
     @OneToMany(mappedBy = "parent")
     private List<NetDiskFile> children;
@@ -80,4 +83,18 @@ public class NetDiskFile extends AuditEntity {
      */
     @ManyToMany
     private Set<BaseUser> writableUserList = new HashSet<>();
+
+    public static class ParentsConverter implements AttributeConverter<List<Long>, String>{
+        @Override
+        public String convertToDatabaseColumn(List<Long> ids) {
+            if(ids == null || ids.isEmpty()) return null;
+            return "/" + ids.stream().map(String::valueOf).collect(Collectors.joining("/")) + "/";
+        }
+
+        @Override
+        public List<Long> convertToEntityAttribute(String s) {
+            if(!StringUtils.hasText(s)) return Collections.emptyList();
+            return Stream.of(s.split("/")).filter(i->i.length() > 0).map(Long::valueOf).collect(Collectors.toList());
+        }
+    }
 }

@@ -8,7 +8,6 @@ import cn.bincker.web.blog.base.exception.NotFoundException;
 import cn.bincker.web.blog.base.exception.NotImplementedException;
 import cn.bincker.web.blog.base.exception.UnauthorizedException;
 import cn.bincker.web.blog.base.repository.IBaseUserRepository;
-import cn.bincker.web.blog.base.vo.BaseUserVo;
 import cn.bincker.web.blog.base.vo.EntityLongValueVo;
 import cn.bincker.web.blog.base.vo.ValueVo;
 import cn.bincker.web.blog.netdisk.config.properties.NetDiskFileSystemProperties;
@@ -95,7 +94,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
             targetPath = systemFileFactory.fromPath(parent.getPath() + File.separator + dto.getName());
             target.setPath(targetPath.getPath());
             target.setParent(parent);
-            setParent(target, parent);
+            setParents(target, parent);
         }
 //        否则路径是用户根路径，父级为空，所有者为自己
         else{
@@ -181,7 +180,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
                 var parent = parentOptional.get();
                 netDiskFile.setParent(parent);
                 netDiskFile.setPossessor(parent.getPossessor());
-                setParent(netDiskFile, parent);
+                setParents(netDiskFile, parent);
             }else{
                 netDiskFile.setPossessor(currentUser);
             }
@@ -203,11 +202,20 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
     /**
      * 设置父级
      */
-    private void setParent(NetDiskFile netDiskFile, NetDiskFile parent) {
-        var parents = new Long[parent.getParents().length + 1];
-        if(parents.length > 1) System.arraycopy(parent.getParents(), 0, parents, 0, parent.getParents().length);
-        parents[parents.length - 1] = parent.getId();
-        netDiskFile.setParents(parents);
+    private void setParents(NetDiskFile netDiskFile, NetDiskFile parent) {
+        if(parent == null) {
+            netDiskFile.setParents(Collections.emptyList());
+            return;
+        }
+        var parents = netDiskFile.getParents();
+        if(parents == null){
+            parents = new ArrayList<>((parent.getParents() == null ? 0 : parent.getParents().size()) + 1);
+            netDiskFile.setParents(parents);
+        }
+        if(parent.getParents() != null){
+            parents.addAll(parent.getParents());
+        }
+        parents.add(parent.getId());
     }
 
     @Override
@@ -274,8 +282,17 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
     public NetDiskFileVo save(NetDiskFileDto dto) {
         //当前用户
         var currentUser = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
+//        是否需要修改子节点路径
+        var needUpdateChildrenPath = false;
 //        更新对象
         var target = netDiskFileRepository.findById(dto.getId()).orElseThrow(NotFoundException::new);
+//        排序的所有子孙节点, 层级高的靠前，低层的靠后，这样修改路径才不会出错
+        var allChildren = netDiskFileRepository.findAll(NetDiskFileSpecification.containsParentId(target.getId()))
+                .stream().sorted(Comparator.comparingInt(a -> a.getParents().size())).collect(Collectors.toList());
+//        父节点Map, 方便查找父节点
+        var parentNetDiskFileMap = new HashMap<>(allChildren.stream().collect(Collectors.toUnmodifiableMap(NetDiskFile::getId, f -> f)));
+        parentNetDiskFileMap.put(target.getId(), target);
+//        原来的文件
         var oldSystemFile = systemFileFactory.fromNetDiskFile(target);
 //        权限判断
         checkUpdatePermission(currentUser, target);
@@ -285,17 +302,34 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
             if(dto.getParentId() == null){//传入parent为空则移动到根目录
                 target.setParent(null);
                 target.setPath(systemResourceUtils.getUploadPath(currentUser.getUsername() + File.separator + dto.getName()).getPath());
+                setParents(target, null);
             }else{
                 var parent = netDiskFileRepository.findById(dto.getParentId())
                         .orElseThrow(()->new NotFoundException("父级不存在", "移动操作失败父级节点不存在：id=" + dto.getParentId()));
                 target.setParent(parent);
                 target.setPath(new File(new File(parent.getPath()), dto.getName()).getPath());
+                setParents(target, parent);
             }
+//            修改所有子节点的父节点列表
+            for (NetDiskFile netDiskFile : allChildren) {
+                var parent = parentNetDiskFileMap.get(netDiskFile.getParent().getId());
+                setParents(netDiskFile, parent);
+            }
+            needUpdateChildrenPath = target.getIsDirectory();
         }
 //        重命名
         if(!dto.getName().equals(target.getName())){
             target.setName(dto.getName());
             target.setPath(new File(new File(target.getPath()).getParentFile(), target.getName()).getPath());
+            needUpdateChildrenPath = target.getIsDirectory();
+        }
+//        修改子节点路径
+        if(needUpdateChildrenPath){
+//            修改所有子节点路径
+            for (NetDiskFile netDiskFile : allChildren) {
+                var parent = parentNetDiskFileMap.get(netDiskFile.getParent().getId());
+                netDiskFile.setPath(new File(new File(parent.getPath()), netDiskFile.getName()).getPath());
+            }
         }
 //        只有所有者才能修改权限
         boolean canChangePermission = target.getPossessor().getId().equals(currentUser.getId());
@@ -305,29 +339,19 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
 
 //        持久化
         netDiskFileRepository.save(target);
+        netDiskFileRepository.saveAll(allChildren);
 //        执行实体文件操作
         if(!oldPath.equals(target.getPath())){
             if(!oldSystemFile.renameTo(target.getPath()))
                 throw new RenameFileFailException(oldPath, target.getPath());
         }
 //        vo
-        var vo = new NetDiskFileVo();
-        vo.setId(target.getId());
-        vo.setName(target.getName());
-        vo.setIsDirectory(target.getIsDirectory());
-        if(canChangePermission){
-            vo.setEveryoneReadable(target.getEveryoneReadable());
-            vo.setEveryoneWritable(target.getEveryoneWritable());
-            var allUsersId = new HashSet<>(dto.getReadableUserList());
-            if(allUsersId.isEmpty()){
-                vo.setReadableUserList(Collections.emptyList());
-                vo.setWritableUserList(Collections.emptyList());
-            }else {
-                allUsersId.addAll(dto.getWritableUserList());
-                var users = baseUserRepository.findAllById(allUsersId).stream().map(BaseUserVo::new).collect(Collectors.toList());
-                vo.setReadableUserList(users.stream().filter(u -> dto.getReadableUserList().contains(u.getId())).collect(Collectors.toList()));
-                vo.setWritableUserList(users.stream().filter(u -> dto.getWritableUserList().contains(u.getId())).collect(Collectors.toList()));
-            }
+        var vo = new NetDiskFileVo(target);
+        if(!canChangePermission){
+            vo.setEveryoneReadable(null);
+            vo.setEveryoneWritable(null);
+            vo.setReadableUserList(Collections.emptyList());
+            vo.setWritableUserList(Collections.emptyList());
         }
         return vo;
     }
@@ -376,8 +400,8 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
     }
 
     @Override
-    public List<NetDiskFile> findAllById(Long[] ids) {
-        return netDiskFileRepository.findAllById(Arrays.asList(ids));
+    public List<NetDiskFile> findAllById(List<Long> ids) {
+        return netDiskFileRepository.findAllById(ids);
     }
 
     @Override

@@ -76,7 +76,7 @@ public class NetDiskFileController {
         var target = netDiskFileService.findById(id).orElseThrow(NotFoundException::new);
         netDiskFileService.checkReadPermission(user, target);
         var parents = netDiskFileService.findAllById(target.getParents());
-        parents.sort((a,b)->b.getParents().length - a.getParents().length);
+        parents.sort((a,b)->b.getParents().size() - a.getParents().size());
         var result = new ArrayList<NetDiskFileListVo>(parents.size());
         for (var currentItem : parents) {
             netDiskFileService.checkWritePermission(user, currentItem);

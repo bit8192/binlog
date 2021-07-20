@@ -51,8 +51,9 @@ public interface INetDiskFileService {
 
     /**
      * 通过id列出所有对象
+     * @param ids
      */
-    List<NetDiskFile> findAllById(Long[] ids);
+    List<NetDiskFile> findAllById(List<Long> ids);
 
     /**
      * 通过id查询

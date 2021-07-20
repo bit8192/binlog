@@ -88,6 +88,7 @@ public class AuthenticationTests {
         result.add(fieldWithPath(prefix + "nickname").type(JsonFieldType.NUMBER).optional().description("昵称"));
         result.add(fieldWithPath(prefix + "headImg").type(JsonFieldType.STRING).optional().description("头像"));
         result.add(fieldWithPath(prefix + "isBlogger").type(JsonFieldType.BOOLEAN).optional().description("是否是博主"));
+        result.add(fieldWithPath(prefix + "isAdmin").type(JsonFieldType.BOOLEAN).optional().description("是否是管理员"));
         return result;
     }
 }

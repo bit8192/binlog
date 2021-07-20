@@ -19,6 +19,10 @@ public class NetDiskFileSpecification {
         return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("parent").get("id"), id);
     }
 
+    public static Specification<NetDiskFile> containsParentId(Long id){
+        return (root, query, criteriaBuilder) -> criteriaBuilder.like(root.get("parents").as(String.class), "%/" + id + "/%");
+    }
+
     public static Specification<NetDiskFile> isDirectory(boolean isDirectory){
         return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("isDirectory"), isDirectory);
     }
