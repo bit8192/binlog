@@ -3,6 +3,7 @@ package cn.bincker.web.blog.material.controller;
 import cn.bincker.web.blog.AuthenticationTests;
 import cn.bincker.web.blog.base.repository.IBaseUserRepository;
 import cn.bincker.web.blog.material.dto.ArticleCommentDto;
+import cn.bincker.web.blog.material.dto.ArticleSubCommentDto;
 import cn.bincker.web.blog.material.entity.Article;
 import cn.bincker.web.blog.material.entity.Tag;
 import cn.bincker.web.blog.material.repository.IArticleClassRepository;
@@ -46,7 +47,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @ExtendWith(RestDocumentationExtension.class)
 @Transactional
-class ArticleCommentControllerTest {
+public class ArticleCommentControllerTest {
     private MockMvc mockMvc;
 
     @Value("${system.base-path}")
@@ -140,19 +141,33 @@ class ArticleCommentControllerTest {
         var article = newArticle();
         var articleCommentDto = new ArticleCommentDto();
         articleCommentDto.setContent("very good");
+        articleCommentDto.setArticleId(article.getId());
 
         mockMvc.perform(
-                post(basePath + "/article/{articleId}/comment",article.getId()).contentType(MediaType.APPLICATION_JSON)
+                post(basePath + "/comments").contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(articleCommentDto))
         )
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andDo(document(
                         "{ClassName}/{methodName}",
-                        pathParameters(parameterWithName("articleId").description("文章id")),
-                        requestFields(fieldWithPath("content").type(JsonFieldType.STRING).description("评论内容")),
+                        requestFields(getArticleCommentDtoFields("")),
                         responseFields(getArticleCommentVoFieldsDescriptor(""))
                 ));
+    }
+
+    public static List<FieldDescriptor> getArticleCommentDtoFields(String prefix){
+        var result = new ArrayList<FieldDescriptor>();
+        result.add(fieldWithPath(prefix + "content").type(JsonFieldType.STRING).description("评论内容"));
+        result.add(fieldWithPath(prefix + "articleId").type(JsonFieldType.NUMBER).description("文章Id"));
+        return result;
+    }
+
+    public static List<FieldDescriptor> getArticleSubCommentDtoFields(String prefix){
+        var result = new ArrayList<FieldDescriptor>();
+        result.add(fieldWithPath(prefix + "content").type(JsonFieldType.STRING).description("评论内容"));
+        result.add(fieldWithPath(prefix + "commentId").type(JsonFieldType.NUMBER).description("上级评论Id"));
+        return result;
     }
 
     @Test
@@ -161,16 +176,17 @@ class ArticleCommentControllerTest {
         var article = newArticle();
         var articleCommentDto = new ArticleCommentDto();
         articleCommentDto.setContent("nice");
-        var vo = articleCommentService.comment(article.getId(), articleCommentDto);
+        articleCommentDto.setArticleId(article.getId());
+        var vo = articleCommentService.comment(articleCommentDto);
 
         mockMvc.perform(
-                delete(basePath + "/article/{articleId}/comment/{id}", article.getId(), vo.getId())
+                delete(basePath + "/comments/{id}", vo.getId())
         )
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andDo(document(
                         "{ClassName}/{methodName}",
-                        pathParameters(parameterWithName("articleId").description("文章id"), parameterWithName("id").description("评论id"))
+                        pathParameters(parameterWithName("id").description("评论id"))
                 ));
     }
 
@@ -180,16 +196,17 @@ class ArticleCommentControllerTest {
         var article = newArticle();
         var articleCommentDto = new ArticleCommentDto();
         articleCommentDto.setContent("nice");
-        var vo = articleCommentService.comment(article.getId(), articleCommentDto);
+        articleCommentDto.setArticleId(article.getId());
+        var vo = articleCommentService.comment(articleCommentDto);
 
         mockMvc.perform(
-                post(basePath + "/article/{articleId}/comment/{id}/toggle-agree", article.getId(), vo.getId())
+                post(basePath + "/comments/{id}/toggle-agree", vo.getId())
         )
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andDo(document(
                         "{ClassName}/{methodName}",
-                        pathParameters(parameterWithName("articleId").description("文章id"), parameterWithName("id").description("评论id")),
+                        pathParameters(parameterWithName("id").description("评论id")),
                         responseFields(fieldWithPath("value").type(JsonFieldType.BOOLEAN).description("切换后的状态"))
                 ));
     }
@@ -200,16 +217,17 @@ class ArticleCommentControllerTest {
         var article = newArticle();
         var articleCommentDto = new ArticleCommentDto();
         articleCommentDto.setContent("nice");
-        var vo = articleCommentService.comment(article.getId(), articleCommentDto);
+        articleCommentDto.setArticleId(article.getId());
+        var vo = articleCommentService.comment(articleCommentDto);
 
         mockMvc.perform(
-                post(basePath + "/article/{articleId}/comment/{id}/toggle-tread", article.getId(), vo.getId())
+                post(basePath + "/comments/{id}/toggle-tread", vo.getId())
         )
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andDo(document(
                         "{ClassName}/{methodName}",
-                        pathParameters(parameterWithName("articleId").description("文章id"), parameterWithName("id").description("评论id")),
+                        pathParameters(parameterWithName("id").description("评论id")),
                         responseFields(fieldWithPath("value").type(JsonFieldType.BOOLEAN).description("切换后的状态"))
                 ));
     }
@@ -222,15 +240,18 @@ class ArticleCommentControllerTest {
         for (int i = 0; i < 20; i++) {
             var articleCommentDto = new ArticleCommentDto();
             articleCommentDto.setContent("comment-" + i);
-            var vo = articleCommentService.comment(article.getId(), articleCommentDto);
+            articleCommentDto.setArticleId(article.getId());
+            var vo = articleCommentService.comment(articleCommentDto);
             for (int j = 0, subCommentNum = (int)(Math.random() * 10 % 4); j < subCommentNum; j++) {
-                articleCommentDto.setContent("sub-comment-" + j);
-                articleSubCommentService.comment(vo.getId(), articleCommentDto);
+                var articleSubCommentDto = new ArticleSubCommentDto();
+                articleSubCommentDto.setContent("sub-comment-" + j);
+                articleSubCommentDto.setCommentId(vo.getId());
+                articleSubCommentService.comment(articleSubCommentDto);
             }
         }
 
         mockMvc.perform(
-                get(basePath + "/article/{articleId}/comment", article.getId())
+                get(basePath + "/article/{articleId}/comments", article.getId())
         )
                 .andDo(print())
                 .andExpect(status().isOk())

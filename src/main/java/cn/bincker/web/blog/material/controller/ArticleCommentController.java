@@ -3,27 +3,28 @@ package cn.bincker.web.blog.material.controller;
 import cn.bincker.web.blog.base.vo.ValueVo;
 import cn.bincker.web.blog.material.dto.ArticleCommentDto;
 import cn.bincker.web.blog.material.service.IArticleCommentService;
-import cn.bincker.web.blog.material.vo.ArticleCommentListVo;
+import cn.bincker.web.blog.material.service.IArticleSubCommentService;
 import cn.bincker.web.blog.material.vo.ArticleCommentVo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("${system.base-path}/article/{articleId}/comment")
+@RequestMapping("${system.base-path}/comments")
 public class ArticleCommentController {
     private final IArticleCommentService articleCommentService;
+    private final IArticleSubCommentService articleSubCommentService;
 
-    public ArticleCommentController(IArticleCommentService articleCommentService) {
+    public ArticleCommentController(IArticleCommentService articleCommentService, IArticleSubCommentService articleSubCommentService) {
         this.articleCommentService = articleCommentService;
+        this.articleSubCommentService = articleSubCommentService;
     }
 
     @PostMapping
-    public ArticleCommentVo comment(@PathVariable Long articleId, @RequestBody @Validated ArticleCommentDto dto){
-        return articleCommentService.comment(articleId, dto);
+    public ArticleCommentVo comment(@RequestBody @Validated ArticleCommentDto dto){
+        return articleCommentService.comment(dto);
     }
 
     @DeleteMapping("{commentId}")
@@ -41,8 +42,8 @@ public class ArticleCommentController {
         return articleCommentService.toggleTread(id);
     }
 
-    @GetMapping
-    public Page<ArticleCommentListVo> getPage(@PathVariable Long articleId, @PageableDefault(sort = "createdDate", direction = Sort.Direction.DESC) Pageable pageable){
-        return articleCommentService.getPage(articleId, pageable);
+    @GetMapping("{commentId}/sub-comments")
+    public Page<ArticleCommentVo> getPage(@PathVariable Long commentId, @PageableDefault(sort = "createdDate") Pageable pageable){
+        return articleSubCommentService.getPage(commentId, pageable);
     }
 }

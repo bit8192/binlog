@@ -2,10 +2,10 @@ package cn.bincker.web.blog.material.controller;
 
 import cn.bincker.web.blog.base.repository.IBaseUserRepository;
 import cn.bincker.web.blog.material.dto.ArticleCommentDto;
+import cn.bincker.web.blog.material.dto.ArticleSubCommentDto;
 import cn.bincker.web.blog.material.entity.Article;
 import cn.bincker.web.blog.material.entity.Tag;
 import cn.bincker.web.blog.material.repository.IArticleClassRepository;
-import cn.bincker.web.blog.material.repository.IArticleCommentRepository;
 import cn.bincker.web.blog.material.repository.IArticleRepository;
 import cn.bincker.web.blog.material.repository.ITagRepository;
 import cn.bincker.web.blog.material.service.IArticleCommentService;
@@ -36,8 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.*;
-import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
-import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.payload.PayloadDocumentation.*;
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -60,8 +59,6 @@ class ArticleSubCommentControllerTest {
     private ITagRepository tagRepository;
     @Autowired
     private INetDiskFileRepository netDiskFileRepository;
-    @Autowired
-    private IArticleCommentRepository articleCommentRepository;
     @Autowired
     private IArticleCommentService articleCommentService;
     @Autowired
@@ -109,11 +106,14 @@ class ArticleSubCommentControllerTest {
         var article = newArticle();
         var articleCommentDto = new ArticleCommentDto();
         articleCommentDto.setContent("articleComment");
-        var articleCommentVo = articleCommentService.comment(article.getId(), articleCommentDto);
+        articleCommentDto.setArticleId(article.getId());
+        var articleCommentVo = articleCommentService.comment(articleCommentDto);
 
-        articleCommentDto.setContent("article sub comment");
+        var articleSubCommentDto = new ArticleSubCommentDto();
+        articleSubCommentDto.setContent("article sub comment");
+        articleSubCommentDto.setCommentId(articleCommentVo.getId());
         mockMvc.perform(
-                post(basePath + "/article/{articleId}/comment/{commentId}/comment", article.getId(), articleCommentVo.getId())
+                post(basePath + "/sub-comments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(articleCommentDto))
         )
@@ -121,7 +121,7 @@ class ArticleSubCommentControllerTest {
                 .andExpect(status().isOk())
                 .andDo(document(
                         "{ClassName}/{methodName}",
-                        pathParameters(parameterWithName("articleId").description("文章id"), parameterWithName("commentId").description("上级评论id")),
+                        requestFields(ArticleCommentControllerTest.getArticleCommentDtoFields("")),
                         responseFields(ArticleCommentControllerTest.getArticleCommentVoFieldsDescriptor(""))
                 ));
     }
@@ -132,18 +132,21 @@ class ArticleSubCommentControllerTest {
         var article = newArticle();
         var articleCommentDto = new ArticleCommentDto();
         articleCommentDto.setContent("articleComment");
-        var articleCommentVo = articleCommentService.comment(article.getId(), articleCommentDto);
-        articleCommentDto.setContent("article sub comment");
-        var articleSubCommentVo = articleSubCommentService.comment(articleCommentVo.getId(), articleCommentDto);
+        articleCommentDto.setArticleId(article.getId());
+        var articleCommentVo = articleCommentService.comment(articleCommentDto);
+        var articleSubCommentDto = new ArticleSubCommentDto();
+        articleSubCommentDto.setContent("article sub comment");
+        articleSubCommentDto.setCommentId(articleCommentVo.getId());
+        var articleSubCommentVo = articleSubCommentService.comment(articleSubCommentDto);
 
         mockMvc.perform(
-                delete(basePath + "/article/{articleId}/comment/{commentId}/comment/{id}", article.getId(), articleCommentVo.getId(), articleSubCommentVo.getId())
+                delete(basePath + "/sub-comments/{id}", articleSubCommentVo.getId())
         )
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andDo(document(
                         "{ClassName}/{methodName}",
-                        pathParameters(parameterWithName("articleId").description("文章id"), parameterWithName("commentId").description("上级评论id"), parameterWithName("id").description("要删除的评论id"))
+                        pathParameters(parameterWithName("id").description("要删除的评论id"))
                 ));
     }
 
@@ -153,18 +156,21 @@ class ArticleSubCommentControllerTest {
         var article = newArticle();
         var articleCommentDto = new ArticleCommentDto();
         articleCommentDto.setContent("articleComment");
-        var articleCommentVo = articleCommentService.comment(article.getId(), articleCommentDto);
-        articleCommentDto.setContent("article sub comment");
-        var articleSubCommentVo = articleSubCommentService.comment(articleCommentVo.getId(), articleCommentDto);
+        articleCommentDto.setArticleId(article.getId());
+        var articleCommentVo = articleCommentService.comment(articleCommentDto);
+        var articleSubCommentDto = new ArticleSubCommentDto();
+        articleSubCommentDto.setContent("article sub comment content");
+        articleSubCommentDto.setCommentId(articleCommentVo.getId());
+        var articleSubCommentVo = articleSubCommentService.comment(articleSubCommentDto);
 
         mockMvc.perform(
-                post(basePath + "/article/{articleId}/comment/{commentId}/comment/{id}/toggle-agree", article.getId(), articleCommentVo.getId(), articleSubCommentVo.getId())
+                post(basePath + "/sub-comments/{id}/toggle-agree", articleSubCommentVo.getId())
         )
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andDo(document(
                         "{ClassName}/{methodName}",
-                        pathParameters(parameterWithName("articleId").description("文章id"), parameterWithName("commentId").description("上级评论id"), parameterWithName("id").description("要删除的评论id")),
+                        pathParameters(parameterWithName("id").description("要删除的评论id")),
                         responseFields(fieldWithPath("value").type(JsonFieldType.BOOLEAN).description("切换后的状态"))
                 ));
     }
@@ -175,18 +181,21 @@ class ArticleSubCommentControllerTest {
         var article = newArticle();
         var articleCommentDto = new ArticleCommentDto();
         articleCommentDto.setContent("articleComment");
-        var articleCommentVo = articleCommentService.comment(article.getId(), articleCommentDto);
-        articleCommentDto.setContent("article sub comment");
-        var articleSubCommentVo = articleSubCommentService.comment(articleCommentVo.getId(), articleCommentDto);
+        articleCommentDto.setArticleId(article.getId());
+        var articleCommentVo = articleCommentService.comment(articleCommentDto);
+        var articleSubCommentDto = new ArticleSubCommentDto();
+        articleSubCommentDto.setContent("article sub comment");
+        articleSubCommentDto.setCommentId(articleCommentVo.getId());
+        var articleSubCommentVo = articleSubCommentService.comment(articleSubCommentDto);
 
         mockMvc.perform(
-                post(basePath + "/article/{articleId}/comment/{commentId}/comment/{id}/toggle-tread", article.getId(), articleCommentVo.getId(), articleSubCommentVo.getId())
+                post(basePath + "/sub-comments/{id}/toggle-tread", articleSubCommentVo.getId())
         )
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andDo(document(
                         "{ClassName}/{methodName}",
-                        pathParameters(parameterWithName("articleId").description("文章id"), parameterWithName("commentId").description("上级评论id"), parameterWithName("id").description("要删除的评论id")),
+                        pathParameters(parameterWithName("id").description("要删除的评论id")),
                         responseFields(fieldWithPath("value").type(JsonFieldType.BOOLEAN).description("切换后的状态"))
                 ));
     }
@@ -197,20 +206,23 @@ class ArticleSubCommentControllerTest {
         var article = newArticle();
         var articleCommentDto = new ArticleCommentDto();
         articleCommentDto.setContent("articleComment");
-        var articleCommentVo = articleCommentService.comment(article.getId(), articleCommentDto);
+        articleCommentDto.setArticleId(article.getId());
+        var articleCommentVo = articleCommentService.comment(articleCommentDto);
         for (int i = 0; i < 20; i++) {
-            articleCommentDto.setContent("article sub comment " + i);
-            articleSubCommentService.comment(articleCommentVo.getId(), articleCommentDto);
+            var articleSubCommentDto = new ArticleSubCommentDto();
+            articleSubCommentDto.setContent("article sub comment " + i);
+            articleSubCommentDto.setCommentId(articleCommentVo.getId());
+            articleSubCommentService.comment(articleSubCommentDto);
         }
 
         mockMvc.perform(
-                get(basePath + "/article/{articleId}/comment/{commentId}/comment", article.getId(), articleCommentVo.getId())
+                get(basePath + "/comments/{commentId}/sub-comments", articleCommentVo.getId())
         )
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andDo(document(
                         "{ClassName}/{methodName}",
-                        pathParameters(parameterWithName("articleId").description("文章id"), parameterWithName("commentId").description("上级评论id")),
+                        pathParameters(parameterWithName("commentId").description("上级评论id")),
                         responseFields(ArticleCommentControllerTest.getArticleCommentVoFieldsDescriptor("content[].")).and(FIELDS_PAGE)
                 ));
     }

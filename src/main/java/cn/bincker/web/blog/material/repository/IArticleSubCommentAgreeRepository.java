@@ -13,7 +13,7 @@ public interface IArticleSubCommentAgreeRepository extends CrudRepository<Articl
 
     Long countByComment(ArticleSubComment comment);
 
-    List<ArticleSubCommentAgree> findByCreatedUserIdAndCommentIdIn(Long uid, List<Long> commentIds);
+    List<ArticleSubCommentAgree> findByCreatedUserIdAndCommentIdIn(Long uid, Iterable<Long> commentIds);
 
     Long countByCommentCreatedUser(BaseUser user);
 }

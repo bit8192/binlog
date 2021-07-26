@@ -28,6 +28,8 @@ spring:
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     default-property-inclusion: non_null
+    serialization:
+      WRITE_ENUMS_USING_TO_STRING: true
   profiles:
     active: @profiles.active@
   servlet:

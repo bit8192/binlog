@@ -2,6 +2,7 @@ package cn.bincker.web.blog.material.service;
 
 import cn.bincker.web.blog.base.vo.ValueVo;
 import cn.bincker.web.blog.material.dto.ArticleCommentDto;
+import cn.bincker.web.blog.material.dto.ArticleSubCommentDto;
 import cn.bincker.web.blog.material.vo.ArticleCommentVo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,12 +11,12 @@ public interface IArticleSubCommentService {
     /**
      * 评论
      */
-    ArticleCommentVo comment(Long articleCommentId, ArticleCommentDto dto);
+    ArticleCommentVo comment(ArticleSubCommentDto dto);
 
     /**
      * 对子评论进行评论
      */
-    ArticleCommentVo subComment(Long subCommentId, ArticleCommentDto dto);
+    ArticleCommentVo subComment(ArticleSubCommentDto dto);
 
     /**
      * 删除评论

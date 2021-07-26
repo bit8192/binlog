@@ -12,7 +12,7 @@ public interface IArticleCommentAgreeRepository extends JpaRepository<ArticleCom
 
     Long countByCommentId(Long commentId);
 
-    List<ArticleCommentAgree> findByCreatedUserIdAndCommentIdIn(Long uid, List<Long> commentIds);
+    List<ArticleCommentAgree> findByCreatedUserIdAndCommentIdIn(Long uid, Iterable<Long> commentIds);
 
     Long countByCommentCreatedUser(BaseUser user);
 }

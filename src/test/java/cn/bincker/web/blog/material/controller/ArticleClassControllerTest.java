@@ -39,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @ExtendWith(RestDocumentationExtension.class)
-class ArticleClassControllerTest {
+public class ArticleClassControllerTest {
     private MockMvc mockMvc;
 
     @Autowired

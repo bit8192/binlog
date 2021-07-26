@@ -3,11 +3,13 @@ package cn.bincker.web.blog.material.service.impl;
 import cn.bincker.web.blog.base.UserAuditingListener;
 import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.entity.BaseUser;
+import cn.bincker.web.blog.base.entity.Message;
 import cn.bincker.web.blog.base.exception.ForbiddenException;
 import cn.bincker.web.blog.base.exception.NotFoundException;
 import cn.bincker.web.blog.base.exception.SystemException;
 import cn.bincker.web.blog.base.exception.UnauthorizedException;
 import cn.bincker.web.blog.base.repository.IBaseUserRepository;
+import cn.bincker.web.blog.base.repository.IMessageRepository;
 import cn.bincker.web.blog.base.vo.BaseUserVo;
 import cn.bincker.web.blog.base.vo.ValueVo;
 import cn.bincker.web.blog.material.constant.SynchronizedPrefixConstant;
@@ -45,8 +47,9 @@ public class ArticleCommentServiceImpl implements IArticleCommentService {
     private final IArticleSubCommentAgreeRepository articleSubCommentAgreeRepository;
     private final IArticleSubCommentTreadRepository articleSubCommentTreadRepository;
     private final IBaseUserRepository baseUserRepository;
+    private final IMessageRepository messageRepository;
 
-    public ArticleCommentServiceImpl(IArticleCommentRepository articleCommentRepository, UserAuditingListener userAuditingListener, IArticleRepository articleRepository, IArticleCommentAgreeRepository articleCommentAgreeRepository, IArticleCommentTreadRepository articleCommentTreadRepository, IArticleSubCommentRepository articleSubCommentRepository, IArticleSubCommentAgreeRepository articleSubCommentAgreeRepository, IArticleSubCommentTreadRepository articleSubCommentTreadRepository, IBaseUserRepository baseUserRepository) {
+    public ArticleCommentServiceImpl(IArticleCommentRepository articleCommentRepository, UserAuditingListener userAuditingListener, IArticleRepository articleRepository, IArticleCommentAgreeRepository articleCommentAgreeRepository, IArticleCommentTreadRepository articleCommentTreadRepository, IArticleSubCommentRepository articleSubCommentRepository, IArticleSubCommentAgreeRepository articleSubCommentAgreeRepository, IArticleSubCommentTreadRepository articleSubCommentTreadRepository, IBaseUserRepository baseUserRepository, IMessageRepository messageRepository) {
         this.articleCommentRepository = articleCommentRepository;
         this.userAuditingListener = userAuditingListener;
         this.articleRepository = articleRepository;
@@ -56,21 +59,59 @@ public class ArticleCommentServiceImpl implements IArticleCommentService {
         this.articleSubCommentAgreeRepository = articleSubCommentAgreeRepository;
         this.articleSubCommentTreadRepository = articleSubCommentTreadRepository;
         this.baseUserRepository = baseUserRepository;
+        this.messageRepository = messageRepository;
     }
 
+    @SuppressWarnings("DuplicatedCode")
     @Override
-    public ArticleCommentVo comment(Long articleId, ArticleCommentDto dto) {
+    @Transactional
+    public ArticleCommentVo comment(ArticleCommentDto dto) {
         var user = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
-        var article = articleRepository.findById(articleId).orElseThrow(NotFoundException::new);
+        var article = articleRepository.findById(dto.getArticleId()).orElseThrow(NotFoundException::new);
+        var articleAuthor = baseUserRepository.getOne(article.getCreatedUser().getId());
         var comment = new ArticleComment();
         comment.setContent(dto.getContent());
         comment.setTarget(article);
         articleCommentRepository.save(comment);
-        comment.setCreatedUser(user);
+
+//        发送消息提醒作者，如果是自己评论的则不发送
+        if(!user.getId().equals(articleAuthor.getId()))
+            sendMessage(Message.Type.ARTICLE_COMMENT, comment.getContent(), comment.getId(), user, articleAuthor);
+//        发送消息提醒被@的人
+        var matcher = RegexpConstant.COMMENT_MEMBER.matcher(dto.getContent());
+        var memberNameList = new ArrayList<String>();
+        while (matcher.find()) memberNameList.add(matcher.group(2));
+        var memberList = baseUserRepository.findAllByUsernameIn(memberNameList);
+        var mentionMessageList = memberList.stream().filter(u->!u.getId().equals(articleAuthor.getId())).map(u->{
+            var msg = new Message();
+            msg.setType(Message.Type.ARTICLE_COMMENT_MENTION);
+            msg.setFromUser(user);
+            msg.setToUser(u);
+            msg.setContent(dto.getContent());
+            msg.setRelevantId(comment.getId());
+            return msg;
+        }).collect(Collectors.toList());
+        if(!mentionMessageList.isEmpty()) messageRepository.saveAll(mentionMessageList);
+
+        comment.setCreatedUser(user);//不设置的话只有id
         var vo = new ArticleCommentVo(comment);
-        //处理被@的用户
-        handleMember(Collections.singletonList(vo));
+        vo.setMembers(memberList.stream().map(BaseUserVo::new).collect(Collectors.toList()));
         return vo;
+    }
+
+    /**
+     * 发送消息通知
+     */
+    @SuppressWarnings("DuplicatedCode")
+    private void sendMessage(Message.Type type, String content, Long relevantId, BaseUser fromUser, BaseUser toUser) {
+        var msg = new Message();
+        msg.setFromUser(fromUser);
+        msg.setToUser(toUser);
+        msg.setIsRead(false);
+        msg.setContent(content);
+        msg.setType(type);
+        msg.setRelevantId(relevantId);
+        messageRepository.save(msg);
     }
 
     @Override
@@ -97,25 +138,35 @@ public class ArticleCommentServiceImpl implements IArticleCommentService {
     public ValueVo<Boolean> toggleAgree(Long id) {
         var user = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
         var comment = articleCommentRepository.findById(id).orElseThrow(NotFoundException::new);
-        synchronized (SynchronizedPrefixConstant.TOGGLE_ARTICLE_COMMENT_AGREE_AND_TREAD + id){
-            var agreeOptional = articleCommentAgreeRepository.findByCreatedUserIdAndCommentId(user.getId(), id);
-            var treadOptional = articleCommentTreadRepository.findByCreatedUserIdAndCommentId(user.getId(), id);
-            if(agreeOptional.isEmpty()){//如果没有点赞，那么点赞，并取消踩
-                treadOptional.ifPresent(articleCommentTreadRepository::delete);
-                var agree = new ArticleCommentAgree();
-                agree.setComment(comment);
-                articleCommentAgreeRepository.save(agree);
-            }else{
-                articleCommentAgreeRepository.delete(agreeOptional.get());
-            }
 
+        var agreeOptional = articleCommentAgreeRepository.findByCreatedUserIdAndCommentId(user.getId(), id);
+        var treadOptional = articleCommentTreadRepository.findByCreatedUserIdAndCommentId(user.getId(), id);
+        if(agreeOptional.isEmpty()){//如果没有点赞，那么点赞，并取消踩
+            treadOptional.ifPresent(articleCommentTreadRepository::delete);
+            var agree = new ArticleCommentAgree();
+            agree.setComment(comment);
+            articleCommentAgreeRepository.save(agree);
+            if(!user.getId().equals(comment.getCreatedUser().getId())) sendMessage(Message.Type.ARTICLE_COMMENT_AGREE, null, id, user, comment.getCreatedUser());
+        }else{
+            articleCommentAgreeRepository.delete(agreeOptional.get());
+        }
+
+        updateCommentAgreeAndTreadNum(id, comment);
+
+        return new ValueVo<>(agreeOptional.isEmpty());
+    }
+
+    /**
+     * 更新评论点赞和踩的数量
+     */
+    private void updateCommentAgreeAndTreadNum(Long id, ArticleComment comment) {
+        synchronized (SynchronizedPrefixConstant.TOGGLE_ARTICLE_COMMENT_AGREE_AND_TREAD + id) {
             //更新点赞数和踩数量
             var agreeNum = articleCommentAgreeRepository.countByCommentId(id);
             var treadNum = articleCommentTreadRepository.countByCommentId(id);
             comment.setAgreedNum(agreeNum);
             comment.setTreadNum(treadNum);
             articleCommentRepository.save(comment);
-            return new ValueVo<>(agreeOptional.isEmpty());
         }
     }
 
@@ -123,26 +174,20 @@ public class ArticleCommentServiceImpl implements IArticleCommentService {
     public ValueVo<Boolean> toggleTread(Long id) {
         var user = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
         var comment = articleCommentRepository.findById(id).orElseThrow(NotFoundException::new);
-        synchronized (SynchronizedPrefixConstant.TOGGLE_ARTICLE_COMMENT_AGREE_AND_TREAD + id){
-            var treadOptional = articleCommentTreadRepository.findByCreatedUserIdAndCommentId(user.getId(), id);
-            var agreeOptional = articleCommentAgreeRepository.findByCreatedUserIdAndCommentId(user.getId(), id);
-            if(treadOptional.isEmpty()){//如果没有点踩，那么点踩，并取消赞
-                agreeOptional.ifPresent(articleCommentAgreeRepository::delete);
-                var tread = new ArticleCommentTread();
-                tread.setComment(comment);
-                articleCommentTreadRepository.save(tread);
-            }else{
-                articleCommentTreadRepository.delete(treadOptional.get());
-            }
 
-            //更新点赞数和踩数量
-            var agreeNum = articleCommentAgreeRepository.countByCommentId(id);
-            var treadNum = articleCommentTreadRepository.countByCommentId(id);
-            comment.setAgreedNum(agreeNum);
-            comment.setTreadNum(treadNum);
-            articleCommentRepository.save(comment);
-            return new ValueVo<>(treadOptional.isEmpty());
+        var treadOptional = articleCommentTreadRepository.findByCreatedUserIdAndCommentId(user.getId(), id);
+        var agreeOptional = articleCommentAgreeRepository.findByCreatedUserIdAndCommentId(user.getId(), id);
+        if(treadOptional.isEmpty()){//如果没有点踩，那么点踩，并取消赞
+            agreeOptional.ifPresent(articleCommentAgreeRepository::delete);
+            var tread = new ArticleCommentTread();
+            tread.setComment(comment);
+            articleCommentTreadRepository.save(tread);
+        }else{
+            articleCommentTreadRepository.delete(treadOptional.get());
         }
+
+        updateCommentAgreeAndTreadNum(id, comment);
+        return new ValueVo<>(treadOptional.isEmpty());
     }
 
     @Override

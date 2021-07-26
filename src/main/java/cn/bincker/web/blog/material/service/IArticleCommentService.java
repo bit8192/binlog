@@ -11,7 +11,7 @@ public interface IArticleCommentService {
     /**
      * 评论
      */
-    ArticleCommentVo comment(Long articleId, ArticleCommentDto dto);
+    ArticleCommentVo comment(ArticleCommentDto dto);
 
     /**
      * 删除评论

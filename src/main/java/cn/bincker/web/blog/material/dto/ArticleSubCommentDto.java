@@ -6,9 +6,10 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 @Data
-public class ArticleCommentDto {
+public class ArticleSubCommentDto {
     @NotNull
-    private Long articleId;
+    private Long commentId;
+
     @NotEmpty
     private String content;
 }

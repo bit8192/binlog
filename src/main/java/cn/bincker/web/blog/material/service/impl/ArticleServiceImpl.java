@@ -3,10 +3,12 @@ package cn.bincker.web.blog.material.service.impl;
 import cn.bincker.web.blog.base.UserAuditingListener;
 import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.entity.BaseUser;
+import cn.bincker.web.blog.base.entity.Message;
 import cn.bincker.web.blog.base.exception.BadRequestException;
 import cn.bincker.web.blog.base.exception.ForbiddenException;
 import cn.bincker.web.blog.base.exception.NotFoundException;
 import cn.bincker.web.blog.base.exception.UnauthorizedException;
+import cn.bincker.web.blog.base.repository.IMessageRepository;
 import cn.bincker.web.blog.base.vo.ValueVo;
 import cn.bincker.web.blog.material.constant.SynchronizedPrefixConstant;
 import cn.bincker.web.blog.material.entity.Article;
@@ -45,14 +47,16 @@ public class ArticleServiceImpl implements IArticleService {
     private final IArticleClassRepository articleClassRepository;
     private final INetDiskFileRepository netDiskFileRepository;
     private final IArticleAgreeRepository articleAgreeRepository;
+    private final IMessageRepository messageRepository;
 
-    public ArticleServiceImpl(UserAuditingListener userAuditingListener, IArticleRepository articleRepository, ITagRepository tagRepository, IArticleClassRepository articleClassRepository, INetDiskFileRepository netDiskFileRepository, IArticleAgreeRepository articleAgreeRepository) {
+    public ArticleServiceImpl(UserAuditingListener userAuditingListener, IArticleRepository articleRepository, ITagRepository tagRepository, IArticleClassRepository articleClassRepository, INetDiskFileRepository netDiskFileRepository, IArticleAgreeRepository articleAgreeRepository, IMessageRepository messageRepository) {
         this.userAuditingListener = userAuditingListener;
         this.articleRepository = articleRepository;
         this.tagRepository = tagRepository;
         this.articleClassRepository = articleClassRepository;
         this.netDiskFileRepository = netDiskFileRepository;
         this.articleAgreeRepository = articleAgreeRepository;
+        this.messageRepository = messageRepository;
     }
 
     @Override
@@ -216,18 +220,26 @@ public class ArticleServiceImpl implements IArticleService {
     @Transactional
     public ValueVo<Boolean> toggleAgreed(Long articleId) {
         var currentUser = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
+        var article = articleRepository.findById(articleId).orElseThrow(NotFoundException::new);
         var articleAgreeOptional = articleAgreeRepository.findByArticleIdAndCreatedUserId(articleId, currentUser.getId());
         if(articleAgreeOptional.isEmpty()){
             var articleAgree = new ArticleAgree();
-            var article = new Article();
-            article.setId(articleId);
             articleAgree.setArticle(article);
             articleAgreeRepository.save(articleAgree);
+            //发送点赞消息提醒
+            if(!currentUser.getId().equals(article.getCreatedUser().getId())) {
+                var msg = new Message();
+                msg.setType(Message.Type.ARTICLE_AGREE);
+                msg.setFromUser(currentUser);
+                msg.setToUser(article.getCreatedUser());
+                msg.setRelevantId(articleId);
+                msg.setIsRead(false);
+                messageRepository.save(msg);
+            }
         }else{
             articleAgreeRepository.deleteById(articleAgreeOptional.get().getId());
         }
         synchronized (SynchronizedPrefixConstant.UPDATE_ARTICLE_AGREE + articleId){
-            var article = articleRepository.getOne(articleId);
             article.setAgreedNum(articleAgreeRepository.countByArticleId(articleId));
             articleRepository.save(article);
         }

@@ -4,11 +4,15 @@ import cn.bincker.web.blog.base.dto.valid.InsertValid;
 import cn.bincker.web.blog.base.dto.valid.UpdateValid;
 import cn.bincker.web.blog.base.vo.ValueVo;
 import cn.bincker.web.blog.material.dto.ArticleDto;
+import cn.bincker.web.blog.material.service.IArticleCommentService;
 import cn.bincker.web.blog.material.service.IArticleService;
+import cn.bincker.web.blog.material.vo.ArticleCommentListVo;
 import cn.bincker.web.blog.material.vo.ArticleListVo;
 import cn.bincker.web.blog.material.vo.ArticleVo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -19,9 +23,11 @@ import javax.validation.constraints.NotEmpty;
 @RestController
 public class ArticleController {
     private final IArticleService articleService;
+    private final IArticleCommentService articleCommentService;
 
-    public ArticleController(IArticleService articleService) {
+    public ArticleController(IArticleService articleService, IArticleCommentService articleCommentService) {
         this.articleService = articleService;
+        this.articleCommentService = articleCommentService;
     }
 
     @GetMapping("{id}")
@@ -76,5 +82,10 @@ public class ArticleController {
     @DeleteMapping("{id}")
     public void delete(@PathVariable Long id){
         articleService.delete(id);
+    }
+
+    @GetMapping("{articleId}/comments")
+    public Page<ArticleCommentListVo> getPage(@PathVariable Long articleId, @PageableDefault(sort = "createdDate", direction = Sort.Direction.DESC) Pageable pageable){
+        return articleCommentService.getPage(articleId, pageable);
     }
 }

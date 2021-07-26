@@ -10,7 +10,7 @@ import java.util.Set;
 public interface IBaseUserRepository extends JpaRepository<BaseUser, Long> {
     Optional<BaseUser> findByUsername(String username);
 
-    List<BaseUser> findAllByUsernameIn(Set<String> usernameSet);
+    List<BaseUser> findAllByUsernameIn(Iterable<String> usernameSet);
 
     Optional<BaseUser> findByQqOpenId(String openId);
 }

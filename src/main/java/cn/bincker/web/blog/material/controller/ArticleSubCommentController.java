@@ -1,17 +1,14 @@
 package cn.bincker.web.blog.material.controller;
 
 import cn.bincker.web.blog.base.vo.ValueVo;
-import cn.bincker.web.blog.material.dto.ArticleCommentDto;
+import cn.bincker.web.blog.material.dto.ArticleSubCommentDto;
 import cn.bincker.web.blog.material.service.IArticleSubCommentService;
 import cn.bincker.web.blog.material.vo.ArticleCommentVo;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("${system.base-path}/article/{articleId}/comment/{commentId}/comment")
+@RequestMapping("${system.base-path}/sub-comments")
 public class ArticleSubCommentController {
     private final IArticleSubCommentService articleSubCommentService;
 
@@ -20,16 +17,16 @@ public class ArticleSubCommentController {
     }
 
     @PostMapping
-    public ArticleCommentVo comment(@PathVariable Long commentId, @RequestBody @Validated ArticleCommentDto dto){
-        return articleSubCommentService.comment(commentId, dto);
+    public ArticleCommentVo comment(@RequestBody @Validated ArticleSubCommentDto dto){
+        return articleSubCommentService.comment(dto);
     }
 
     /**
      * 对子评论进行评论
      */
-    @PostMapping("{subCommentId}/comment")
-    public ArticleCommentVo subComment(@PathVariable Long subCommentId, @RequestBody @Validated ArticleCommentDto dto){
-        return articleSubCommentService.subComment(subCommentId, dto);
+    @PostMapping("sub-comments")
+    public ArticleCommentVo subComment(@RequestBody @Validated ArticleSubCommentDto dto){
+        return articleSubCommentService.subComment(dto);
     }
 
     @DeleteMapping("{id}")
@@ -47,8 +44,4 @@ public class ArticleSubCommentController {
         return articleSubCommentService.toggleTread(id);
     }
 
-    @GetMapping
-    public Page<ArticleCommentVo> getPage(@PathVariable Long commentId, @PageableDefault(sort = "createdDate") Pageable pageable){
-        return articleSubCommentService.getPage(commentId, pageable);
-    }
 }

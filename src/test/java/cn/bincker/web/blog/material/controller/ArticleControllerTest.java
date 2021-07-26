@@ -48,7 +48,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @ExtendWith(RestDocumentationExtension.class)
 @Transactional
-class ArticleControllerTest {
+public class ArticleControllerTest {
     private MockMvc mockMvc;
 
     @Value("${system.base-path}")
