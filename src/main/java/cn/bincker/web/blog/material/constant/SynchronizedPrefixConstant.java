@@ -15,4 +15,9 @@ public class SynchronizedPrefixConstant {
      * 文章子评论点赞和踩
      */
     public static final String TOGGLE_ARTICLE_SUB_COMMENT_AGREE_AND_TREAD = "TOGGLE-ARTICLE-SUB-COMMENT-AGREE-AND-TREAD-";
+
+    /**
+     * 表情点赞
+     */
+    public static final String TOGGLE_EXPRESSION_AGREE = "TOGGLE_EXPRESSION_AGREE-";
 }

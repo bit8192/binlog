@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 public class TagControllerTest {
     private MockMvc mockMvc;
-    @Value("${system.base-path}")
+    @Value("${binlog.base-path}")
     private String basePath;
     @Autowired
     private ITagRepository tagRepository;

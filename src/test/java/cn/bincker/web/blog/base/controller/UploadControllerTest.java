@@ -3,8 +3,7 @@ package cn.bincker.web.blog.base.controller;
 import cn.bincker.web.blog.base.entity.UploadFile;
 import cn.bincker.web.blog.base.repository.IUploadFileRepository;
 import cn.bincker.web.blog.base.dto.UploadFileDto;
-import cn.bincker.web.blog.netdisk.service.ISystemFileFactory;
-import cn.bincker.web.blog.utils.SystemResourceUtils;
+import cn.bincker.web.blog.base.service.ISystemFileFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,12 +38,10 @@ class UploadControllerTest {
 
     private MockMvc mockMvc;
 
-    @Value("${system.base-path}")
+    @Value("${binlog.base-path}")
     private String basePath;
     @Autowired
     private IUploadFileRepository uploadFileRepository;
-    @Autowired
-    private SystemResourceUtils systemResourceUtils;
     @Autowired
     private ISystemFileFactory systemFileFactory;
     @Autowired
@@ -81,7 +78,7 @@ class UploadControllerTest {
     void get() throws Exception {
         var uploadFile = new UploadFile();
         uploadFile.setName("test-file.txt");
-        uploadFile.setPath(systemResourceUtils.getUploadPath("public").getPath() + File.separator + uploadFile.getName());
+        uploadFile.setPath("public" + File.separator + uploadFile.getName());
         uploadFile.setIsPublic(true);
         uploadFile.setSize(0);
         uploadFile.setSha256("");

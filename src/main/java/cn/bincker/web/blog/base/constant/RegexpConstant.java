@@ -47,4 +47,11 @@ public class RegexpConstant {
     public static final String URL_HOST_VALUE = "https?://([^/]+)";
 
     public static final Pattern URL_HOST = Pattern.compile(URL_HOST_VALUE);
+
+    /**
+     * 表情标题
+     */
+    public static final String EXPRESSION_TITLE_VALUE = "^[\\w-_\\u4e00-\\u9fa5]+$";
+
+    public static final Pattern EXPRESSION_TITLE = Pattern.compile(EXPRESSION_TITLE_VALUE);
 }

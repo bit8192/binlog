@@ -38,7 +38,7 @@ public class ErrorController extends AbstractErrorController {
             ErrorAttributeOptions.Include.MESSAGE
     );
 
-    public ErrorController(ErrorAttributes errorAttributes, UserAuditingListener userAuditingListener, @Value("${system.base-path}") String basePath) {
+    public ErrorController(ErrorAttributes errorAttributes, UserAuditingListener userAuditingListener, @Value("${binlog.base-path}") String basePath) {
         super(errorAttributes);
         this.userAuditingListener = userAuditingListener;
         this.basePath = basePath;
@@ -55,7 +55,7 @@ public class ErrorController extends AbstractErrorController {
         var path = (String) errorAttributes.get("path");
         var status = (Integer) errorAttributes.get("status");
         if(status == HttpStatus.NOT_FOUND.value() && !path.startsWith(basePath)){
-            response.sendRedirect("/?directPath=" + response.encodeURL(path));
+            response.sendRedirect("/?redirectPath=" + response.encodeURL(path));
         }
     }
 
@@ -63,9 +63,8 @@ public class ErrorController extends AbstractErrorController {
     public ResponseEntity<ErrorResult> error(HttpServletRequest request) {
         var errorAttributes = this.getErrorAttributes(request, allErrorAttributeOptions);
         var status = HttpStatus.valueOf((int) errorAttributes.get("status"));
-        var message = (String) errorAttributes.get("message");
-        if(message.equals("No message available")) message = "系统错误";
-        return new ResponseEntity<>(new ErrorResult(message), status);
+//        log.error(errorAttributes.);
+        return new ResponseEntity<>(new ErrorResult("系统错误"), status);
     }
 
     @ResponseStatus

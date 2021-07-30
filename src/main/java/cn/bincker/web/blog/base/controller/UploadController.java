@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("${system.base-path}/files")
+@RequestMapping("${binlog.base-path}/files")
 public class UploadController {
     private final IUploadService uploadService;
 

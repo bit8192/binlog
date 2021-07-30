@@ -46,7 +46,7 @@ public class ArticleClassControllerTest {
     private IArticleClassRepository articleClassRepository;
     @Autowired
     private ObjectMapper objectMapper;
-    @Value("${system.base-path}")
+    @Value("${binlog.base-path}")
     private String basePath;
 
     @BeforeEach

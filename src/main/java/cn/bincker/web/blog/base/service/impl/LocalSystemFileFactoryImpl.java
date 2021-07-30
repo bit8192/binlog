@@ -1,43 +1,44 @@
-package cn.bincker.web.blog.netdisk.service.impl;
+package cn.bincker.web.blog.base.service.impl;
 
 import cn.bincker.web.blog.base.service.ISystemCacheService;
 import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
-import cn.bincker.web.blog.netdisk.entity.ISystemFile;
-import cn.bincker.web.blog.netdisk.service.ISystemFileFactory;
+import cn.bincker.web.blog.base.entity.ISystemFile;
+import cn.bincker.web.blog.base.service.ISystemFileFactory;
+import cn.bincker.web.blog.utils.FileUtils;
 import cn.bincker.web.blog.utils.RequestUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
-import cn.bincker.web.blog.netdisk.entity.LocalSystemFileImpl;
+import cn.bincker.web.blog.base.entity.LocalSystemFileImpl;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.Duration;
 
 @Service
-@ConditionalOnProperty(value = "netdisk.type", havingValue = "Local")
+@ConditionalOnProperty(value = "binlog.files.type", havingValue = "Local")
 public class LocalSystemFileFactoryImpl implements ISystemFileFactory {
     public static final String CACHE_KEY_DOWNLOAD_CODE = "DOWNLOAD-FILE-CODE-";
     private final ISystemCacheService systemCacheService;
     private final String basePath;
 
-    public LocalSystemFileFactoryImpl(ISystemCacheService systemCacheService, @Value("${system.base-path}") String basePath) {
+    public LocalSystemFileFactoryImpl(ISystemCacheService systemCacheService, @Value("${binlog.base-path}") String basePath) {
         this.systemCacheService = systemCacheService;
         this.basePath = basePath;
     }
 
     @Override
-    public ISystemFile fromPath(String child) {
-        return new LocalSystemFileImpl(child);
+    public ISystemFile fromPath(String path) {
+        return new LocalSystemFileImpl(path);
     }
 
     @Override
-    public ISystemFile fromPath(String path, String child) {
-        return new LocalSystemFileImpl(path, child);
+    public ISystemFile fromPath(String ...paths) {
+        return fromPath(FileUtils.join(paths));
     }
 
     @Override
     public ISystemFile fromNetDiskFile(NetDiskFile netDiskFile) {
-        return new LocalSystemFileImpl(netDiskFile);
+        return fromPath(netDiskFile.getPath());
     }
 
     @Override
@@ -50,5 +51,10 @@ public class LocalSystemFileFactoryImpl implements ISystemFileFactory {
 
     private String generateDownloadKey(){
         return Long.toHexString(System.nanoTime());
+    }
+
+    @Override
+    public String getDownloadUrl(String path) {
+        return null;
     }
 }

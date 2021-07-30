@@ -8,7 +8,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("${system.base-path}/sub-comments")
+@RequestMapping("${binlog.base-path}/sub-comments")
 public class ArticleSubCommentController {
     private final IArticleSubCommentService articleSubCommentService;
 

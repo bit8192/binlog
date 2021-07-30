@@ -1,4 +1,4 @@
-package cn.bincker.web.blog.netdisk.entity;
+package cn.bincker.web.blog.base.entity;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;

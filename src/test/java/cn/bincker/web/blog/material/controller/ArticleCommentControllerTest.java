@@ -50,7 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ArticleCommentControllerTest {
     private MockMvc mockMvc;
 
-    @Value("${system.base-path}")
+    @Value("${binlog.base-path}")
     private String basePath;
 
     @Autowired

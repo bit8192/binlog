@@ -1,4 +1,4 @@
-package cn.bincker.web.blog.netdisk.enumeration;
+package cn.bincker.web.blog.base.enumeration;
 
 public enum FileSystemTypeEnum {
     LOCAL,

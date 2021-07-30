@@ -2,8 +2,6 @@ package cn.bincker.web.blog.netdisk.entity;
 
 import cn.bincker.web.blog.base.entity.AuditEntity;
 import cn.bincker.web.blog.base.entity.BaseUser;
-import cn.bincker.web.blog.netdisk.enumeration.FileSystemTypeEnum;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.util.StringUtils;
@@ -25,10 +23,6 @@ public class NetDiskFile extends AuditEntity {
     private String path;
     @Column(nullable = false)
     private Boolean isDirectory = true;
-
-    @JsonIgnore
-    @Enumerated(EnumType.STRING)
-    private FileSystemTypeEnum storageLocation;
 
     /**
      * 文件后缀，全用小写，方便查询

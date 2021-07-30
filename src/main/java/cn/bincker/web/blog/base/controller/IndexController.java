@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @RestController
-@RequestMapping("${system.base-path}")
+@RequestMapping("${binlog.base-path}")
 public class IndexController {
     private final IVerifyCode<?> verifyCode;
     private final SystemProfile profile;

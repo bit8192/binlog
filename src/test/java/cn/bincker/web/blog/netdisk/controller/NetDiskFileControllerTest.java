@@ -4,16 +4,14 @@ import cn.bincker.web.blog.AuthenticationTests;
 import cn.bincker.web.blog.base.UserAuditingListener;
 import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.repository.IBaseUserRepository;
-import cn.bincker.web.blog.netdisk.config.properties.NetDiskFileSystemProperties;
 import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
 import cn.bincker.web.blog.netdisk.repository.INetDiskFileRepository;
-import cn.bincker.web.blog.netdisk.service.ISystemFileFactory;
+import cn.bincker.web.blog.base.service.ISystemFileFactory;
 import cn.bincker.web.blog.netdisk.dto.NetDiskFileDto;
 import cn.bincker.web.blog.netdisk.vo.NetDiskFileVo;
 import cn.bincker.web.blog.utils.CommonUtils;
-import cn.bincker.web.blog.utils.SystemResourceUtils;
+import cn.bincker.web.blog.utils.FileUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,17 +53,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class NetDiskFileControllerTest {
     private MockMvc mockMvc;
 
-    @Value("${system.base-path}")
+    @Value("${binlog.base-path}")
     private String basePath;
 
     @Autowired
     private INetDiskFileRepository netDiskFileRepository;
     @Autowired
     private ISystemFileFactory systemFileFactory;
-    @Autowired
-    private SystemResourceUtils systemResourceUtils;
-    @Autowired
-    private NetDiskFileSystemProperties netDiskFileSystemProperties;
     @Autowired
     private UserAuditingListener userAuditingListener;
     @Autowired
@@ -211,7 +205,7 @@ public class NetDiskFileControllerTest {
                 ))
                 .andReturn();
         var responseVo = objectMapper.readValue(result.getResponse().getContentAsString(), NetDiskFileVo.class);
-        var topDir = systemFileFactory.fromPath(systemResourceUtils.getUploadPath(user.getUsername() + File.separator + netDiskFileDto.getName()).getPath());
+        var topDir = systemFileFactory.fromPath(user.getUsername(), netDiskFileDto.getName());
 //        确保创建成功
         System.out.println(topDir.getPath());
         assertTrue(topDir.exists());
@@ -380,7 +374,7 @@ public class NetDiskFileControllerTest {
             netDiskFile.setParent(parent);
             setParent(netDiskFile, parent);
         }else{
-            netDiskFile.setPath(systemResourceUtils.getUploadPath(user.getUsername()).getPath() + File.separator + netDiskFile.getName());
+            netDiskFile.setPath(FileUtils.join(user.getUsername(), netDiskFile.getName()));
         }
         netDiskFile.setPossessor(user);
         var file = systemFileFactory.fromNetDiskFile(netDiskFile);
@@ -395,13 +389,12 @@ public class NetDiskFileControllerTest {
         var netDiskFile = new NetDiskFile();
         netDiskFile.setName(name);
         netDiskFile.setIsDirectory(false);
-        netDiskFile.setStorageLocation(netDiskFileSystemProperties.getType());
         if(parent != null){
             netDiskFile.setPath(parent.getPath() + File.separator + name);
             netDiskFile.setParent(parent);
             setParent(netDiskFile, parent);
         }else{
-            netDiskFile.setPath(systemResourceUtils.getUploadPath(user.getUsername()).getPath() + File.separator + name);
+            netDiskFile.setPath(FileUtils.join(user.getUsername(), name));
         }
         netDiskFile.setMediaType("");
         netDiskFile.setSize(content.length());

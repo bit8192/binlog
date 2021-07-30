@@ -27,7 +27,7 @@ import java.time.Duration;
 
 @ConditionalOnBean(IQQAuthorizeService.class)
 @Controller
-@RequestMapping("${system.base-path}/authorize/qq")
+@RequestMapping("${binlog.base-path}/authorize/qq")
 public class QQAuthorizeController{
     private static final String CACHE_KEY_QQ_AUTHORIZE_STATE = "QQ-AUTHORIZE-STATE-";
     private static final long STATE_ALIVE_TIMEOUT = 10 * 60 * 1000L;
@@ -36,7 +36,7 @@ public class QQAuthorizeController{
     private final IBaseUserService userService;
     private final ISystemCacheService systemCacheService;
 
-    public QQAuthorizeController(@Value("${system.base-path}") String basePath, IQQAuthorizeService qqAuthorizeService, IBaseUserService userService, ISystemCacheService systemCacheService) {
+    public QQAuthorizeController(@Value("${binlog.base-path}") String basePath, IQQAuthorizeService qqAuthorizeService, IBaseUserService userService, ISystemCacheService systemCacheService) {
         this.basePath = basePath;
         this.qqAuthorizeService = qqAuthorizeService;
         this.userService = userService;

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Collection;
 
 @RestController
-@RequestMapping("${system.base-path}/tags")
+@RequestMapping("${binlog.base-path}/tags")
 public class TagController {
     private final ITagService tagService;
 

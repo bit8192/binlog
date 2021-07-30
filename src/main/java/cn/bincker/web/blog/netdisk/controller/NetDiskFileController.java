@@ -5,12 +5,13 @@ import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.exception.BadRequestException;
 import cn.bincker.web.blog.base.exception.ForbiddenException;
 import cn.bincker.web.blog.base.exception.NotFoundException;
+import cn.bincker.web.blog.base.exception.SystemException;
 import cn.bincker.web.blog.base.service.ISystemCacheService;
 import cn.bincker.web.blog.base.vo.ValueVo;
-import cn.bincker.web.blog.netdisk.config.properties.NetDiskFileSystemProperties;
+import cn.bincker.web.blog.base.config.SystemFileProperties;
 import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
 import cn.bincker.web.blog.netdisk.service.INetDiskFileService;
-import cn.bincker.web.blog.netdisk.service.ISystemFileFactory;
+import cn.bincker.web.blog.base.service.ISystemFileFactory;
 import cn.bincker.web.blog.netdisk.dto.NetDiskFileDto;
 import cn.bincker.web.blog.netdisk.dto.valid.CreateDirectoryValid;
 import cn.bincker.web.blog.netdisk.dto.valid.UploadFileValid;
@@ -33,23 +34,23 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static cn.bincker.web.blog.netdisk.service.impl.LocalSystemFileFactoryImpl.CACHE_KEY_DOWNLOAD_CODE;
+import static cn.bincker.web.blog.base.service.impl.LocalSystemFileFactoryImpl.CACHE_KEY_DOWNLOAD_CODE;
 
 @RestController
-@RequestMapping("${system.base-path}/net-disk-files")
+@RequestMapping("${binlog.base-path}/net-disk-files")
 public class NetDiskFileController {
     private static final Logger log = LoggerFactory.getLogger(NetDiskFileController.class);
 
     private final INetDiskFileService netDiskFileService;
     private final ISystemFileFactory systemFileFactory;
     private final ISystemCacheService systemCacheService;
-    private final NetDiskFileSystemProperties netDiskFileSystemProperties;
+    private final SystemFileProperties systemFileProperties;
 
-    public NetDiskFileController(INetDiskFileService netDiskFileService, ISystemFileFactory systemFileFactory, ISystemCacheService systemCacheService, NetDiskFileSystemProperties netDiskFileSystemProperties) {
+    public NetDiskFileController(INetDiskFileService netDiskFileService, ISystemFileFactory systemFileFactory, ISystemCacheService systemCacheService, SystemFileProperties systemFileProperties) {
         this.netDiskFileService = netDiskFileService;
         this.systemFileFactory = systemFileFactory;
         this.systemCacheService = systemCacheService;
-        this.netDiskFileSystemProperties = netDiskFileSystemProperties;
+        this.systemFileProperties = systemFileProperties;
     }
 
     @GetMapping(value = "{id}")
@@ -136,10 +137,10 @@ public class NetDiskFileController {
             var matcher = RegexpConstant.URL_HOST.matcher(referer);
             if(!matcher.find()) throw new BadRequestException();
             var host = matcher.group(1);
-            if(Arrays.stream(netDiskFileSystemProperties.getAllowReferer()).noneMatch(p-> CommonUtils.simpleMatch(p, host))){
+            if(Arrays.stream(systemFileProperties.getAllowReferer()).noneMatch(p-> CommonUtils.simpleMatch(p, host))){
                 throw new ForbiddenException();
             }
-        }else if(!netDiskFileSystemProperties.getAllowEmptyReferer()) throw new ForbiddenException();
+        }else if(!systemFileProperties.getAllowEmptyReferer()) throw new ForbiddenException();
         outputFile(netDiskFile, user, response, false);
     }
 
@@ -163,7 +164,7 @@ public class NetDiskFileController {
             in.transferTo(out);
         } catch (IOException e) {
             log.error("下载文件失败: netDiskFileId=" + netDiskFile.getId() + "\tpath=" + netDiskFile.getPath());
-            throw new RuntimeException(e);
+            throw new SystemException(e);
         }
     }
 

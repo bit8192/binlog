@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 
 @Component
-@ConfigurationProperties("system.verify-code")
+@ConfigurationProperties("binlog.verify-code")
 @Data
 public class VerifyCodeConfigProperties {
     private int width = 350;

@@ -47,7 +47,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class ArticleSubCommentControllerTest {
     private MockMvc mockMvc;
-    @Value("${system.base-path}")
+    @Value("${binlog.base-path}")
     private String basePath;
     @Autowired
     private IBaseUserRepository userRepository;

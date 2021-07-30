@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("${system.base-path}/users")
+@RequestMapping("${binlog.base-path}/users")
 public class UserController {
     private final IBaseUserService baseUserService;
 

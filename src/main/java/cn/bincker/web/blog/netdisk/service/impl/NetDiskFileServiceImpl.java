@@ -1,31 +1,28 @@
 package cn.bincker.web.blog.netdisk.service.impl;
 
 import cn.bincker.web.blog.base.UserAuditingListener;
+import cn.bincker.web.blog.base.config.SystemFileProperties;
 import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.entity.BaseUser;
-import cn.bincker.web.blog.base.exception.ForbiddenException;
-import cn.bincker.web.blog.base.exception.NotFoundException;
-import cn.bincker.web.blog.base.exception.NotImplementedException;
-import cn.bincker.web.blog.base.exception.UnauthorizedException;
+import cn.bincker.web.blog.base.exception.*;
 import cn.bincker.web.blog.base.repository.IBaseUserRepository;
 import cn.bincker.web.blog.base.vo.EntityLongValueVo;
 import cn.bincker.web.blog.base.vo.ValueVo;
-import cn.bincker.web.blog.netdisk.config.properties.NetDiskFileSystemProperties;
 import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
 import cn.bincker.web.blog.netdisk.exception.DeleteFileFailException;
 import cn.bincker.web.blog.netdisk.exception.MakeDirectoryFailException;
 import cn.bincker.web.blog.netdisk.exception.RenameFileFailException;
 import cn.bincker.web.blog.netdisk.repository.INetDiskFileRepository;
 import cn.bincker.web.blog.netdisk.service.INetDiskFileService;
-import cn.bincker.web.blog.netdisk.entity.ISystemFile;
-import cn.bincker.web.blog.netdisk.service.ISystemFileFactory;
+import cn.bincker.web.blog.base.entity.ISystemFile;
+import cn.bincker.web.blog.base.service.ISystemFileFactory;
 import cn.bincker.web.blog.netdisk.dto.NetDiskFileDto;
 import cn.bincker.web.blog.netdisk.specification.NetDiskFileSpecification;
 import cn.bincker.web.blog.netdisk.vo.NetDiskFileListVo;
 import cn.bincker.web.blog.netdisk.vo.NetDiskFileVo;
 import cn.bincker.web.blog.utils.CommonUtils;
+import cn.bincker.web.blog.utils.DigestUtils;
 import cn.bincker.web.blog.utils.FileUtils;
-import cn.bincker.web.blog.utils.SystemResourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
@@ -39,7 +36,6 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -50,25 +46,21 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
 
     private final INetDiskFileRepository netDiskFileRepository;
     private final UserAuditingListener userAuditingListener;
-    private final SystemResourceUtils systemResourceUtils;
     private final ISystemFileFactory systemFileFactory;
-    private final NetDiskFileSystemProperties netDiskFileSystemProperties;
     private final IBaseUserRepository baseUserRepository;
+    private final SystemFileProperties systemFileProperties;
 
     public NetDiskFileServiceImpl(
             INetDiskFileRepository netDiskFileRepository,
             UserAuditingListener userAuditingListener,
-            SystemResourceUtils systemResourceUtils,
             ISystemFileFactory systemFileFactory,
-            NetDiskFileSystemProperties netDiskFileSystemProperties,
-            IBaseUserRepository baseUserRepository
-    ) {
+            IBaseUserRepository baseUserRepository,
+            SystemFileProperties systemFileProperties) {
         this.netDiskFileRepository = netDiskFileRepository;
         this.userAuditingListener = userAuditingListener;
-        this.systemResourceUtils = systemResourceUtils;
         this.systemFileFactory = systemFileFactory;
-        this.netDiskFileSystemProperties = netDiskFileSystemProperties;
         this.baseUserRepository = baseUserRepository;
+        this.systemFileProperties = systemFileProperties;
     }
 
     @Override
@@ -76,7 +68,8 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
     public NetDiskFileVo createDirectory(NetDiskFileDto dto) {
         var currentUser = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
 
-        var directoryName = dto.getName().replaceAll(RegexpConstant.ILLEGAL_FILE_NAME_CHAR_VALUE, "");
+        if(dto.getName().matches(RegexpConstant.ILLEGAL_FILE_NAME_CHAR_VALUE))
+            throw new BadRequestException("无效文件名");
 
 //        构建实体
         var target = new NetDiskFile();
@@ -91,14 +84,14 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
 //            判断是否有权限创建
             checkWritePermission(currentUser, parent);
             target.setPossessor(parent.getPossessor());
-            targetPath = systemFileFactory.fromPath(parent.getPath() + File.separator + dto.getName());
+            targetPath = systemFileFactory.fromPath(parent.getPath(), dto.getName());
             target.setPath(targetPath.getPath());
             target.setParent(parent);
             setParents(target, parent);
         }
 //        否则路径是用户根路径，父级为空，所有者为自己
         else{
-            targetPath = systemFileFactory.fromPath(systemResourceUtils.getUploadPath(currentUser.getUsername()).getPath(), directoryName);
+            targetPath = systemFileFactory.fromPath(currentUser.getUsername(), dto.getName());
             target.setPath(targetPath.getPath());
             target.setPossessor(currentUser);
         }
@@ -142,9 +135,13 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         var currentUser = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
         String targetPath;
         Optional<NetDiskFile> parentOptional = dto.getParentId() == null ? Optional.empty() : netDiskFileRepository.findById(dto.getParentId());
-        targetPath = parentOptional
-                .map(NetDiskFile::getPath)
-                .orElseGet(() -> systemResourceUtils.getUploadPath(currentUser.getUsername()).getPath());
+        if(parentOptional.isPresent()){
+            targetPath = parentOptional.get().getPath();
+        }else{
+            var targetPathSystemFile = systemFileFactory.fromPath(systemFileProperties.getLocation(), currentUser.getUsername());
+            if(!targetPathSystemFile.exists() && !targetPathSystemFile.mkdirs()) throw new SystemException("创建文件夹失败");
+            targetPath = targetPathSystemFile.getPath();
+        }
         var result = new ArrayList<NetDiskFileVo>(multipartFiles.size());
         for (MultipartFile multipartFile : multipartFiles) {
             //构建uploadFile
@@ -154,8 +151,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
             }else{
                 netDiskFile.setName(UUID.randomUUID().toString());
             }
-            netDiskFile.setPath(targetPath + File.separator + netDiskFile.getName());
-            netDiskFile.setStorageLocation(netDiskFileSystemProperties.getType());
+            netDiskFile.setPath(FileUtils.join(targetPath, netDiskFile.getName()));
             netDiskFile.setSuffix(CommonUtils.getStringSuffix(netDiskFile.getName(), "."));//后缀全用小写，方便查询
             netDiskFile.setMediaType(multipartFile.getContentType());
             netDiskFile.setSize(multipartFile.getSize());
@@ -164,17 +160,15 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
             while (systemFile.exists()){
                 systemFile = systemFileFactory.fromPath(targetPath, FileUtils.nextSerialFileName(systemFile.getName()));
             }
-            try(var in = multipartFile.getInputStream(); var out = systemFile.getOutputStream()){
-                MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
-                var buff = new byte[8192];
-                int len;
-                while ((len = in.read(buff)) > 0){
-                    messageDigest.update(buff, 0, len);
-                    out.write(buff, 0, len);
-                }
-                netDiskFile.setSha256(CommonUtils.bytes2hex(messageDigest.digest()));
+            try(var in = multipartFile.getInputStream()){
+                netDiskFile.setSha256(DigestUtils.sha256Hex(in));
             } catch (IOException | NoSuchAlgorithmException e) {
-                e.printStackTrace();
+                throw new SystemException(e);
+            }
+            try(var in = multipartFile.getInputStream(); var out = systemFile.getOutputStream()){
+                in.transferTo(out);
+            } catch (IOException e) {
+                throw new SystemException(e);
             }
             if(parentOptional.isPresent()){
                 var parent = parentOptional.get();
@@ -301,7 +295,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         if(dto.getParentId() != null || target.getParent() != null){//如果传入parent不为空，或者传入parent未空但原有parent不为空
             if(dto.getParentId() == null){//传入parent为空则移动到根目录
                 target.setParent(null);
-                target.setPath(systemResourceUtils.getUploadPath(currentUser.getUsername() + File.separator + dto.getName()).getPath());
+                target.setPath(FileUtils.join(systemFileProperties.getLocation(), currentUser.getUsername(), dto.getName()));
                 setParents(target, null);
             }else{
                 var parent = netDiskFileRepository.findById(dto.getParentId())

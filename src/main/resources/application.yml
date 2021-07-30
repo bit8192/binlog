@@ -1,6 +1,6 @@
 server:
   port: 80
-system:
+binlog:
   name: Bincker的个人博客
   copy-right: copyright @2021 Bincker
   ipc: 京ICP备1234567890号
@@ -11,11 +11,12 @@ system:
   time-format: HH:mm:ss
   verify-code:
     image-path: ./verify-images
-netdisk:
-  type: local
-  allow-referer:
-    - "*"
-  allow-empty-referer: false
+  files:
+    type: local
+    allow-referer:
+      - "*"
+    allow-empty-referer: false
+    location: upload-file
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -34,7 +35,6 @@ spring:
     active: @profiles.active@
   servlet:
     multipart:
-      location: upload-file
       max-file-size: 20MB
       max-request-size: 24MB
   web:

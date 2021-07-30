@@ -21,7 +21,7 @@ public class VerifyCodeFilter implements Filter {
     private final ObjectMapper objectMapper;
     private final String basePath;
 
-    public VerifyCodeFilter(IVerifyCode<?> verifyCode, ObjectMapper objectMapper, @Value("${system.base-path}") String basePath) {
+    public VerifyCodeFilter(IVerifyCode<?> verifyCode, ObjectMapper objectMapper, @Value("${binlog.base-path}") String basePath) {
         this.verifyCode = verifyCode;
         this.objectMapper = objectMapper;
         this.basePath = basePath;

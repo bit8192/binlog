@@ -1,23 +1,12 @@
-package cn.bincker.web.blog.netdisk.entity;
+package cn.bincker.web.blog.base.entity;
 
-import cn.bincker.web.blog.utils.RequestUtils;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 
 public class LocalSystemFileImpl implements ISystemFile {
     private final File file;
 
-    public LocalSystemFileImpl(NetDiskFile netDiskFile) {
-        this.file = new File(netDiskFile.getPath());
-    }
-
     public LocalSystemFileImpl(String path){
         this.file = new File(path);
-    }
-
-    public LocalSystemFileImpl(String path, String child){
-        this.file = new File(path, child);
     }
 
     @Override

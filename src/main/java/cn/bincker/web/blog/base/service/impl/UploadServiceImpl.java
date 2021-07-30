@@ -1,24 +1,25 @@
 package cn.bincker.web.blog.base.service.impl;
 
 import cn.bincker.web.blog.base.UserAuditingListener;
+import cn.bincker.web.blog.base.config.SystemFileProperties;
 import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.entity.BaseUser;
+import cn.bincker.web.blog.base.entity.ISystemFile;
 import cn.bincker.web.blog.base.entity.UploadFile;
 import cn.bincker.web.blog.base.exception.SystemException;
 import cn.bincker.web.blog.base.repository.IUploadFileRepository;
 import cn.bincker.web.blog.base.service.IUploadService;
 import cn.bincker.web.blog.base.dto.UploadFileDto;
-import cn.bincker.web.blog.netdisk.service.ISystemFileFactory;
+import cn.bincker.web.blog.base.service.ISystemFileFactory;
 import cn.bincker.web.blog.utils.CommonUtils;
 import cn.bincker.web.blog.utils.DateUtils;
+import cn.bincker.web.blog.utils.DigestUtils;
 import cn.bincker.web.blog.utils.FileUtils;
-import cn.bincker.web.blog.utils.SystemResourceUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,27 +29,28 @@ public class UploadServiceImpl implements IUploadService {
     private final IUploadFileRepository repository;
     private final UserAuditingListener userAuditingListener;
     private final DateUtils dateUtils;
-    private final SystemResourceUtils systemResourceUtils;
     private final ISystemFileFactory systemFileFactory;
+    private final SystemFileProperties systemFileProperties;
 
-    public UploadServiceImpl(IUploadFileRepository repository, UserAuditingListener userAuditingListener, DateUtils dateUtils, SystemResourceUtils systemResourceUtils, ISystemFileFactory systemFileFactory) {
+    public UploadServiceImpl(IUploadFileRepository repository, UserAuditingListener userAuditingListener, DateUtils dateUtils, ISystemFileFactory systemFileFactory, SystemFileProperties systemFileProperties) {
         this.repository = repository;
         this.userAuditingListener = userAuditingListener;
         this.dateUtils = dateUtils;
-        this.systemResourceUtils = systemResourceUtils;
         this.systemFileFactory = systemFileFactory;
+        this.systemFileProperties = systemFileProperties;
     }
 
     @Override
     public List<UploadFileDto> upload(Collection<MultipartFile> files, Boolean isPublic) {
-        String uploadDir;
+        ISystemFile uploadDir;
 
         Optional<BaseUser> userOptional = userAuditingListener.getCurrentAuditor();
         uploadDir = userOptional
-                .map(baseUser -> systemResourceUtils.getUploadPath(baseUser.getUsername() + File.separator + "public" + File.separator + dateUtils.today()).getPath())
-                .orElseGet(() -> systemResourceUtils.getUploadPath("public" + File.separator + dateUtils.today()).getPath());
+                .map(baseUser -> systemFileFactory.fromPath(systemFileProperties.getLocation(), baseUser.getUsername(), "public", dateUtils.today()))
+                .orElseGet(() -> systemFileFactory.fromPath(systemFileProperties.getLocation(), "public", dateUtils.today()));
 
-        String finalUploadDir = uploadDir;
+        if(!uploadDir.exists() && !uploadDir.mkdirs()) throw new SystemException("创建目录失败: path=" + uploadDir.getPath());
+        String finalUploadDir = uploadDir.getPath();
         return files.stream().map(multipartFile -> {
             UploadFile uploadFile = new UploadFile();
             uploadFile.setIsPublic(userOptional.isPresent() ? isPublic : true);//权限只有登录的用户可以设置, 否则都是公开
@@ -66,22 +68,17 @@ public class UploadServiceImpl implements IUploadService {
             uploadFile.setName(fileName);
             uploadFile.setSuffix(CommonUtils.getStringSuffix(fileName, "."));
             uploadFile.setMediaType(multipartFile.getContentType());
-            try(
-                    InputStream inputStream = new BufferedInputStream(multipartFile.getInputStream());
-                    OutputStream outputStream = targetFile.getOutputStream()
-            ){
-                MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
-                byte[] buf = new byte[8192];
-                int len;
-                while ((len = inputStream.read(buf)) > 0){
-                    messageDigest.update(buf, 0, len);
-                    outputStream.write(buf, 0, len);
-                }
-                uploadFile.setSha256(CommonUtils.bytes2hex(messageDigest.digest()));
-                repository.save(uploadFile);
+            try(var in = multipartFile.getInputStream()){
+                uploadFile.setSha256(DigestUtils.sha256Hex(in));
             } catch (IOException | NoSuchAlgorithmException e) {
                 throw new SystemException(e);
             }
+            try(var in = multipartFile.getInputStream(); var out = targetFile.getOutputStream()){
+                in.transferTo(out);
+            } catch (IOException e) {
+                throw new SystemException(e);
+            }
+            repository.save(uploadFile);
 
             return UploadServiceImpl.getDto(uploadFile);
         }).collect(Collectors.toList());

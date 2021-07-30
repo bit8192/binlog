@@ -51,7 +51,7 @@ class MessageControllerTest {
     private IMessageRepository messageRepository;
     @Autowired
     private UserAuditingListener userAuditingListener;
-    @Value("${system.base-path}")
+    @Value("${binlog.base-path}")
     private String basePath;
     @Autowired
     private ITagRepository tagRepository;

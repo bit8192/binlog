@@ -19,7 +19,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     private final SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer;
     private final UserDetailsService userDetailsService;
 
-    public SpringSecurityConfig(AuthenticationHandler authenticationHandler, VerifyCodeFilter verifyCodeFilter, @Value("${system.base-path}") String basePath, SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer, UserDetailsService userDetailsService) {
+    public SpringSecurityConfig(AuthenticationHandler authenticationHandler, VerifyCodeFilter verifyCodeFilter, @Value("${binlog.base-path}") String basePath, SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer, UserDetailsService userDetailsService) {
         this.authenticationHandler = authenticationHandler;
         this.verifyCodeFilter = verifyCodeFilter;
         this.basePath = basePath;

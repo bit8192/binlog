@@ -36,7 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(RestDocumentationExtension.class)
 public class AuthenticationTests {
     private MockMvc mock;
-    @Value("${system.base-path}")
+    @Value("${binlog.base-path}")
     private String basePath;
 
     @BeforeEach
