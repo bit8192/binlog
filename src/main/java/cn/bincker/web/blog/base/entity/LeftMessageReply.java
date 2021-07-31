@@ -1,20 +1,20 @@
 package cn.bincker.web.blog.base.entity;
 
-import cn.bincker.web.blog.base.UserAuditingListener;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.CreatedBy;
 
-import javax.persistence.EntityListeners;
+import javax.persistence.Column;
+import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
-import javax.persistence.MappedSuperclass;
+import javax.validation.constraints.NotEmpty;
 
-@EntityListeners(UserAuditingListener.class)
 @EqualsAndHashCode(callSuper = true)
-@MappedSuperclass
+@Entity
 @Data
-public class Comment<T extends BaseEntity> extends BaseEntity{
+public class LeftMessageReply extends BaseEntity{
+
     private String content;
 
     /**
@@ -22,7 +22,7 @@ public class Comment<T extends BaseEntity> extends BaseEntity{
      */
     @ManyToOne
     @JsonIgnore
-    private T target;
+    private LeftMessage comment;
 
     private long agreedNum;
 
@@ -32,5 +32,11 @@ public class Comment<T extends BaseEntity> extends BaseEntity{
     @CreatedBy
     private BaseUser createdUser;
 
+    private Boolean recommend;
+
+    @Column(nullable = false)
     private Boolean removed;
+
+    @Column(nullable = false)
+    private Boolean isAnonymous;
 }

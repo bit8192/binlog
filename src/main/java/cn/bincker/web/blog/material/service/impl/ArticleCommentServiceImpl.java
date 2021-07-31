@@ -160,7 +160,7 @@ public class ArticleCommentServiceImpl implements IArticleCommentService {
      * 更新评论点赞和踩的数量
      */
     private void updateCommentAgreeAndTreadNum(Long id, ArticleComment comment) {
-        synchronized (SynchronizedPrefixConstant.TOGGLE_ARTICLE_COMMENT_AGREE_AND_TREAD + id) {
+        synchronized ((SynchronizedPrefixConstant.TOGGLE_ARTICLE_COMMENT_COUNT_AGREE_AND_TREAD + id).intern()) {
             //更新点赞数和踩数量
             var agreeNum = articleCommentAgreeRepository.countByCommentId(id);
             var treadNum = articleCommentTreadRepository.countByCommentId(id);

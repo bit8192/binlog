@@ -184,7 +184,7 @@ public class ArticleSubCommentServiceImpl implements IArticleSubCommentService {
      * 更新子评论赞和踩的数量
      */
     private void updateArticleSubCommentAgreeAndTreadNum(Long id, ArticleSubComment comment) {
-        synchronized (SynchronizedPrefixConstant.TOGGLE_ARTICLE_SUB_COMMENT_AGREE_AND_TREAD + id) {
+        synchronized ((SynchronizedPrefixConstant.TOGGLE_ARTICLE_SUB_COMMENT_COUNT_AGREE_AND_TREAD + id).intern()) {
             //重新统计数量
             var agreeNum = articleSubCommentAgreeRepository.countByComment(comment);
             var treadNum = articleSubCommentTreadRepository.countByComment(comment);

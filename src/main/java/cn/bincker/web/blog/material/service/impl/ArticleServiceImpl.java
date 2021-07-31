@@ -239,7 +239,7 @@ public class ArticleServiceImpl implements IArticleService {
         }else{
             articleAgreeRepository.deleteById(articleAgreeOptional.get().getId());
         }
-        synchronized (SynchronizedPrefixConstant.UPDATE_ARTICLE_AGREE + articleId){
+        synchronized ((SynchronizedPrefixConstant.UPDATE_ARTICLE_AGREE + articleId).intern()){
             article.setAgreedNum(articleAgreeRepository.countByArticleId(articleId));
             articleRepository.save(article);
         }

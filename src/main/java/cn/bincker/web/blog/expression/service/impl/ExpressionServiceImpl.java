@@ -159,7 +159,7 @@ public class ExpressionServiceImpl implements IExpressionService {
             agree.setExpression(target);
             expressionAgreeRepository.save(agree);
         }
-        synchronized (SynchronizedPrefixConstant.TOGGLE_EXPRESSION_AGREE + id){
+        synchronized ((SynchronizedPrefixConstant.TOGGLE_EXPRESSION_AGREE + id).intern()){
             target = expressionRepository.getOne(id);
             target.setAgreedNum(expressionAgreeRepository.countByExpression(target));
             expressionRepository.save(target);

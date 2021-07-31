@@ -1,5 +1,7 @@
 package cn.bincker.web.blog.utils;
 
+import cn.bincker.web.blog.base.entity.Role;
+
 import java.util.Stack;
 
 public class CommonUtils {
@@ -15,7 +17,18 @@ public class CommonUtils {
         return str.substring(index + 1);
     }
 
-
+    /**
+     * 检测角色
+     */
+    @SuppressWarnings({"ConstantConditions", "EqualsBetweenInconvertibleTypes"})
+    public static boolean checkRoleIn(Iterable<Role> checkRoles, Role.RoleEnum... roles){
+        for (Role.RoleEnum role : roles) {
+            for (Role checkRole : checkRoles) {
+                if(role.equals(checkRole)) return true;
+            }
+        }
+        return false;
+    }
 
 
     /**
