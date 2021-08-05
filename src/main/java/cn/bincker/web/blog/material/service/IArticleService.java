@@ -1,7 +1,10 @@
 package cn.bincker.web.blog.material.service;
 
+import cn.bincker.web.blog.base.dto.CommentDto;
+import cn.bincker.web.blog.base.vo.CommentVo;
 import cn.bincker.web.blog.base.vo.ValueVo;
 import cn.bincker.web.blog.material.dto.ArticleDto;
+import cn.bincker.web.blog.material.entity.Article;
 import cn.bincker.web.blog.material.vo.ArticleListVo;
 import cn.bincker.web.blog.material.vo.ArticleVo;
 import org.springframework.data.domain.Page;
@@ -34,4 +37,14 @@ public interface IArticleService {
      * 提交阅读，增加阅读量
      */
     void view(Long articleId);
+
+    /**
+     * 查询评论
+     */
+    Page<CommentVo> getCommentPage(Long articleId, Pageable pageable);
+
+    /**
+     * 评论
+     */
+    CommentVo commenting(Long articleId, CommentDto dto);
 }

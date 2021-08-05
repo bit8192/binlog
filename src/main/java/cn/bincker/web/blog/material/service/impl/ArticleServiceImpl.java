@@ -2,13 +2,18 @@ package cn.bincker.web.blog.material.service.impl;
 
 import cn.bincker.web.blog.base.UserAuditingListener;
 import cn.bincker.web.blog.base.constant.RegexpConstant;
+import cn.bincker.web.blog.base.dto.CommentDto;
 import cn.bincker.web.blog.base.entity.BaseUser;
+import cn.bincker.web.blog.base.entity.Comment;
 import cn.bincker.web.blog.base.entity.Message;
+import cn.bincker.web.blog.base.event.MessageEvent;
 import cn.bincker.web.blog.base.exception.BadRequestException;
 import cn.bincker.web.blog.base.exception.ForbiddenException;
 import cn.bincker.web.blog.base.exception.NotFoundException;
 import cn.bincker.web.blog.base.exception.UnauthorizedException;
-import cn.bincker.web.blog.base.repository.IMessageRepository;
+import cn.bincker.web.blog.base.repository.*;
+import cn.bincker.web.blog.base.service.ICommentService;
+import cn.bincker.web.blog.base.vo.CommentVo;
 import cn.bincker.web.blog.base.vo.ValueVo;
 import cn.bincker.web.blog.material.constant.SynchronizedPrefixConstant;
 import cn.bincker.web.blog.material.entity.Article;
@@ -26,6 +31,7 @@ import cn.bincker.web.blog.material.vo.ArticleVo;
 import cn.bincker.web.blog.material.vo.TagVo;
 import cn.bincker.web.blog.netdisk.repository.INetDiskFileRepository;
 import cn.bincker.web.blog.netdisk.vo.NetDiskFileVo;
+import org.springframework.context.ApplicationContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -47,16 +53,30 @@ public class ArticleServiceImpl implements IArticleService {
     private final IArticleClassRepository articleClassRepository;
     private final INetDiskFileRepository netDiskFileRepository;
     private final IArticleAgreeRepository articleAgreeRepository;
-    private final IMessageRepository messageRepository;
+    private final ICommentReplyRepository commentReplyRepository;
+    private final ICommentAgreeRepository commentAgreeRepository;
+    private final ICommentTreadRepository commentTreadRepository;
+    private final ICommentReplyAgreeRepository commentReplyAgreeRepository;
+    private final ICommentReplyTreadRepository commentReplyTreadRepository;
+    private final IBaseUserRepository userRepository;
+    private final ICommentRepository commentRepository;
+    private final ApplicationContext applicationContext;
 
-    public ArticleServiceImpl(UserAuditingListener userAuditingListener, IArticleRepository articleRepository, ITagRepository tagRepository, IArticleClassRepository articleClassRepository, INetDiskFileRepository netDiskFileRepository, IArticleAgreeRepository articleAgreeRepository, IMessageRepository messageRepository) {
+    public ArticleServiceImpl(UserAuditingListener userAuditingListener, IArticleRepository articleRepository, ITagRepository tagRepository, IArticleClassRepository articleClassRepository, INetDiskFileRepository netDiskFileRepository, IArticleAgreeRepository articleAgreeRepository, ICommentReplyRepository commentReplyRepository, ICommentAgreeRepository commentAgreeRepository, ICommentTreadRepository commentTreadRepository, ICommentReplyAgreeRepository commentReplyAgreeRepository, ICommentReplyTreadRepository commentReplyTreadRepository, IBaseUserRepository userRepository, ICommentRepository commentRepository, ApplicationContext applicationContext) {
         this.userAuditingListener = userAuditingListener;
         this.articleRepository = articleRepository;
         this.tagRepository = tagRepository;
         this.articleClassRepository = articleClassRepository;
         this.netDiskFileRepository = netDiskFileRepository;
         this.articleAgreeRepository = articleAgreeRepository;
-        this.messageRepository = messageRepository;
+        this.commentReplyRepository = commentReplyRepository;
+        this.commentAgreeRepository = commentAgreeRepository;
+        this.commentTreadRepository = commentTreadRepository;
+        this.commentReplyAgreeRepository = commentReplyAgreeRepository;
+        this.commentReplyTreadRepository = commentReplyTreadRepository;
+        this.userRepository = userRepository;
+        this.commentRepository = commentRepository;
+        this.applicationContext = applicationContext;
     }
 
     @Override
@@ -226,15 +246,19 @@ public class ArticleServiceImpl implements IArticleService {
             var articleAgree = new ArticleAgree();
             articleAgree.setArticle(article);
             articleAgreeRepository.save(articleAgree);
-            //发送点赞消息提醒
+//            触发点赞消息
             if(!currentUser.getId().equals(article.getCreatedUser().getId())) {
-                var msg = new Message();
-                msg.setType(Message.Type.ARTICLE_AGREE);
-                msg.setFromUser(currentUser);
-                msg.setToUser(article.getCreatedUser());
-                msg.setRelevantId(articleId);
-                msg.setIsRead(false);
-                messageRepository.save(msg);
+                var messageEvent = new MessageEvent(
+                        applicationContext,
+                        null,
+                        Message.Type.ARTICLE_AGREE,
+                        currentUser,
+                        article.getCreatedUser(),
+                        null,
+                        article.getId(),
+                        articleAgree.getId()
+                );
+                applicationContext.publishEvent(messageEvent);
             }
         }else{
             articleAgreeRepository.deleteById(articleAgreeOptional.get().getId());
@@ -251,5 +275,44 @@ public class ArticleServiceImpl implements IArticleService {
         var article = articleRepository.findById(articleId).orElseThrow(NotFoundException::new);
         article.setViewingNum(article.getViewingNum() + 1);
         articleRepository.save(article);
+    }
+
+    @Override
+    public Page<CommentVo> getCommentPage(Long articleId, Pageable pageable) {
+        var commentPage = articleRepository.selectCommentPage(articleId, pageable);
+        var userOptional = userAuditingListener.getCurrentAuditor();
+        var voPage = ICommentService.handleComment(commentReplyRepository, commentAgreeRepository, commentTreadRepository, commentReplyAgreeRepository, commentReplyTreadRepository, userRepository, userOptional, commentPage);
+        ICommentService.handleMember(userRepository, voPage);
+        return voPage;
+    }
+
+    @Override
+    @Transactional
+    public CommentVo commenting(Long articleId, CommentDto dto) {
+        var currentUser = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
+        var article = articleRepository.findById(articleId).orElseThrow(NotFoundException::new);
+        dto.setIsAnonymous(false);//文章评论不能匿名
+        var comment = ICommentService.commenting(commentRepository, Comment.Type.ARTICLE, dto);
+        article.getComments().add(comment);
+        articleRepository.save(article);
+        var vo = new CommentVo(comment);
+        vo.setIsAgreed(false);
+        vo.setIsTrod(false);
+        ICommentService.handleMember(userRepository, Collections.singletonList(vo));
+//        触发消息
+        if(!currentUser.getId().equals(article.getCreatedUser().getId())) {
+            var messageEvent = new MessageEvent(
+                    applicationContext,
+                    dto.getContent(),
+                    Message.Type.ARTICLE_COMMENT,
+                    comment.getCreatedUser(),
+                    article.getCreatedUser(),
+                    null,
+                    article.getId(),
+                    comment.getId()
+            );
+            applicationContext.publishEvent(messageEvent);
+        }
+        return vo;
     }
 }

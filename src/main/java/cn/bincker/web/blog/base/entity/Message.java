@@ -25,11 +25,27 @@ public class Message extends BaseEntity{
 
     /**
      * 相关对象ID
-     * 评论文章消息存储该评论的id
-     * 评论回复存储回复的id
-     * 子评论回复存储回复的id
+     * 评论文章: null
+     * 回复文章评论： 文章id
+     * 回复图片评论： 图片id
      */
-    private Long relevantId;
+    private Long relatedTargetId;
+
+    /**
+     * 起始目标ID
+     * 评论文章：文章id
+     * 回复文章评论：评论id
+     * 文章点赞：文章id
+     */
+    private Long originalTargetId;
+
+    /**
+     * 目标ID
+     * 评论文章：评论id
+     * 回复文章评论：回复id
+     * 文章点赞：点赞id
+     */
+    private Long targetId;
 
     /**
      * 是否已读

@@ -24,7 +24,7 @@ public class MessageVo {
         if(message.getFromUser() != null) this.fromUser = new BaseUserVo(message.getFromUser());
         this.toUser = new BaseUserVo(message.getToUser());
         this.isRead = message.getIsRead();
-        this.relevantId = message.getRelevantId();
+        this.relevantId = message.getRelatedTargetId();
         this.type = message.getType();
     }
 }

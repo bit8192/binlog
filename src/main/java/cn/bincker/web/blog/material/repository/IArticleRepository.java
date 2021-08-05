@@ -1,6 +1,7 @@
 package cn.bincker.web.blog.material.repository;
 
 import cn.bincker.web.blog.base.entity.BaseUser;
+import cn.bincker.web.blog.base.entity.Comment;
 import cn.bincker.web.blog.material.entity.Article;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,4 +48,10 @@ public interface IArticleRepository extends JpaRepository<Article, Long> {
     Page<Article> findAllByTagsIdWithUserId(Long userId, Long tagId, Pageable pageable);
 
     Long countByCreatedUser(BaseUser user);
+
+    @Query("select c from Article a join a.comments c where a.id = :articleId")
+    Page<Comment> selectCommentPage(Long articleId, Pageable pageable);
+
+    @Query("from Article a join a.comments c where c.id = :commentId")
+    Optional<Article> findByCommentId(Long commentId);
 }

@@ -37,10 +37,10 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         final var blogger = Role.RoleEnum.BLOGGER.toString();
         final var admin = Role.RoleEnum.ADMIN.toString();
         http.authorizeRequests()
-                .antMatchers(HttpMethod.POST, "**/*").authenticated()
-                .antMatchers(HttpMethod.PUT, "**/*").authenticated()
-                .antMatchers(HttpMethod.PATCH, "**/*").authenticated()
-                .antMatchers(HttpMethod.DELETE, "**/*").authenticated()
+                .antMatchers(HttpMethod.POST, "**").authenticated()
+                .antMatchers(HttpMethod.PUT, "**").authenticated()
+                .antMatchers(HttpMethod.PATCH, "**").authenticated()
+                .antMatchers(HttpMethod.DELETE, "**").authenticated()
                 .antMatchers(HttpMethod.POST, basePath + "/article-classes", basePath + "/article", basePath + "/tags").hasAnyRole(admin, blogger)
                 .antMatchers(HttpMethod.PUT, basePath + "/article-classes", basePath + "/article", basePath + "/tags").hasAnyRole(admin, blogger)
                 .antMatchers(HttpMethod.PATCH, basePath + "/article-classes", basePath + "/article", basePath + "/tags").hasAnyRole(admin, blogger)

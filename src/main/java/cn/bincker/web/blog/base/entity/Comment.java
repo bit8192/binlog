@@ -1,36 +1,59 @@
 package cn.bincker.web.blog.base.entity;
 
 import cn.bincker.web.blog.base.UserAuditingListener;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.CreatedBy;
 
-import javax.persistence.EntityListeners;
-import javax.persistence.ManyToOne;
-import javax.persistence.MappedSuperclass;
+import javax.persistence.*;
+import javax.validation.constraints.NotEmpty;
 
-@EntityListeners(UserAuditingListener.class)
+/**
+ * 留言
+ */
 @EqualsAndHashCode(callSuper = true)
-@MappedSuperclass
+@Entity
 @Data
-public class Comment<T extends BaseEntity> extends BaseEntity{
+@EntityListeners(UserAuditingListener.class)
+public class Comment extends BaseEntity {
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Type type;
+
+    @NotEmpty
+    @Column(nullable = false)
     private String content;
 
-    /**
-     * 评论对象
-     */
-    @ManyToOne
-    @JsonIgnore
-    private T target;
-
-    private long agreedNum;
-
-    private long treadNum;
-
-    @ManyToOne
     @CreatedBy
+    @ManyToOne
     private BaseUser createdUser;
 
+    @Column(nullable = false)
+    private Long agreedNum;
+
+    @Column(nullable = false)
+    private Long treadNum;
+
+    @Column(nullable = false)
     private Boolean removed;
+
+    /**
+     * 匿名评论
+     */
+    @Column(nullable = false)
+    private Boolean isAnonymous;
+
+    /**
+     * 评论类型
+     */
+    public enum Type{
+        /**
+         * 文章
+         */
+        ARTICLE,
+        /**
+         * 留言
+         */
+        LEFT_MESSAGE
+    }
 }

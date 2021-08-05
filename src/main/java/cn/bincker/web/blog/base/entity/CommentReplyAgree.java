@@ -1,8 +1,6 @@
-package cn.bincker.web.blog.expression.entity;
+package cn.bincker.web.blog.base.entity;
 
 import cn.bincker.web.blog.base.UserAuditingListener;
-import cn.bincker.web.blog.base.entity.BaseEntity;
-import cn.bincker.web.blog.base.entity.BaseUser;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.CreatedBy;
@@ -13,15 +11,16 @@ import javax.persistence.ManyToOne;
 import javax.validation.constraints.NotNull;
 
 @EqualsAndHashCode(callSuper = true)
-@Data
 @Entity
+@Data
 @EntityListeners(UserAuditingListener.class)
-public class ExpressionAgree extends BaseEntity {
+public class CommentReplyAgree extends BaseEntity{
+    @NotNull
     @ManyToOne
-    private Expression expression;
+    private CommentReply comment;
 
-    @CreatedBy
     @ManyToOne
     @NotNull
+    @CreatedBy
     private BaseUser createdUser;
 }

@@ -3,17 +3,16 @@ package cn.bincker.web.blog.base.service.impl;
 import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.dto.MessageDto;
 import cn.bincker.web.blog.base.entity.BaseUser;
+import cn.bincker.web.blog.base.entity.Comment;
+import cn.bincker.web.blog.base.entity.CommentReply;
 import cn.bincker.web.blog.base.entity.Message;
 import cn.bincker.web.blog.base.exception.ForbiddenException;
 import cn.bincker.web.blog.base.exception.NotFoundException;
-import cn.bincker.web.blog.base.repository.IBaseUserRepository;
-import cn.bincker.web.blog.base.repository.IMessageRepository;
+import cn.bincker.web.blog.base.repository.*;
 import cn.bincker.web.blog.base.service.IMessageService;
 import cn.bincker.web.blog.base.specification.MessageSpecification;
 import cn.bincker.web.blog.base.vo.*;
 import cn.bincker.web.blog.material.entity.Article;
-import cn.bincker.web.blog.material.entity.ArticleComment;
-import cn.bincker.web.blog.material.entity.ArticleSubComment;
 import cn.bincker.web.blog.material.repository.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,19 +27,19 @@ public class MessageServiceImpl implements IMessageService {
     private final IMessageRepository messageRepository;
     private final IBaseUserRepository baseUserRepository;
     private final IArticleRepository articleRepository;
-    private final IArticleCommentRepository articleCommentRepository;
-    private final IArticleSubCommentRepository articleSubCommentRepository;
-    private final IArticleCommentAgreeRepository articleCommentAgreeRepository;
-    private final IArticleSubCommentAgreeRepository articleSubCommentAgreeRepository;
+    private final ICommentRepository commentRepository;
+    private final ICommentReplyRepository commentReplyRepository;
+    private final ICommentAgreeRepository commentAgreeRepository;
+    private final ICommentReplyAgreeRepository commentReplyAgreeRepository;
 
-    public MessageServiceImpl(IMessageRepository messageRepository, IBaseUserRepository baseUserRepository, IArticleRepository articleRepository, IArticleCommentRepository articleCommentRepository, IArticleSubCommentRepository articleSubCommentRepository, IArticleCommentAgreeRepository articleCommentAgreeRepository, IArticleSubCommentAgreeRepository articleSubCommentAgreeRepository) {
+    public MessageServiceImpl(IMessageRepository messageRepository, IBaseUserRepository baseUserRepository, IArticleRepository articleRepository, ICommentRepository commentRepository, ICommentReplyRepository commentReplyRepository, ICommentAgreeRepository commentAgreeRepository, ICommentReplyAgreeRepository commentReplyAgreeRepository) {
         this.messageRepository = messageRepository;
         this.baseUserRepository = baseUserRepository;
         this.articleRepository = articleRepository;
-        this.articleCommentRepository = articleCommentRepository;
-        this.articleSubCommentRepository = articleSubCommentRepository;
-        this.articleCommentAgreeRepository = articleCommentAgreeRepository;
-        this.articleSubCommentAgreeRepository = articleSubCommentAgreeRepository;
+        this.commentRepository = commentRepository;
+        this.commentReplyRepository = commentReplyRepository;
+        this.commentAgreeRepository = commentAgreeRepository;
+        this.commentReplyAgreeRepository = commentReplyAgreeRepository;
     }
 
     @Override
@@ -58,24 +57,18 @@ public class MessageServiceImpl implements IMessageService {
                         MessageSpecification.toUser(baseUser).and(MessageSpecification.type(Message.Type.ARTICLE_COMMENT)),
                         pageable
                 );
-        var messageArticleCommentMap = result.getContent().stream().collect(Collectors.toUnmodifiableMap(Message::getId, Message::getRelevantId));
-        var articleCommentIds = new HashSet<>(messageArticleCommentMap.values());
-        var articleCommentMap = articleCommentRepository.findAllById(articleCommentIds).stream().collect(Collectors.toUnmodifiableMap(ArticleComment::getId, a->a));
-        var isAgreedCommentIds = articleCommentAgreeRepository.findByCreatedUserIdAndCommentIdIn(baseUser.getId(), articleCommentIds)
+        var messageArticleCommentMap = result.getContent().stream().collect(Collectors.toUnmodifiableMap(Message::getId, Message::getTargetId));
+        var commentIds = new HashSet<>(messageArticleCommentMap.values());
+//        是否点赞
+        var isAgreedCommentIds = commentAgreeRepository.findAllByCreatedUserAndCommentIdIn(baseUser, commentIds)
                 .stream().map(a->a.getComment().getId()).collect(Collectors.toSet());
-        var articleMap = articleRepository.findAllById(articleCommentMap.values().stream().map(c->c.getTarget().getId()).collect(Collectors.toSet()))
+//        文章
+        var articleMap = articleRepository.findAllById(result.getContent().stream().map(Message::getOriginalTargetId).collect(Collectors.toSet()))
                 .stream().collect(Collectors.toUnmodifiableMap(Article::getId, a->a));
         return result.map(m->{
             var vo = new CommentMessageVo(m);
-            vo.setAdditionInfo(
-                    articleMap.get(
-                            articleCommentMap.get(
-                                    messageArticleCommentMap.get(m.getId())
-                            ).getTarget().getId()
-                    )
-                            .getTitle()
-            );
-            vo.setIsAgreed(isAgreedCommentIds.contains(m.getRelevantId()));//是否已点赞
+            vo.setAdditionInfo(articleMap.get(m.getOriginalTargetId()).getTitle());
+            vo.setIsAgreed(isAgreedCommentIds.contains(m.getTargetId()));//是否已点赞
             return vo;
         });
     }
@@ -89,15 +82,32 @@ public class MessageServiceImpl implements IMessageService {
                 pageable
         );
 
-//        查询回复消息所回复的消息
-        var commentMap = articleSubCommentRepository.findAllById(result.getContent().stream().map(Message::getRelevantId).collect(Collectors.toSet()))
-                .stream().collect(Collectors.toUnmodifiableMap(ArticleSubComment::getId, c->c));
-        var commentTargetMap = articleSubCommentRepository.findAllById(commentMap.values().stream().map(c->c.getTarget().getId()).collect(Collectors.toSet()))
-                .stream().collect(Collectors.toUnmodifiableMap(ArticleSubComment::getId, c->c));
+//        起始目标评论(被回复的内容)，即评论 或者 评论的回复
+        var commentsOriginalTargetMessages = new ArrayList<Message>();//目标是评论的消息
+        var replyOriginalTargetMessages = new ArrayList<Message>();//目标是回复的消息
+        for (Message message : result) {
+            switch (message.getType()){
+                case ARTICLE_COMMENT_REPLY -> commentsOriginalTargetMessages.add(message);
+                case ARTICLE_SUB_COMMENT_REPLY -> replyOriginalTargetMessages.add(message);
+            }
+        }
+        var originalTargetComments = commentsOriginalTargetMessages.isEmpty() ? Collections.<Long, Comment>emptyMap() : commentRepository.findAllById(
+                        commentsOriginalTargetMessages
+                                .stream()
+                                .map(Message::getOriginalTargetId).collect(Collectors.toSet())
+                )
+                .stream().collect(Collectors.toUnmodifiableMap(Comment::getId, c->c));
+        var originalTargetReplies = replyOriginalTargetMessages.isEmpty() ? Collections.<Long, CommentReply>emptyMap() : commentReplyRepository.findAllById(
+                        replyOriginalTargetMessages
+                                .stream()
+                                .map(Message::getOriginalTargetId).collect(Collectors.toSet())
+                )
+                .stream().collect(Collectors.toUnmodifiableMap(CommentReply::getId, c->c));
+
 //        查询是否点赞
-        var isAgreedCommentIds = articleSubCommentAgreeRepository.findByCreatedUserIdAndCommentIdIn(
-                baseUser.getId(),
-                commentMap.keySet()
+        var isAgreedCommentIds = commentReplyAgreeRepository.findAllByCreatedUserAndCommentIdIn(
+                baseUser,
+                result.getContent().stream().map(Message::getTargetId).collect(Collectors.toSet())
         ).stream().map(a->a.getComment().getId()).collect(Collectors.toSet());
 
 //        匹配@到的人
@@ -105,7 +115,7 @@ public class MessageServiceImpl implements IMessageService {
         for (Message message : result) {
             var matcher = RegexpConstant.COMMENT_MEMBER.matcher(message.getContent());
 
-            while (matcher.find()) msgIdAndMemberNameListMap.computeIfAbsent(message.getId(), k->new HashSet<>()).add(matcher.group(2));
+            while (matcher.find()) msgIdAndMemberNameListMap.computeIfAbsent(message.getId(), k->new HashSet<>()).add(matcher.group(1));
         }
         var memberMap = baseUserRepository.findAllByUsernameIn(
                 msgIdAndMemberNameListMap.values().stream()
@@ -119,12 +129,13 @@ public class MessageServiceImpl implements IMessageService {
 
         return result.map(m->{
             var vo = new CommentMessageVo(m);
-            vo.setAdditionInfo(
-                    commentTargetMap.get(
-                            commentMap.get(m.getRelevantId()).getTarget().getId()
-                    ).getContent()
-            );
-            vo.setIsAgreed(isAgreedCommentIds.contains(m.getRelevantId()));
+            //附加信息显示自己发送给的消息，也就是当前消息的回复对象
+            switch (m.getType()){
+                case ARTICLE_COMMENT_REPLY -> vo.setAdditionInfo(originalTargetComments.get(m.getOriginalTargetId()).getContent());
+                case ARTICLE_SUB_COMMENT_REPLY -> vo.setAdditionInfo(originalTargetReplies.get(m.getOriginalTargetId()).getContent());
+            }
+
+            vo.setIsAgreed(isAgreedCommentIds.contains(m.getRelatedTargetId()));
             var memberNameSet = msgIdAndMemberNameListMap.get(m.getId());
             if(memberNameSet != null){
                 vo.setMembers(memberNameSet.stream().map(memberMap::get).filter(Objects::nonNull).map(BaseUserVo::new).collect(Collectors.toList()));
@@ -141,31 +152,53 @@ public class MessageServiceImpl implements IMessageService {
                 pageable
         );
 
-        var articleCommentMessageMap = new HashMap<Long, Message>();//一级评论的消息
-        var articleSubCommentMessageMap = new HashMap<Long, Message>();//二级评论的消息
+        var commentMessageMap = new HashMap<Long, Message>();//一级评论的消息
+        var commentReplyMessageMap = new HashMap<Long, Message>();//二级评论的消息
         var msgIdAndMemberListMap = new HashMap<Long, Set<String>>();//消息对应@到的用户列表
         for (Message message : messagePage) {
             if(Message.Type.ARTICLE_COMMENT_MENTION.equals(message.getType())){
-                articleCommentMessageMap.put(message.getId(), message);
+                commentMessageMap.put(message.getId(), message);
             }else{
-                articleSubCommentMessageMap.put(message.getId(), message);
+                commentReplyMessageMap.put(message.getId(), message);
             }
+        }
+
+//        查询评论内容
+        var commentMap = commentRepository.findAllById(commentMessageMap.values().stream().map(Message::getTargetId).collect(Collectors.toSet()))
+                .stream().collect(Collectors.toUnmodifiableMap(Comment::getId, c->c));
+        var replyMap = commentReplyRepository.findAllById(commentReplyMessageMap.values().stream().map(Message::getTargetId).collect(Collectors.toSet()))
+                .stream().collect(Collectors.toUnmodifiableMap(CommentReply::getId, c->c));
+
 //            匹配@到的用户
-            var matcher = RegexpConstant.COMMENT_MEMBER.matcher(message.getContent());
+        for (Message message : messagePage) {
+            String content = "";
+            switch (message.getType()){
+                case ARTICLE_COMMENT_MENTION -> {
+                    var comment = commentMap.get(message.getTargetId());
+                    if(!comment.getRemoved()) content = comment.getContent();
+                }
+                case ARTICLE_SUB_COMMENT_MENTION -> {
+                    var reply = replyMap.get(message.getTargetId());
+                    if(!reply.getRemoved()) content = reply.getContent();
+                }
+            }
+            message.setContent(content);
+            if(content.isEmpty()) continue;
+            var matcher = RegexpConstant.COMMENT_MEMBER.matcher(content);
             var memberList = msgIdAndMemberListMap.computeIfAbsent(message.getId(), k->new HashSet<>());
-            while (matcher.find()) memberList.add(matcher.group(2));
+            while (matcher.find()) memberList.add(matcher.group(1));
         }
 
 //        查询是否点赞
-        var articleCommentAgreedIds = articleCommentAgreeRepository.findByCreatedUserIdAndCommentIdIn(
-                baseUser.getId(),
-                articleCommentMessageMap.values().stream().map(Message::getRelevantId).collect(Collectors.toList())
+        var commentAgreedIds = commentAgreeRepository.findAllByCreatedUserAndCommentIdIn(
+                baseUser,
+                commentMessageMap.values().stream().map(Message::getTargetId).collect(Collectors.toList())
         )
                 .stream().map(a->a.getComment().getId())
                 .collect(Collectors.toSet());
-        var articleSubCommentAgreedIds = articleSubCommentAgreeRepository.findByCreatedUserIdAndCommentIdIn(
-                baseUser.getId(),
-                articleSubCommentMessageMap.values().stream().map(Message::getRelevantId).collect(Collectors.toList())
+        var commentReplyAgreedIds = commentReplyAgreeRepository.findAllByCreatedUserAndCommentIdIn(
+                baseUser,
+                commentReplyMessageMap.values().stream().map(Message::getTargetId).collect(Collectors.toList())
         )
                 .stream().map(a->a.getComment().getId())
                 .collect(Collectors.toSet());
@@ -180,10 +213,10 @@ public class MessageServiceImpl implements IMessageService {
 
         return messagePage.map(msg->{
             var vo = new CommentMessageVo(msg);
-            if(articleCommentMessageMap.containsKey(msg.getId())){
-                vo.setIsAgreed(articleCommentAgreedIds.contains(msg.getRelevantId()));
+            if(commentMessageMap.containsKey(msg.getId())){
+                vo.setIsAgreed(commentAgreedIds.contains(msg.getRelatedTargetId()));
             }else{
-                vo.setIsAgreed(articleSubCommentAgreedIds.contains(msg.getRelevantId()));
+                vo.setIsAgreed(commentReplyAgreedIds.contains(msg.getRelatedTargetId()));
             }
             var memberNames = msgIdAndMemberListMap.get(msg.getId());
             if(memberNames != null){
@@ -224,27 +257,27 @@ public class MessageServiceImpl implements IMessageService {
 //        查询附加信息
         var articleMap = articleAgreeMessageList.isEmpty() ?
                 Collections.<Long, Article>emptyMap() :
-                articleRepository.findAllById(articleAgreeMessageList.stream().map(Message::getRelevantId).collect(Collectors.toList()))
+                articleRepository.findAllById(articleAgreeMessageList.stream().map(Message::getRelatedTargetId).collect(Collectors.toList()))
                 .stream().collect(Collectors.toUnmodifiableMap(Article::getId, a->a));
         var commentMap = commentAgreeMessageList.isEmpty() ?
-                Collections.<Long, ArticleComment>emptyMap() :
-                articleCommentRepository.findAllById(commentAgreeMessageList.stream().map(Message::getRelevantId).collect(Collectors.toList()))
-                .stream().collect(Collectors.toUnmodifiableMap(ArticleComment::getId, c->c));
+                Collections.<Long, Comment>emptyMap() :
+                commentRepository.findAllById(commentAgreeMessageList.stream().map(Message::getRelatedTargetId).collect(Collectors.toList()))
+                .stream().collect(Collectors.toUnmodifiableMap(Comment::getId, c->c));
         var subCommentMap = subCommentAgreeMessageList.isEmpty() ?
-                Collections.<Long, ArticleSubComment>emptyMap() :
-                articleSubCommentRepository.findAllById(subCommentAgreeMessageList.stream().map(Message::getRelevantId).collect(Collectors.toList()))
-                .stream().collect(Collectors.toUnmodifiableMap(ArticleSubComment::getId, c->c));
+                Collections.<Long, CommentReply>emptyMap() :
+                commentReplyRepository.findAllById(subCommentAgreeMessageList.stream().map(Message::getRelatedTargetId).collect(Collectors.toList()))
+                .stream().collect(Collectors.toUnmodifiableMap(CommentReply::getId, c->c));
 
         return result.map(msg->{
             var vo = new MessageVo(msg);
             if(Message.Type.ARTICLE_AGREE.equals(msg.getType())){
-                var article = articleMap.get(msg.getRelevantId());
+                var article = articleMap.get(msg.getRelatedTargetId());
                 if(article != null) vo.setAdditionInfo(article.getTitle());
             }else if(Message.Type.ARTICLE_COMMENT_AGREE.equals(msg.getType())){
-                var comment = commentMap.get(msg.getRelevantId());
+                var comment = commentMap.get(msg.getRelatedTargetId());
                 if(comment != null) vo.setAdditionInfo(comment.getContent());
             }else{
-                var subComment = subCommentMap.get(msg.getRelevantId());
+                var subComment = subCommentMap.get(msg.getRelatedTargetId());
                 if(subComment != null) vo.setAdditionInfo(subComment.getContent());
             }
             return vo;

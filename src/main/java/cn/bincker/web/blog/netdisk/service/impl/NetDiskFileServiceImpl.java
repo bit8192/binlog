@@ -387,8 +387,8 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         }
         if(target != null) checkReadPermission(user, target);
         if(isDirectory != null) specification = specification.and(NetDiskFileSpecification.isDirectory(isDirectory));
-        if(mediaType != null) specification = specification.and(NetDiskFileSpecification.mediaTypeLike(mediaType));
-        if(suffix != null) specification = specification.and(NetDiskFileSpecification.suffix(suffix));
+        if(StringUtils.hasText(mediaType)) specification = specification.and(NetDiskFileSpecification.mediaTypeLike(mediaType));
+        if(StringUtils.hasText(suffix)) specification = specification.and(NetDiskFileSpecification.suffix(suffix));
         var fileList = netDiskFileRepository.findAll(specification, sort);
         return queryChildrenNum(fileList.stream().map(NetDiskFileListVo::new).collect(Collectors.toList()));
     }

@@ -23,16 +23,23 @@ public class RegexpConstant {
     /**
      * 匹配评论中@的用户
      */
-    public static final String COMMENT_MEMBER_VALUE = "(^|\\s)@(\\S+)($|\\s)";
+    public static final String COMMENT_MEMBER_VALUE = "@(\\S+)($|\\s)";
 
     public static final Pattern COMMENT_MEMBER = Pattern.compile(COMMENT_MEMBER_VALUE);
 
     /**
      * 无效用户名
      */
-    public static final String ILLEGAL_USERNAME_VALUE = "[^_\\-\\d\\w\\u4e00-\\u9fa5]";
+    public static final String ILLEGAL_USERNAME_VALUE = "[^_\\-\\w\\u4e00-\\u9fa5]";
 
     public static final Pattern ILLEGAL_USERNAME = Pattern.compile(ILLEGAL_USERNAME_VALUE);
+
+    /**
+     * 回复消息开头
+     */
+    public static final String REPLY_CONTENT_PREFIX_VALUE = "^回复 @([_\\-\\w\\u4e00-\\u9fa5]) : ";
+
+    public static final Pattern REPLY_CONTENT_PREFIX = Pattern.compile(REPLY_CONTENT_PREFIX_VALUE);
 
     /**
      * 图片文件
