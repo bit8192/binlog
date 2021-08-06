@@ -47,8 +47,8 @@ public class ArticleController {
     }
 
     @GetMapping
-    public Page<ArticleListVo> getPage(Pageable pageable){
-        return articleService.pageAll(pageable);
+    public Page<ArticleListVo> getPage(String keywords, Long articleClassId, Long[] tagIds, Pageable pageable){
+        return articleService.pageAll(keywords, articleClassId, tagIds, pageable);
     }
 
     @GetMapping("search/article-class/{id}")

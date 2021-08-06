@@ -30,6 +30,11 @@ public class UserController {
         return baseUserService.getUserDetail(user);
     }
 
+    @GetMapping("bloggers")
+    public List<UserDetailVo> getBloggers(){
+        return baseUserService.getBloggers();
+    }
+
     @PatchMapping("change-password")
     public ValueVo<Boolean> changePassword(@RequestBody ValueDto<String> dto,@NonNull BaseUser user){
         baseUserService.changePassword(user, dto.getValue());

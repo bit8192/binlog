@@ -27,6 +27,11 @@ public interface IMessageService {
     Page<CommentMessageVo> getArticleCommentMessagePage(BaseUser baseUser, Pageable pageable);
 
     /**
+     * 留言消息
+     */
+    Page<CommentMessageVo> getLeftMessagePage(BaseUser user, Pageable pageable);
+
+    /**
      * 获取回复消息列表
      * @param baseUser 用户
      * @param pageable 分页

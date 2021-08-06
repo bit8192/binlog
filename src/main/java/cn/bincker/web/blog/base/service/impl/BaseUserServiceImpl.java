@@ -2,11 +2,11 @@ package cn.bincker.web.blog.base.service.impl;
 
 import cn.bincker.web.blog.base.entity.AuthorizationUser;
 import cn.bincker.web.blog.base.entity.BaseUser;
+import cn.bincker.web.blog.base.entity.Role;
 import cn.bincker.web.blog.base.exception.NotFoundException;
-import cn.bincker.web.blog.base.repository.IBaseUserRepository;
-import cn.bincker.web.blog.base.repository.ICommentAgreeRepository;
-import cn.bincker.web.blog.base.repository.ICommentReplyAgreeRepository;
+import cn.bincker.web.blog.base.repository.*;
 import cn.bincker.web.blog.base.service.IBaseUserService;
+import cn.bincker.web.blog.base.specification.BaseUserSpecification;
 import cn.bincker.web.blog.base.vo.BaseUserVo;
 import cn.bincker.web.blog.base.vo.UserDetailVo;
 import cn.bincker.web.blog.material.repository.IArticleAgreeRepository;
@@ -28,14 +28,18 @@ public class BaseUserServiceImpl implements IBaseUserService {
     private final IArticleAgreeRepository articleAgreeRepository;
     private final ICommentAgreeRepository commentAgreeRepository;
     private final ICommentReplyAgreeRepository commentReplyAgreeRepository;
+    private final ICommentRepository commentRepository;
+    private final ICommentReplyRepository commentReplyRepository;
 
-    public BaseUserServiceImpl(IBaseUserRepository repository, PasswordEncoder passwordEncoder, IArticleRepository articleRepository, IArticleAgreeRepository articleAgreeRepository, ICommentAgreeRepository commentAgreeRepository, ICommentReplyAgreeRepository commentReplyAgreeRepository) {
+    public BaseUserServiceImpl(IBaseUserRepository repository, PasswordEncoder passwordEncoder, IArticleRepository articleRepository, IArticleAgreeRepository articleAgreeRepository, ICommentAgreeRepository commentAgreeRepository, ICommentReplyAgreeRepository commentReplyAgreeRepository, ICommentRepository commentRepository, ICommentReplyRepository commentReplyRepository) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.articleRepository = articleRepository;
         this.articleAgreeRepository = articleAgreeRepository;
         this.commentAgreeRepository = commentAgreeRepository;
         this.commentReplyAgreeRepository = commentReplyAgreeRepository;
+        this.commentRepository = commentRepository;
+        this.commentReplyRepository = commentReplyRepository;
     }
 
     @Override
@@ -73,8 +77,17 @@ public class BaseUserServiceImpl implements IBaseUserService {
         var articleAgreedNum = articleAgreeRepository.countByArticleCreatedUser(user);
         var commentAgreedNum = commentAgreeRepository.countByCommentCreatedUser(user);
         var commentReplyAgreedNum = commentReplyAgreeRepository.countByCommentCreatedUser(user);
+        var commentNum = commentRepository.countByCreatedUser(user);
+        var replyNum = commentReplyRepository.countByCreatedUser(user);
         vo.setAgreedNum(articleAgreedNum + commentAgreedNum + commentReplyAgreedNum);
+        vo.setCommentNum(commentNum + replyNum);
         return vo;
+    }
+
+    @Override
+    public List<UserDetailVo> getBloggers() {
+        var bloggers = repository.findAll(BaseUserSpecification.role(Role.RoleEnum.BLOGGER));
+        return bloggers.stream().map(this::getUserDetail).collect(Collectors.toList());
     }
 
     @Override

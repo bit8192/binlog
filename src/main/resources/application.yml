@@ -2,7 +2,7 @@ server:
   port: 80
 binlog:
   name: Bincker的个人博客
-  copy-right: copyright @2021 Bincker
+  copy-right: copyright © 2021 Bincker
   ipc: 京ICP备1234567890号
   github: https://github.com/Bincker1973
   base-path: /api

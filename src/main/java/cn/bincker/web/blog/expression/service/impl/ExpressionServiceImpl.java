@@ -1,6 +1,6 @@
 package cn.bincker.web.blog.expression.service.impl;
 
-import cn.bincker.web.blog.base.UserAuditingListener;
+import cn.bincker.web.blog.base.config.UserAuditingListener;
 import cn.bincker.web.blog.base.config.SystemFileProperties;
 import cn.bincker.web.blog.base.exception.BadRequestException;
 import cn.bincker.web.blog.base.exception.NotFoundException;

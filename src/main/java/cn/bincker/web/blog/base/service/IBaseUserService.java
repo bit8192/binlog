@@ -24,4 +24,6 @@ public interface IBaseUserService extends UserDetailsService {
     List<BaseUserVo> findAll();
 
     List<BaseUserVo> findAllById(List<Long> ids);
+
+    List<UserDetailVo> getBloggers();
 }

@@ -57,8 +57,9 @@ public class MessageServiceImpl implements IMessageService {
                         MessageSpecification.toUser(baseUser).and(MessageSpecification.type(Message.Type.ARTICLE_COMMENT)),
                         pageable
                 );
-        var messageArticleCommentMap = result.getContent().stream().collect(Collectors.toUnmodifiableMap(Message::getId, Message::getTargetId));
-        var commentIds = new HashSet<>(messageArticleCommentMap.values());
+        var commentIds = result.stream().map(Message::getTargetId).collect(Collectors.toSet());
+//        获取评论
+        var commentMap = commentRepository.findAllById(commentIds).stream().collect(Collectors.toUnmodifiableMap(Comment::getId, c->c));
 //        是否点赞
         var isAgreedCommentIds = commentAgreeRepository.findAllByCreatedUserAndCommentIdIn(baseUser, commentIds)
                 .stream().map(a->a.getComment().getId()).collect(Collectors.toSet());
@@ -67,8 +68,34 @@ public class MessageServiceImpl implements IMessageService {
                 .stream().collect(Collectors.toUnmodifiableMap(Article::getId, a->a));
         return result.map(m->{
             var vo = new CommentMessageVo(m);
+            var comment = commentMap.get(m.getTargetId());
             vo.setAdditionInfo(articleMap.get(m.getOriginalTargetId()).getTitle());
             vo.setIsAgreed(isAgreedCommentIds.contains(m.getTargetId()));//是否已点赞
+            vo.setIsAnonymous(comment.getIsAnonymous());
+            vo.setRemoved(comment.getRemoved());
+            return vo;
+        });
+    }
+
+    @Override
+    public Page<CommentMessageVo> getLeftMessagePage(BaseUser user, Pageable pageable) {
+        var result = messageRepository
+                .findAll(
+                        MessageSpecification.toUser(user).and(MessageSpecification.type(Message.Type.LEFT_MESSAGE)),
+                        pageable
+                );
+        var commentIds = result.stream().map(Message::getTargetId).collect(Collectors.toSet());
+//        查询评论
+        var commentMap = commentRepository.findAllById(commentIds).stream().collect(Collectors.toUnmodifiableMap(Comment::getId, c->c));
+//        是否点赞
+        var isAgreedCommentIds = commentAgreeRepository.findAllByCreatedUserAndCommentIdIn(user, commentIds)
+                .stream().map(a->a.getComment().getId()).collect(Collectors.toSet());
+        return result.map(m->{
+            var vo = new CommentMessageVo(m);
+            var comment = commentMap.get(m.getTargetId());
+            vo.setIsAgreed(isAgreedCommentIds.contains(m.getTargetId()));//是否已点赞
+            vo.setIsAnonymous(comment.getIsAnonymous());
+            vo.setRemoved(comment.getRemoved());
             return vo;
         });
     }
@@ -103,6 +130,19 @@ public class MessageServiceImpl implements IMessageService {
                                 .map(Message::getOriginalTargetId).collect(Collectors.toSet())
                 )
                 .stream().collect(Collectors.toUnmodifiableMap(CommentReply::getId, c->c));
+//        获取当前回复
+        var targetComments = commentsOriginalTargetMessages.isEmpty() ? Collections.<Long, Comment>emptyMap() : commentRepository.findAllById(
+                        commentsOriginalTargetMessages
+                                .stream()
+                                .map(Message::getTargetId).collect(Collectors.toSet())
+                )
+                .stream().collect(Collectors.toUnmodifiableMap(Comment::getId, c->c));
+        var targetReplies = replyOriginalTargetMessages.isEmpty() ? Collections.<Long, CommentReply>emptyMap() : commentReplyRepository.findAllById(
+                        replyOriginalTargetMessages
+                                .stream()
+                                .map(Message::getTargetId).collect(Collectors.toSet())
+                )
+                .stream().collect(Collectors.toUnmodifiableMap(CommentReply::getId, c->c));
 
 //        查询是否点赞
         var isAgreedCommentIds = commentReplyAgreeRepository.findAllByCreatedUserAndCommentIdIn(
@@ -131,8 +171,18 @@ public class MessageServiceImpl implements IMessageService {
             var vo = new CommentMessageVo(m);
             //附加信息显示自己发送给的消息，也就是当前消息的回复对象
             switch (m.getType()){
-                case ARTICLE_COMMENT_REPLY -> vo.setAdditionInfo(originalTargetComments.get(m.getOriginalTargetId()).getContent());
-                case ARTICLE_SUB_COMMENT_REPLY -> vo.setAdditionInfo(originalTargetReplies.get(m.getOriginalTargetId()).getContent());
+                case ARTICLE_COMMENT_REPLY -> {
+                    vo.setAdditionInfo(originalTargetComments.get(m.getOriginalTargetId()).getContent());
+                    var targetComment = targetComments.get(m.getTargetId());
+                    vo.setIsAnonymous(targetComment.getIsAnonymous());
+                    vo.setRemoved(targetComment.getRemoved());
+                }
+                case ARTICLE_SUB_COMMENT_REPLY -> {
+                    vo.setAdditionInfo(originalTargetReplies.get(m.getOriginalTargetId()).getContent());
+                    var targetReply = targetReplies.get(m.getTargetId());
+                    vo.setIsAnonymous(targetReply.getIsAnonymous());
+                    vo.setRemoved(targetReply.getIsAnonymous());
+                }
             }
 
             vo.setIsAgreed(isAgreedCommentIds.contains(m.getRelatedTargetId()));
@@ -152,21 +202,20 @@ public class MessageServiceImpl implements IMessageService {
                 pageable
         );
 
-        var commentMessageMap = new HashMap<Long, Message>();//一级评论的消息
-        var commentReplyMessageMap = new HashMap<Long, Message>();//二级评论的消息
+        var commentMentionMessages = new ArrayList<Message>();//一级评论的消息
+        var commentReplyMentionMessages = new ArrayList<Message>();//二级评论的消息
         var msgIdAndMemberListMap = new HashMap<Long, Set<String>>();//消息对应@到的用户列表
         for (Message message : messagePage) {
-            if(Message.Type.ARTICLE_COMMENT_MENTION.equals(message.getType())){
-                commentMessageMap.put(message.getId(), message);
-            }else{
-                commentReplyMessageMap.put(message.getId(), message);
+            switch (message.getType()) {
+                case ARTICLE_COMMENT_MENTION, LEFT_MESSAGE_MENTION -> commentMentionMessages.add(message);
+                case ARTICLE_SUB_COMMENT_MENTION, LEFT_MESSAGE_REPLY_MENTION -> commentReplyMentionMessages.add(message);
             }
         }
 
 //        查询评论内容
-        var commentMap = commentRepository.findAllById(commentMessageMap.values().stream().map(Message::getTargetId).collect(Collectors.toSet()))
+        var commentMap = commentRepository.findAllById(commentMentionMessages.stream().map(Message::getTargetId).collect(Collectors.toSet()))
                 .stream().collect(Collectors.toUnmodifiableMap(Comment::getId, c->c));
-        var replyMap = commentReplyRepository.findAllById(commentReplyMessageMap.values().stream().map(Message::getTargetId).collect(Collectors.toSet()))
+        var replyMap = commentReplyRepository.findAllById(commentReplyMentionMessages.stream().map(Message::getTargetId).collect(Collectors.toSet()))
                 .stream().collect(Collectors.toUnmodifiableMap(CommentReply::getId, c->c));
 
 //            匹配@到的用户
@@ -192,13 +241,13 @@ public class MessageServiceImpl implements IMessageService {
 //        查询是否点赞
         var commentAgreedIds = commentAgreeRepository.findAllByCreatedUserAndCommentIdIn(
                 baseUser,
-                commentMessageMap.values().stream().map(Message::getTargetId).collect(Collectors.toList())
+                commentMentionMessages.stream().map(Message::getTargetId).collect(Collectors.toList())
         )
                 .stream().map(a->a.getComment().getId())
                 .collect(Collectors.toSet());
         var commentReplyAgreedIds = commentReplyAgreeRepository.findAllByCreatedUserAndCommentIdIn(
                 baseUser,
-                commentReplyMessageMap.values().stream().map(Message::getTargetId).collect(Collectors.toList())
+                commentReplyMentionMessages.stream().map(Message::getTargetId).collect(Collectors.toList())
         )
                 .stream().map(a->a.getComment().getId())
                 .collect(Collectors.toSet());
@@ -213,10 +262,19 @@ public class MessageServiceImpl implements IMessageService {
 
         return messagePage.map(msg->{
             var vo = new CommentMessageVo(msg);
-            if(commentMessageMap.containsKey(msg.getId())){
-                vo.setIsAgreed(commentAgreedIds.contains(msg.getRelatedTargetId()));
-            }else{
-                vo.setIsAgreed(commentReplyAgreedIds.contains(msg.getRelatedTargetId()));
+            switch (msg.getType()){
+                case ARTICLE_COMMENT_MENTION, LEFT_MESSAGE_MENTION -> {
+                    var comment = commentMap.get(msg.getTargetId());
+                    vo.setIsAgreed(commentAgreedIds.contains(msg.getTargetId()));
+                    vo.setRemoved(comment.getRemoved());
+                    vo.setIsAnonymous(comment.getIsAnonymous());
+                }
+                case ARTICLE_SUB_COMMENT_MENTION, LEFT_MESSAGE_REPLY_MENTION -> {
+                    var comment = replyMap.get(msg.getTargetId());
+                    vo.setIsAgreed(commentReplyAgreedIds.contains(msg.getTargetId()));
+                    vo.setRemoved(comment.getRemoved());
+                    vo.setIsAnonymous(comment.getIsAnonymous());
+                }
             }
             var memberNames = msgIdAndMemberListMap.get(msg.getId());
             if(memberNames != null){

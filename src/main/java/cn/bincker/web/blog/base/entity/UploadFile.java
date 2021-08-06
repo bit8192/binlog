@@ -1,6 +1,6 @@
 package cn.bincker.web.blog.base.entity;
 
-import cn.bincker.web.blog.base.UserAuditingListener;
+import cn.bincker.web.blog.base.config.UserAuditingListener;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

@@ -55,6 +55,7 @@ public class Message extends BaseEntity{
     public enum Type{
         //系统消息
         SYSTEM,
+
         //评论文章
         ARTICLE_COMMENT,
         //文章评论回复
@@ -71,7 +72,23 @@ public class Message extends BaseEntity{
         ARTICLE_COMMENT_AGREE,
         //文章子评论获赞
         ARTICLE_SUB_COMMENT_AGREE,
+
+        //留言
+        LEFT_MESSAGE,
+        //留言回复
+        LEFT_MESSAGE_REPLY,
+        //留言子回复
+        LEFT_MESSAGE_SUB_REPLY,
+        //留言@到
+        LEFT_MESSAGE_MENTION,
+        //留言回复@到
+        LEFT_MESSAGE_REPLY_MENTION,
+        //留言点赞
+        LEFT_MESSAGE_AGREE,
+        //留言回复点赞
+        LEFT_MESSAGE_REPLY_AGREE,
+
         //私信
-        PRIVATE_MESSAGE
+        PRIVATE_MESSAGE;
     }
 }

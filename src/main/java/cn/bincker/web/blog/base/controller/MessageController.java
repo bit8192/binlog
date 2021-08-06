@@ -11,6 +11,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
 
@@ -34,6 +35,14 @@ public class MessageController {
     @GetMapping("article-comment")
     public Page<CommentMessageVo> getArticleCommentMessagePage(@NonNull BaseUser user, @PageableDefault(sort = "createdDate", direction = Sort.Direction.DESC) Pageable pageable){
         return messageService.getArticleCommentMessagePage(user, pageable);
+    }
+
+    /**
+     * 留言消息
+     */
+    @GetMapping("left-message")
+    public Page<CommentMessageVo> getLeftMessagePage(@NotNull BaseUser user, @PageableDefault(sort = "createdDate", direction = Sort.Direction.DESC) Pageable pageable){
+        return messageService.getLeftMessagePage(user, pageable);
     }
 
     /**

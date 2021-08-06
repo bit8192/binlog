@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.base.repository;
 
+import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.entity.Comment;
 import cn.bincker.web.blog.base.entity.CommentReply;
 import cn.bincker.web.blog.base.vo.EntityLongValueVo;
@@ -27,4 +28,6 @@ public interface ICommentReplyRepository extends JpaRepository<CommentReply, Lon
     group by reply.comment.id
     """)
     List<EntityLongValueVo> countAllByCommentIds(Iterable<Long> commentIds);
+
+    Long countByCreatedUser(BaseUser user);
 }

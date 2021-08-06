@@ -1,6 +1,6 @@
 package cn.bincker.web.blog.base.controller;
 
-import cn.bincker.web.blog.base.UserAuditingListener;
+import cn.bincker.web.blog.base.config.UserAuditingListener;
 import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.entity.ErrorResult;
 import cn.bincker.web.blog.base.exception.*;

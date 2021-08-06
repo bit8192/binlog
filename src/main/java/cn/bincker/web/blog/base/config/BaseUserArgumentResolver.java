@@ -1,4 +1,4 @@
-package cn.bincker.web.blog.base;
+package cn.bincker.web.blog.base.config;
 
 import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.exception.UnauthorizedException;

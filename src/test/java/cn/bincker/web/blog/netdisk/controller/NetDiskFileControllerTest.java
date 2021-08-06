@@ -1,7 +1,7 @@
 package cn.bincker.web.blog.netdisk.controller;
 
 import cn.bincker.web.blog.AuthenticationTests;
-import cn.bincker.web.blog.base.UserAuditingListener;
+import cn.bincker.web.blog.base.config.UserAuditingListener;
 import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.repository.IBaseUserRepository;
 import cn.bincker.web.blog.netdisk.entity.NetDiskFile;

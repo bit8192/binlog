@@ -1,6 +1,6 @@
 package cn.bincker.web.blog.material.service.impl;
 
-import cn.bincker.web.blog.base.UserAuditingListener;
+import cn.bincker.web.blog.base.config.UserAuditingListener;
 import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.dto.CommentDto;
 import cn.bincker.web.blog.base.entity.BaseUser;
@@ -25,6 +25,7 @@ import cn.bincker.web.blog.material.repository.IArticleRepository;
 import cn.bincker.web.blog.material.repository.ITagRepository;
 import cn.bincker.web.blog.material.service.IArticleService;
 import cn.bincker.web.blog.material.dto.ArticleDto;
+import cn.bincker.web.blog.material.specification.ArticleSpecification;
 import cn.bincker.web.blog.material.vo.ArticleClassVo;
 import cn.bincker.web.blog.material.vo.ArticleListVo;
 import cn.bincker.web.blog.material.vo.ArticleVo;
@@ -97,13 +98,18 @@ public class ArticleServiceImpl implements IArticleService {
     }
 
     @Override
-    public Page<ArticleListVo> pageAll(Pageable pageable) {
+    public Page<ArticleListVo> pageAll(String keywords, Long articleClassId, Long[] tagIds, Pageable pageable) {
         var currentUser = userAuditingListener.getCurrentAuditor();
+        var predicate = ArticleSpecification.keyWords(keywords)
+                .and(ArticleSpecification.articleClass(articleClassId))
+                .and(ArticleSpecification.tagIds(tagIds));
         if(currentUser.isEmpty()){
-            return handleIsAgreed(currentUser, articleRepository.findAll(handlePageable(pageable)).map(ArticleListVo::new));
+            predicate = predicate.and(ArticleSpecification.isPublic());
         }else{
-            return handleIsAgreed(currentUser, articleRepository.findAllWithUserId(currentUser.get().getId(), handlePageable(pageable)).map(ArticleListVo::new));
+            predicate = predicate.and(ArticleSpecification.publicOrUser(currentUser.get()));
         }
+        var page = articleRepository.findAll(predicate, pageable);
+        return handleIsAgreed(currentUser, page.map(ArticleListVo::new));
     }
 
     @Override

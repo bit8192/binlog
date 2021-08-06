@@ -1,6 +1,6 @@
 package cn.bincker.web.blog.base.service.impl;
 
-import cn.bincker.web.blog.base.UserAuditingListener;
+import cn.bincker.web.blog.base.config.UserAuditingListener;
 import cn.bincker.web.blog.base.dto.CommentDto;
 import cn.bincker.web.blog.base.entity.*;
 import cn.bincker.web.blog.base.event.MessageEvent;
@@ -113,6 +113,10 @@ public class CommentServiceImpl implements ICommentService {
                 triggerMentionMessageType = Message.Type.ARTICLE_COMMENT_MENTION;
                 dto.setIsAnonymous(false);
             }
+            case LEFT_MESSAGE -> {
+                triggerReplyMessageType = Message.Type.LEFT_MESSAGE_REPLY;
+                triggerMentionMessageType = Message.Type.LEFT_MESSAGE_MENTION;
+            }
         }
 //        触发消息
         if(!currentUser.getId().equals(comment.getCreatedUser().getId())) {
@@ -149,6 +153,10 @@ public class CommentServiceImpl implements ICommentService {
                 triggerReplyMessageType = Message.Type.ARTICLE_SUB_COMMENT_REPLY;
                 triggerMentionMessageType = Message.Type.ARTICLE_SUB_COMMENT_MENTION;
                 dto.setIsAnonymous(false);
+            }
+            case LEFT_MESSAGE -> {
+                triggerReplyMessageType = Message.Type.LEFT_MESSAGE_SUB_REPLY;
+                triggerMentionMessageType = Message.Type.LEFT_MESSAGE_REPLY_MENTION;
             }
         }
         if(!currentUser.getId().equals(reply.getCreatedUser().getId())) {
@@ -190,6 +198,9 @@ public class CommentServiceImpl implements ICommentService {
                         var article = articleRepository.findByCommentId(comment.getId()).orElseThrow(NotFoundException::new);
                         messageType = Message.Type.ARTICLE_COMMENT_AGREE;
                         relatedTargetId = article.getId();
+                    }
+                    case LEFT_MESSAGE -> {
+                        messageType = Message.Type.LEFT_MESSAGE_AGREE;
                     }
                 }
                 var agreeMessageEvent = new MessageEvent(
@@ -242,6 +253,9 @@ public class CommentServiceImpl implements ICommentService {
                         var article = articleRepository.findByCommentId(comment.getId()).orElseThrow(NotFoundException::new);
                         messageType = Message.Type.ARTICLE_SUB_COMMENT_AGREE;
                         relatedTargetId = article.getId();
+                    }
+                    case LEFT_MESSAGE -> {
+                        messageType = Message.Type.LEFT_MESSAGE_REPLY_AGREE;
                     }
                 }
                 var messageEvent = new MessageEvent(

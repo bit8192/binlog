@@ -14,8 +14,13 @@ public class MessageVo {
     private BaseUserVo toUser;
     private Boolean isRead;
     private String additionInfo;
-    private Long relevantId;
+    private Long relatedTargetId;
+    private Long originalTargetId;
+    private Long targetId;
     private Message.Type type;
+
+    public MessageVo() {
+    }
 
     public MessageVo(Message message) {
         this.id = message.getId();
@@ -24,7 +29,9 @@ public class MessageVo {
         if(message.getFromUser() != null) this.fromUser = new BaseUserVo(message.getFromUser());
         this.toUser = new BaseUserVo(message.getToUser());
         this.isRead = message.getIsRead();
-        this.relevantId = message.getRelatedTargetId();
+        this.relatedTargetId = message.getRelatedTargetId();
+        this.originalTargetId = message.getOriginalTargetId();
+        this.targetId = message.getTargetId();
         this.type = message.getType();
     }
 }

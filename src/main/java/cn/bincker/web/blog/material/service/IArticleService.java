@@ -13,7 +13,7 @@ import org.springframework.data.domain.Pageable;
 public interface IArticleService {
     ArticleVo getDetail(Long articleId);
 
-    Page<ArticleListVo> pageAll(Pageable pageable);
+    Page<ArticleListVo> pageAll(String keywords, Long articleClassId, Long[] tagIds, Pageable pageable);
 
     Page<ArticleListVo> pageByKeywords(String keyword, Pageable pageable);
 

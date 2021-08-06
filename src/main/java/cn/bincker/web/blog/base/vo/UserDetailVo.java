@@ -9,6 +9,7 @@ import lombok.EqualsAndHashCode;
 public class UserDetailVo extends BaseUserVo{
     private Long agreedNum;
     private Long articleNum;
+    private Long commentNum;
 
     public UserDetailVo(BaseUser user) {
         super(user);

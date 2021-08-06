@@ -1,6 +1,6 @@
 package cn.bincker.web.blog.expression.entity;
 
-import cn.bincker.web.blog.base.UserAuditingListener;
+import cn.bincker.web.blog.base.config.UserAuditingListener;
 import cn.bincker.web.blog.base.entity.BaseEntity;
 import cn.bincker.web.blog.base.entity.BaseUser;
 import lombok.Data;
