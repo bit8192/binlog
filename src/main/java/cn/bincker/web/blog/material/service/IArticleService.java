@@ -15,12 +15,6 @@ public interface IArticleService {
 
     Page<ArticleListVo> pageAll(String keywords, Long articleClassId, Long[] tagIds, Pageable pageable);
 
-    Page<ArticleListVo> pageByKeywords(String keyword, Pageable pageable);
-
-    Page<ArticleListVo> pageByClass(Long articleClassId, Pageable pageable);
-
-    Page<ArticleListVo> pageByTag(Long articleTagId, Pageable pageable);
-
     ArticleVo update(ArticleDto articleDto);
 
     ArticleVo insert(ArticleDto articleDto);

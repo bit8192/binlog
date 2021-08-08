@@ -51,21 +51,6 @@ public class ArticleController {
         return articleService.pageAll(keywords, articleClassId, tagIds, pageable);
     }
 
-    @GetMapping("search/article-class/{id}")
-    public Page<ArticleListVo> pageByArticleClass(@PathVariable Long id, Pageable pageable){
-        return articleService.pageByClass(id, pageable);
-    }
-
-    @GetMapping("search/tag/{id}")
-    public Page<ArticleListVo> pageByTag(@PathVariable Long id, Pageable pageable){
-        return articleService.pageByTag(id, pageable);
-    }
-
-    @GetMapping("search/keywords")
-    public Page<ArticleListVo> pageByKeywords(@NotEmpty String keywords, Pageable pageable){
-        return articleService.pageByKeywords(keywords, pageable);
-    }
-
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ArticleVo add(@Validated(InsertValid.class) @RequestBody ArticleDto dto){

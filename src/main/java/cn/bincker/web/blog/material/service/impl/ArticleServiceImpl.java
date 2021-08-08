@@ -108,48 +108,16 @@ public class ArticleServiceImpl implements IArticleService {
         }else{
             predicate = predicate.and(ArticleSpecification.publicOrUser(currentUser.get()));
         }
+//        默认排序
+        if(pageable.getSort().isUnsorted()){
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(
+                    Sort.Order.desc("top"),
+                    Sort.Order.asc("orderNum"),
+                    Sort.Order.desc("createdDate")
+            ));
+        }
         var page = articleRepository.findAll(predicate, pageable);
         return handleIsAgreed(currentUser, page.map(ArticleListVo::new));
-    }
-
-    @Override
-    public Page<ArticleListVo> pageByKeywords(String keyword, Pageable pageable) {
-        var currentUser = userAuditingListener.getCurrentAuditor();
-        if(currentUser.isEmpty()) {
-            return handleIsAgreed(currentUser,articleRepository.findAllByKeywords(keyword, handlePageable(pageable)).map(ArticleListVo::new));
-        }else{
-            return handleIsAgreed(currentUser,articleRepository.findAllByKeywordsWithUserId(currentUser.get().getId(), keyword, handlePageable(pageable)).map(ArticleListVo::new));
-        }
-    }
-
-    @Override
-    public Page<ArticleListVo> pageByClass(Long articleClassId, Pageable pageable) {
-        var currentUser = userAuditingListener.getCurrentAuditor();
-        if(currentUser.isEmpty()){
-            return handleIsAgreed(currentUser,articleRepository.findAllByArticleClassIdAndIsPublicTrue(articleClassId, handlePageable(pageable)).map(ArticleListVo::new));
-        }else{
-            return handleIsAgreed(currentUser,articleRepository.findAllByArticleClassIdWithUserId(currentUser.get().getId(), articleClassId, handlePageable(pageable)).map(ArticleListVo::new));
-        }
-    }
-
-    @Override
-    public Page<ArticleListVo> pageByTag(Long articleTagId, Pageable pageable) {
-        var currentUser = userAuditingListener.getCurrentAuditor();
-        if(currentUser.isEmpty()){
-            return handleIsAgreed(currentUser,articleRepository.findAllByTagsIdAndIsPublicTrue(articleTagId, handlePageable(pageable)).map(ArticleListVo::new));
-        }else{
-            return handleIsAgreed(currentUser,articleRepository.findAllByTagsIdWithUserId(currentUser.get().getId(), articleTagId, handlePageable(pageable)).map(ArticleListVo::new));
-        }
-    }
-
-    /**
-     * 默认分页设置
-     * @param pageable 分页
-     */
-    private Pageable handlePageable(Pageable pageable){
-        if(pageable.isPaged() && pageable.getSort() == Sort.unsorted())
-            return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), DEFAULT_SORT);
-        return pageable;
     }
 
     /**
@@ -169,13 +137,6 @@ public class ArticleServiceImpl implements IArticleService {
         articlePage.forEach(a->a.setIsAgreed(articleAgreeMap.containsKey(a.getId())));
         return articlePage;
     }
-
-    private static final Sort DEFAULT_SORT = Sort.by(
-            new Sort.Order(Sort.Direction.DESC, "top"),
-            new Sort.Order(Sort.Direction.DESC, "recommend"),
-            new Sort.Order(Sort.Direction.DESC, "orderNum"),
-            new Sort.Order(Sort.Direction.DESC, "createdDate")
-    );
 
     @Override
     public ArticleVo update(ArticleDto dto) {
