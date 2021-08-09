@@ -39,3 +39,6 @@ spring:
       max-request-size: 24MB
   web:
     locale: zh_CN
+    resources:
+      cache:
+        period: 2592000

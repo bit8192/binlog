@@ -9,6 +9,7 @@ import cn.bincker.web.blog.base.vo.ValueVo;
 import cn.bincker.web.blog.expression.dto.ExpressionDto;
 import cn.bincker.web.blog.expression.service.IExpressionService;
 import cn.bincker.web.blog.expression.vo.ExpressionVo;
+import cn.bincker.web.blog.utils.ResponseUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -21,6 +22,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -63,6 +65,7 @@ public class ExpressionController {
         try(var in = systemFileFactory.fromPath(target.getPath()).getInputStream(); var out = response.getOutputStream()){
             in.transferTo(out);
         }
+        ResponseUtils.setCachePeriod(response, Duration.ofDays(30));
     }
 
     @GetMapping(value = "{title}", produces = "application/json")

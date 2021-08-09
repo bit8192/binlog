@@ -4,12 +4,14 @@ import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.material.entity.Article;
 import cn.bincker.web.blog.material.entity.Tag;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.util.StringUtils;
 
 import java.util.Optional;
 
 public class ArticleSpecification {
     public static Specification<Article> keyWords(String keywords){
         return (root, query, criteriaBuilder) -> {
+            if(!StringUtils.hasText(keywords)) return null;
             var pattern = "%" + keywords + "%";
             return criteriaBuilder.or(
                     criteriaBuilder.like(root.get("title"), pattern),

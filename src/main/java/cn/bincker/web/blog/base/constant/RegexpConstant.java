@@ -61,4 +61,11 @@ public class RegexpConstant {
     public static final String EXPRESSION_TITLE_VALUE = "^[\\w-_\\u4e00-\\u9fa5]+$";
 
     public static final Pattern EXPRESSION_TITLE = Pattern.compile(EXPRESSION_TITLE_VALUE);
+
+    /**
+     * IP
+     */
+    public static final String IP_VALUE = "^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$";
+
+    public static final Pattern IP = Pattern.compile(IP_VALUE);
 }

@@ -10,6 +10,7 @@ public class SystemProfileVo {
     private String ipc;
     private String github;
     private Boolean useQQAuthorize;
+    private String expression;//happy or serious
 
     public SystemProfileVo(SystemProfile systemProfile, boolean useQQAuthorize) {
         this.name = systemProfile.getName();

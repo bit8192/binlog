@@ -32,6 +32,9 @@ spring:
       max-request-size: 1024MB
   web:
     locale: zh_CN
+    resources:
+      cache:
+        period: 2592000
   jpa:
     hibernate:
       ddl-auto: update

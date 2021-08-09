@@ -18,6 +18,7 @@ import cn.bincker.web.blog.netdisk.dto.valid.UploadFileValid;
 import cn.bincker.web.blog.netdisk.vo.NetDiskFileListVo;
 import cn.bincker.web.blog.netdisk.vo.NetDiskFileVo;
 import cn.bincker.web.blog.utils.CommonUtils;
+import cn.bincker.web.blog.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
@@ -31,6 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -141,6 +143,7 @@ public class NetDiskFileController {
                 throw new ForbiddenException();
             }
         }else if(!systemFileProperties.getAllowEmptyReferer()) throw new ForbiddenException();
+        ResponseUtils.setCachePeriod(response, Duration.ofDays(30));
         outputFile(netDiskFile, user, response, false);
     }
 

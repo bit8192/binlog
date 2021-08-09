@@ -8,7 +8,7 @@ import cn.bincker.web.blog.base.exception.BadRequestException;
 import cn.bincker.web.blog.base.exception.ForbiddenException;
 import cn.bincker.web.blog.base.service.IUploadService;
 import cn.bincker.web.blog.base.dto.UploadFileDto;
-import cn.bincker.web.blog.utils.CommonUtils;
+import cn.bincker.web.blog.utils.ResponseUtils;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -20,7 +20,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
-import java.util.Arrays;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -49,7 +49,7 @@ public class UploadController {
             var serverPort = request.getServerPort();
             if(serverPort != 80 && serverPort != 443) host += ":" + serverPort;
             if(!host.equals(refererHost)) throw new ForbiddenException();
-        }else throw new ForbiddenException();
+        }
 
         Optional<UploadFile> uploadFileOptional = uploadService.getUploadFile(id);
         if(uploadFileOptional.isEmpty()) return ResponseEntity.notFound().build();
@@ -64,7 +64,8 @@ public class UploadController {
             }
         }
         File targetFile = new File(uploadFile.getPath());
-        response.setHeader("Content-Disposition", "attachment; filename=" + uploadFile.getName());
+//        response.setHeader("Content-Disposition", "attachment; filename=" + uploadFile.getName());
+        ResponseUtils.setCachePeriod(response, Duration.ofDays(30));
         return ResponseEntity.ok(new FileSystemResource(targetFile));
     }
 }

@@ -37,6 +37,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         final var blogger = Role.RoleEnum.BLOGGER.toString();
         final var admin = Role.RoleEnum.ADMIN.toString();
         http.authorizeRequests()
+                .antMatchers(HttpMethod.POST, basePath + "/article/*/view").permitAll()
                 .antMatchers(HttpMethod.POST, "**").authenticated()
                 .antMatchers(HttpMethod.PUT, "**").authenticated()
                 .antMatchers(HttpMethod.PATCH, "**").authenticated()
