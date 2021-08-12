@@ -46,8 +46,8 @@ public class UploadServiceImpl implements IUploadService {
 
         Optional<BaseUser> userOptional = userAuditingListener.getCurrentAuditor();
         uploadDir = userOptional
-                .map(baseUser -> systemFileFactory.fromPath(systemFileProperties.getLocation(), baseUser.getUsername(), "public", dateUtils.today()))
-                .orElseGet(() -> systemFileFactory.fromPath(systemFileProperties.getLocation(), "public", dateUtils.today()));
+                .map(baseUser -> systemFileFactory.fromPath(systemFileProperties.getLocation(), baseUser.getUsername(), "public", dateUtils.todayStr()))
+                .orElseGet(() -> systemFileFactory.fromPath(systemFileProperties.getLocation(), "public", dateUtils.todayStr()));
 
         if(!uploadDir.exists() && !uploadDir.mkdirs()) throw new SystemException("创建目录失败: path=" + uploadDir.getPath());
         String finalUploadDir = uploadDir.getPath();

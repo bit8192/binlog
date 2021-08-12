@@ -8,10 +8,7 @@ import org.springframework.util.StringUtils;
 
 import javax.persistence.*;
 import javax.validation.constraints.Min;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -87,7 +84,7 @@ public class NetDiskFile extends AuditEntity {
 
         @Override
         public List<Long> convertToEntityAttribute(String s) {
-            if(!StringUtils.hasText(s)) return Collections.emptyList();
+            if(!StringUtils.hasText(s)) return new ArrayList<>();
             return Stream.of(s.split("/")).filter(i->i.length() > 0).map(Long::valueOf).collect(Collectors.toList());
         }
     }

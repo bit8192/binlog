@@ -1,7 +1,10 @@
 package cn.bincker.web.blog.security.config;
 
+import cn.bincker.web.blog.base.entity.AuthorizationUser;
+import cn.bincker.web.blog.base.event.UserActionEvent;
 import cn.bincker.web.blog.base.vo.SuccessMsgVo;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
@@ -19,9 +22,11 @@ import java.nio.charset.StandardCharsets;
 @Component
 public class AuthenticationHandler implements AuthenticationSuccessHandler, AuthenticationFailureHandler {
     private final ObjectMapper objectMapper;
+    private final ApplicationContext applicationContext;
 
-    public AuthenticationHandler(ObjectMapper objectMapper) {
+    public AuthenticationHandler(ObjectMapper objectMapper, ApplicationContext applicationContext) {
         this.objectMapper = objectMapper;
+        this.applicationContext = applicationContext;
     }
 
     @Override
@@ -38,5 +43,9 @@ public class AuthenticationHandler implements AuthenticationSuccessHandler, Auth
         httpServletResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
         httpServletResponse.setCharacterEncoding(StandardCharsets.UTF_8.name());
         objectMapper.writeValue(httpServletResponse.getWriter(), new SuccessMsgVo("认证成功"));
+
+        var authorizationUser = (AuthorizationUser) authentication.getPrincipal();
+        var userActionEvent = new UserActionEvent(applicationContext, authorizationUser.getBaseUser(), UserActionEvent.ActionEnum.LOGIN_PASSWORD);
+        applicationContext.publishEvent(userActionEvent);
     }
 }

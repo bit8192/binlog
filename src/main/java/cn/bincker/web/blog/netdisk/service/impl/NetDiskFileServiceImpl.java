@@ -201,15 +201,9 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
             netDiskFile.setParents(Collections.emptyList());
             return;
         }
-        var parents = netDiskFile.getParents();
-        if(parents == null){
-            parents = new ArrayList<>((parent.getParents() == null ? 0 : parent.getParents().size()) + 1);
-            netDiskFile.setParents(parents);
-        }
-        if(parent.getParents() != null){
-            parents.addAll(parent.getParents());
-        }
+        var parents = new ArrayList<>(parent.getParents());
         parents.add(parent.getId());
+        netDiskFile.setParents(parents);
     }
 
     @Override

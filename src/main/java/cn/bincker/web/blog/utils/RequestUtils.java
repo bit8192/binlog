@@ -2,7 +2,9 @@ package cn.bincker.web.blog.utils;
 
 import org.springframework.util.StringUtils;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Optional;
 
 public class RequestUtils {
 
@@ -34,5 +36,17 @@ public class RequestUtils {
         }else{
             return request.getScheme() + "://" + request.getServerName() + ":" + port;
         }
+    }
+
+    /**
+     * 获取Cookie
+     */
+    public static Optional<Cookie> getCookie(HttpServletRequest request, String name){
+        for (Cookie cookie : request.getCookies()) {
+            if(cookie.getName().equals(name)){
+                return Optional.of(cookie);
+            }
+        }
+        return Optional.empty();
     }
 }

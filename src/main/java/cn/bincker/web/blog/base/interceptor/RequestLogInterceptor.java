@@ -10,9 +10,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.time.Duration;
+import java.util.UUID;
 
 @Component
 public class RequestLogInterceptor implements HandlerInterceptor {
@@ -38,9 +39,21 @@ public class RequestLogInterceptor implements HandlerInterceptor {
                 log.setAddress(address);
             }
         }
+        log.setMethod(request.getMethod());
         log.setRequestUri(request.getRequestURI());
         log.setSessionId(request.getSession(true).getId());
+        var cookieOptional = RequestUtils.getCookie(request, "clientId");
+        if(cookieOptional.isPresent()){
+            log.setClientId(cookieOptional.get().getValue());
+        }else{
+            log.setClientId(UUID.randomUUID().toString());
+            var cookie = new Cookie("clientId", log.getClientId());
+            cookie.setMaxAge(3600*24*365*30);
+            response.addCookie(cookie);
+        }
         log.setUserAgent(request.getHeader(HttpHeaders.USER_AGENT));
+        log.setHost(request.getServerName());
+        log.setReferer(request.getHeader(HttpHeaders.REFERER));
         var userOptional = userAuditingListener.getCurrentAuditor();
         userOptional.ifPresent(user -> log.setUserId(user.getId()));
         requestLogRepository.save(log);

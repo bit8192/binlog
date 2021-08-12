@@ -3,6 +3,7 @@ package cn.bincker.web.blog.security.config;
 import cn.bincker.web.blog.base.entity.Role;
 import cn.bincker.web.blog.security.filter.VerifyCodeFilter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
@@ -18,13 +19,15 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     private final String basePath;
     private final SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer;
     private final UserDetailsService userDetailsService;
+    private final ApplicationContext applicationContext;
 
-    public SpringSecurityConfig(AuthenticationHandler authenticationHandler, VerifyCodeFilter verifyCodeFilter, @Value("${binlog.base-path}") String basePath, SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer, UserDetailsService userDetailsService) {
+    public SpringSecurityConfig(AuthenticationHandler authenticationHandler, VerifyCodeFilter verifyCodeFilter, @Value("${binlog.base-path}") String basePath, SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer, UserDetailsService userDetailsService, ApplicationContext applicationContext) {
         this.authenticationHandler = authenticationHandler;
         this.verifyCodeFilter = verifyCodeFilter;
         this.basePath = basePath;
         this.securityExceptionHandingConfigurer = securityExceptionHandingConfigurer;
         this.userDetailsService = userDetailsService;
+        this.applicationContext = applicationContext;
     }
 
     @Override
@@ -57,7 +60,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
                 .and().logout()
                 .logoutUrl(basePath + "/logout")
-                .logoutSuccessHandler(new CustomLogoutSuccessHandler())
+                .logoutSuccessHandler(new CustomLogoutSuccessHandler(applicationContext))
 
                 .and().rememberMe()
                 .rememberMeParameter("remember-me")
