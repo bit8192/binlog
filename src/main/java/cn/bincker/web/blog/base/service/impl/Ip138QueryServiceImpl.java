@@ -49,6 +49,11 @@ public class Ip138QueryServiceImpl implements IIpAddressQueryService {
     @Override
     public Optional<IpAddressVo> query(String ip) {
         if(!StringUtils.hasText(ip) || !ip.matches(RegexpConstant.IP_VALUE)) return Optional.empty();
+        if(ip.equals("127.0.0.1")) {
+            var vo = new IpAddressVo();
+            vo.setAddress("本地");
+            return Optional.of(vo);
+        }
         var addressOptional = systemCacheService.getValue(CACHE_KEY_IP_ADDRESS + ip, IpAddressVo.class);
         if(addressOptional.isPresent()) {
             return addressOptional;

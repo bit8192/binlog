@@ -2,8 +2,8 @@ package cn.bincker.web.blog.netdisk.entity;
 
 import cn.bincker.web.blog.base.entity.AuditEntity;
 import cn.bincker.web.blog.base.entity.BaseUser;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
+import org.hibernate.Hibernate;
 import org.springframework.util.StringUtils;
 
 import javax.persistence.*;
@@ -12,8 +12,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@EqualsAndHashCode(callSuper = true)
-@Data
+@Getter
+@Setter
+@ToString
+@RequiredArgsConstructor
 @Entity
 public class NetDiskFile extends AuditEntity {
     private String name;
@@ -43,6 +45,7 @@ public class NetDiskFile extends AuditEntity {
     private List<Long> parents;
 
     @OneToMany(mappedBy = "parent")
+    @ToString.Exclude
     private List<NetDiskFile> children;
 
     /**
@@ -67,12 +70,14 @@ public class NetDiskFile extends AuditEntity {
      * 可读用户
      */
     @ManyToMany
+    @ToString.Exclude
     private Set<BaseUser> readableUserList = new HashSet<>();
 
     /**
      * 可写用户
      */
     @ManyToMany
+    @ToString.Exclude
     private Set<BaseUser> writableUserList = new HashSet<>();
 
     public static class ParentsConverter implements AttributeConverter<List<Long>, String>{
@@ -87,5 +92,19 @@ public class NetDiskFile extends AuditEntity {
             if(!StringUtils.hasText(s)) return new ArrayList<>();
             return Stream.of(s.split("/")).filter(i->i.length() > 0).map(Long::valueOf).collect(Collectors.toList());
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        NetDiskFile that = (NetDiskFile) o;
+
+        return Objects.equals(getId(), that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return 552188326;
     }
 }

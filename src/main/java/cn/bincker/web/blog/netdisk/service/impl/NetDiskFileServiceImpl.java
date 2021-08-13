@@ -133,9 +133,11 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
     @Transactional
     public List<NetDiskFileVo> upload(Collection<MultipartFile> multipartFiles, NetDiskFileDto dto) {
         var currentUser = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
+        Optional<NetDiskFile> parentOptional = Optional.empty();
         String targetPath;
-        Optional<NetDiskFile> parentOptional = dto.getParentId() == null ? Optional.empty() : netDiskFileRepository.findById(dto.getParentId());
-        if(parentOptional.isPresent()){
+        if(dto.getParentId() != null){
+            parentOptional = netDiskFileRepository.findById(dto.getParentId());
+            if(parentOptional.isEmpty()) throw new NotFoundException();
             targetPath = parentOptional.get().getPath();
         }else{
             var targetPathSystemFile = systemFileFactory.fromPath(systemFileProperties.getLocation(), currentUser.getUsername());
@@ -151,6 +153,8 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
             }else{
                 netDiskFile.setName(UUID.randomUUID().toString());
             }
+            while (systemFileFactory.fromPath(targetPath, netDiskFile.getName()).exists())
+                netDiskFile.setName(FileUtils.nextSerialFileName(netDiskFile.getName()));
             netDiskFile.setPath(FileUtils.join(targetPath, netDiskFile.getName()));
             netDiskFile.setSuffix(CommonUtils.getStringSuffix(netDiskFile.getName(), "."));//后缀全用小写，方便查询
             netDiskFile.setMediaType(multipartFile.getContentType());

@@ -90,4 +90,12 @@ public class RequestLogSpecification {
             return cb.lessThan(root.get("createdDate"), end);
         };
     }
+
+    public static Specification<RequestLog> userIdNotEqual(Long id) {
+        return (root, query, cb) -> cb.notEqual(root.get("userId"), id);
+    }
+
+    public static Specification<RequestLog> userIdIsNull(){
+        return (root, query, cb) -> cb.isNull(root.get("userId"));
+    }
 }

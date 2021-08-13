@@ -54,6 +54,9 @@ public class UploadController {
         Optional<UploadFile> uploadFileOptional = uploadService.getUploadFile(id);
         if(uploadFileOptional.isEmpty()) return ResponseEntity.notFound().build();
         UploadFile uploadFile = uploadFileOptional.get();
+//        检测缓存
+        if(ResponseUtils.checkETag(request, response, uploadFile.getSha256())) return ResponseEntity.status(HttpStatus.NOT_MODIFIED).build();
+        if(ResponseUtils.checkLastModified(request, response, uploadFile.getLastModifiedDate())) return ResponseEntity.status(HttpStatus.NOT_MODIFIED).build();
         //判断是否有权限读取
         if(!uploadFile.getIsPublic()){
             BaseUser createUser = uploadFile.getCreatedUser();

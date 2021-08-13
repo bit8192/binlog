@@ -42,7 +42,9 @@ public class RequestUtils {
      * 获取Cookie
      */
     public static Optional<Cookie> getCookie(HttpServletRequest request, String name){
-        for (Cookie cookie : request.getCookies()) {
+        var cookies = request.getCookies();
+        if(cookies == null) return Optional.empty();
+        for (Cookie cookie : cookies) {
             if(cookie.getName().equals(name)){
                 return Optional.of(cookie);
             }

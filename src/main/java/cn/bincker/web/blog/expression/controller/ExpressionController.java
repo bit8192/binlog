@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Duration;
@@ -56,16 +57,18 @@ public class ExpressionController {
     }
 
     @GetMapping(value = "{title}", produces = {MediaType.IMAGE_GIF_VALUE, MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE, "image/webp","image/*"})
-    public void get(@PathVariable String title, HttpServletResponse response) throws IOException {
+    public void get(@PathVariable String title, HttpServletRequest request, HttpServletResponse response) throws IOException {
         var target = expressionService.getByTitle(title);
         if(!systemFileProperties.getType().equals(FileSystemTypeEnum.LOCAL)) {
             response.sendRedirect(systemFileFactory.getDownloadUrl(target.getPath()));
             return;
         }
-        try(var in = systemFileFactory.fromPath(target.getPath()).getInputStream(); var out = response.getOutputStream()){
-            in.transferTo(out);
-        }
+        if(ResponseUtils.checkETag(request, response, target.getSha256())) return;
+        if(ResponseUtils.checkLastModified(request, response, target.getLastModifiedDate())) return;
         ResponseUtils.setCachePeriod(response, Duration.ofDays(30));
+        try(var in = systemFileFactory.fromPath(target.getPath()).getInputStream()){
+            in.transferTo(response.getOutputStream());
+        }
     }
 
     @GetMapping(value = "{title}", produces = "application/json")

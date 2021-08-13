@@ -3,7 +3,7 @@ server:
 binlog:
   name: Bincker的个人博客
   copy-right: copyright © 2021 Bincker
-  ipc: 京ICP备1234567890号
+  icp: 京ICP备1234567890号
   github: https://github.com/Bincker1973
   base-path: /api
   datetime-format: yyyy-MM-dd HH:mm:ss
@@ -31,6 +31,7 @@ spring:
     default-property-inclusion: non_null
     serialization:
       WRITE_ENUMS_USING_TO_STRING: true
+    time-zone: Asia/Shanghai
   profiles:
     active: @profiles.active@
   servlet:

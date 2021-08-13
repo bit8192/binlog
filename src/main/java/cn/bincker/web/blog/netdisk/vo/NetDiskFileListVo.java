@@ -13,6 +13,8 @@ public class NetDiskFileListVo {
 
     private Boolean isDirectory;
 
+    private String mediaType;
+
     private Long size;
 
     private Date createdDate;
@@ -25,6 +27,7 @@ public class NetDiskFileListVo {
         this.id = file.getId();
         this.name = file.getName();
         this.isDirectory = file.getIsDirectory();
+        this.mediaType = file.getMediaType();
         this.size = file.getSize();
         this.createdDate = file.getCreatedDate();
         this.lastModifiedDate = file.getLastModifiedDate();

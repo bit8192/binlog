@@ -16,7 +16,9 @@ public class NetDiskFileVo {
 
     private Boolean isDirectory;
 
-    private Long size = 0L;
+    private String mediaType;
+
+    private Long size;
 
     private Date createdDate;
 
@@ -40,13 +42,11 @@ public class NetDiskFileVo {
 
     private Boolean writable;
 
-    public NetDiskFileVo() {
-    }
-
     public NetDiskFileVo(NetDiskFile netDiskFile) {
         this.id = netDiskFile.getId();
         this.name = netDiskFile.getName();
         this.isDirectory = netDiskFile.getIsDirectory();
+        this.mediaType = netDiskFile.getMediaType();
         this.size = netDiskFile.getSize();
         this.createdDate = netDiskFile.getCreatedDate();
         this.lastModifiedDate = netDiskFile.getLastModifiedDate();

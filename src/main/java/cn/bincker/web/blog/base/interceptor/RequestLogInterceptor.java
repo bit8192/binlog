@@ -48,6 +48,7 @@ public class RequestLogInterceptor implements HandlerInterceptor {
         }else{
             log.setClientId(UUID.randomUUID().toString());
             var cookie = new Cookie("clientId", log.getClientId());
+            cookie.setPath("/");
             cookie.setMaxAge(3600*24*365*30);
             response.addCookie(cookie);
         }

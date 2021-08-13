@@ -7,7 +7,7 @@ import lombok.Data;
 public class SystemProfileVo {
     private String name;
     private String copyRight;
-    private String ipc;
+    private String icp;
     private String github;
     private Boolean useQQAuthorize;
     private String expression;//happy or serious
@@ -15,7 +15,7 @@ public class SystemProfileVo {
     public SystemProfileVo(SystemProfile systemProfile, boolean useQQAuthorize) {
         this.name = systemProfile.getName();
         this.copyRight = systemProfile.getCopyRight();
-        this.ipc = systemProfile.getIpc();
+        this.icp = systemProfile.getIcp();
         this.github = systemProfile.getGithub();
         this.useQQAuthorize = useQQAuthorize;
     }

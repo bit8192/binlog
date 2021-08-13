@@ -21,6 +21,7 @@ import cn.bincker.web.blog.utils.CommonUtils;
 import cn.bincker.web.blog.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.util.StringUtils;
@@ -28,8 +29,12 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
+import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -134,6 +139,8 @@ public class NetDiskFileController {
     @GetMapping(value = "get/{id}")
     public void get(@PathVariable Long id, BaseUser user, HttpServletRequest request, HttpServletResponse response){
         var netDiskFile = netDiskFileService.findById(id).orElseThrow(NotFoundException::new);
+        if(ResponseUtils.checkETag(request, response, netDiskFile.getSha256())) return;
+        if(ResponseUtils.checkLastModified(request, response, netDiskFile.getLastModifiedDate())) return;
         String referer = request.getHeader(HttpHeaders.REFERER);
         if(StringUtils.hasText(referer)){
             var matcher = RegexpConstant.URL_HOST.matcher(referer);
@@ -168,6 +175,60 @@ public class NetDiskFileController {
         } catch (IOException e) {
             log.error("下载文件失败: netDiskFileId=" + netDiskFile.getId() + "\tpath=" + netDiskFile.getPath());
             throw new SystemException(e);
+        }
+    }
+
+    @GetMapping("thumbnail/{id}/{size}")
+    public void thumbnail(@PathVariable Long id, BaseUser user, @PathVariable Integer size, HttpServletRequest request, HttpServletResponse response){
+        if(size == null || size < 40 || size > 200) throw new BadRequestException();
+        var netDiskFile = netDiskFileService.findById(id).orElseThrow(NotFoundException::new);
+//        浏览器缓存检测
+        if(ResponseUtils.checkETag(request, response, netDiskFile.getSha256())) return;
+        if(ResponseUtils.checkLastModified(request, response, netDiskFile.getLastModifiedDate())) return;
+//        是否是图片判断
+        if(netDiskFile.getIsDirectory() || !netDiskFile.getMediaType().contains("image")) throw new NotFoundException();
+//        权限检测
+        if(!netDiskFile.getEveryoneReadable()) netDiskFileService.checkReadPermission(user, netDiskFile);
+//        服务器缓存
+        ResponseUtils.setCachePeriod(response, Duration.ofDays(30));
+        var file = new File(systemFileProperties.getImageCacheLocation(), netDiskFile.getSha256() + "_" + size + ".webp");
+        if(file.exists()) {
+            try(var in = new FileInputStream(file)) {
+                in.transferTo(response.getOutputStream());
+            } catch (IOException e) {
+                log.error("写出图片异常", e);
+            }
+            return;
+        }
+//        生成图片缓存
+        BufferedImage image;
+        try {
+            image = ImageIO.read(systemFileFactory.fromNetDiskFile(netDiskFile).getInputStream());
+        } catch (IOException e) {
+            log.error("生成缩略图失败，读取图片失败: id=" + id, e);
+            throw new SystemException();
+        }
+        int height, width;
+        if(image.getHeight() > image.getWidth()){
+            height = size;
+            width = size * image.getWidth() / image.getHeight();
+        }else{
+            width = size;
+            height = size * image.getHeight() / image.getWidth();
+        }
+        var thumbnail = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        var graphics = thumbnail.getGraphics();
+        graphics.drawImage(image, 0, 0, width, height, null);
+        try {
+            ImageIO.write(thumbnail, "webp", file);
+        } catch (IOException e) {
+            log.error("生成缩略图失败，写出图片失败: id=" + id, e);
+            throw new SystemException();
+        }
+        try(var in = new FileInputStream(file)) {
+            in.transferTo(response.getOutputStream());
+        } catch (IOException e) {
+            log.error("写出图片异常", e);
         }
     }
 

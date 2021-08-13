@@ -12,7 +12,8 @@ public class SystemFileProperties {
     /**
      * 储存文件路径
      */
-    private String location = "";
+    private String location = "upload-file";
+    private String imageCacheLocation = "image-cache";
     private FileSystemTypeEnum type;
     private String[] allowReferer;
     private Boolean allowEmptyReferer;

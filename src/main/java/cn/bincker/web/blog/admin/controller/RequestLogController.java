@@ -33,10 +33,11 @@ public class RequestLogController {
             String sessionId,
             String clientId,
             Long userId,
+            Boolean excludeMe,
             Date start,
             Date end,
             @PageableDefault(sort = "createdDate", direction = Sort.Direction.DESC) Pageable pageable
     ){
-        return requestLogService.getPage(ip, address, host, referer, userAgent, method, requestUri, sessionId, clientId, userId, start, end, pageable);
+        return requestLogService.getPage(ip, address, host, referer, userAgent, method, requestUri, sessionId, clientId, userId, excludeMe, start, end, pageable);
     }
 }

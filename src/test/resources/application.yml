@@ -3,7 +3,7 @@ server:
 binlog:
   name: Bincker的博客
   copy-right: copyright © 2021 Bincker
-  ipc: 京ICP备1234567890号
+  icp: 京ICP备1234567890号
   github: https://github.com/Bincker1973
   base-path: /api
   datetime-format: yyyy-MM-dd HH:mm:ss

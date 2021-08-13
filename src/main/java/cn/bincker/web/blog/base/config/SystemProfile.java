@@ -19,7 +19,7 @@ public class SystemProfile {
     /**
      * 展示ipc
      */
-    private String ipc;
+    private String icp;
     /**
      * 展示github
      */
