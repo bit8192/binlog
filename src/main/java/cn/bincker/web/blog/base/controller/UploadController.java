@@ -41,7 +41,7 @@ public class UploadController {
     @GetMapping("/{id}")
     public ResponseEntity<?> get(@PathVariable Long id, BaseUser user, HttpServletRequest request, HttpServletResponse response){
         String referer = request.getHeader(HttpHeaders.REFERER);
-        if(StringUtils.hasText(referer)){
+        if(StringUtils.hasText(referer) && !referer.equals("http://localhost:8080/")){
             var matcher = RegexpConstant.URL_HOST.matcher(referer);
             if(!matcher.find()) throw new BadRequestException();
             var refererHost = matcher.group(1);

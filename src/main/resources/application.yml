@@ -34,6 +34,7 @@ spring:
     time-zone: Asia/Shanghai
   profiles:
     active: @profiles.active@
+    include: local
   servlet:
     multipart:
       max-file-size: 20MB

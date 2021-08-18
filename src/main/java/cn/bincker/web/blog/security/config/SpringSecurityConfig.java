@@ -20,14 +20,24 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     private final SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer;
     private final UserDetailsService userDetailsService;
     private final ApplicationContext applicationContext;
+    private final String rememberMeKey;
 
-    public SpringSecurityConfig(AuthenticationHandler authenticationHandler, VerifyCodeFilter verifyCodeFilter, @Value("${binlog.base-path}") String basePath, SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer, UserDetailsService userDetailsService, ApplicationContext applicationContext) {
+    public SpringSecurityConfig(
+            AuthenticationHandler authenticationHandler,
+            VerifyCodeFilter verifyCodeFilter,
+            @Value("${binlog.base-path}") String basePath,
+            SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer,
+            UserDetailsService userDetailsService,
+            ApplicationContext applicationContext,
+            @Value("${binlog.remember-me-key:d#>bc49c&8475$41d6*ab0a.8ca863588e63}") String rememberMeKey
+    ) {
         this.authenticationHandler = authenticationHandler;
         this.verifyCodeFilter = verifyCodeFilter;
         this.basePath = basePath;
         this.securityExceptionHandingConfigurer = securityExceptionHandingConfigurer;
         this.userDetailsService = userDetailsService;
         this.applicationContext = applicationContext;
+        this.rememberMeKey = rememberMeKey;
     }
 
     @Override
@@ -40,7 +50,15 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         final var blogger = Role.RoleEnum.BLOGGER.toString();
         final var admin = Role.RoleEnum.ADMIN.toString();
         http.authorizeRequests()
-                .antMatchers(HttpMethod.POST, basePath + "/article/*/view").permitAll()
+                .antMatchers(
+                        HttpMethod.POST,
+//                        文章点击量
+                        basePath + "/article/*/view",
+//                        上传文件
+                        basePath + "/files",
+//                        注册用户
+                        basePath + "/users"
+                ).permitAll()
                 .antMatchers(HttpMethod.POST, "**").authenticated()
                 .antMatchers(HttpMethod.PUT, "**").authenticated()
                 .antMatchers(HttpMethod.PATCH, "**").authenticated()
@@ -66,7 +84,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .rememberMeParameter("remember-me")
                 .tokenValiditySeconds(30 * 24 * 60 * 60)
                 .userDetailsService(userDetailsService)
-                .key("d#>bc49c&8475$41d6*ab0a.8ca863588e63")
+                .key(rememberMeKey)
 
                 .and().exceptionHandling(securityExceptionHandingConfigurer)
                 .httpBasic(Customizer.withDefaults())

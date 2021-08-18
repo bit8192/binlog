@@ -5,13 +5,18 @@ import cn.bincker.web.blog.base.entity.QQAccessToken;
 import cn.bincker.web.blog.base.entity.QQUserInfo;
 import cn.bincker.web.blog.base.exception.SystemException;
 import cn.bincker.web.blog.base.service.IQQAuthorizeService;
+import cn.bincker.web.blog.utils.RequestUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -23,7 +28,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-@ConditionalOnProperty(value = "system.qq-authorize.use", havingValue = "true")
+@ConditionalOnProperty(value = "binlog.oauth2.qq.use", havingValue = "true")
 @Service
 public class QQAuthorizeServiceImpl implements IQQAuthorizeService {
     private static final Logger log = LoggerFactory.getLogger(QQAuthorizeServiceImpl.class);
@@ -34,36 +39,47 @@ public class QQAuthorizeServiceImpl implements IQQAuthorizeService {
     private final QQAuthorizeConfigProperties configProperties;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
+    private final String basePath;
 
-    public QQAuthorizeServiceImpl(QQAuthorizeConfigProperties configProperties, ObjectMapper objectMapper) {
+    public QQAuthorizeServiceImpl(QQAuthorizeConfigProperties configProperties, ObjectMapper objectMapper, @Value("${binlog.base-path}") String basePath) {
         this.configProperties = configProperties;
         this.objectMapper = objectMapper;
         httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+        this.basePath = basePath;
     }
 
     @Override
     public String getAuthorizeUrl(String redirectUrl, String state) {
-        return String.format(URL_AUTHORIZE, configProperties, URLEncoder.encode(redirectUrl, StandardCharsets.UTF_8), state);
+        return String.format(URL_AUTHORIZE, configProperties.getAppId(), URLEncoder.encode(redirectUrl, StandardCharsets.UTF_8), state);
     }
 
     @Override
-    public QQAccessToken getAccessToken(String code, String redirectUrl) {
+    public QQAccessToken getAccessToken(HttpServletRequest req, String code) {
         var request = HttpRequest.newBuilder(URI.create(String.format(
                 URL_GET_ACCESS_TOKEN,
                 configProperties.getAppId(),
                 configProperties.getAppKey(),
                 code,
-                URLEncoder.encode(redirectUrl, StandardCharsets.UTF_8)
+                URLEncoder.encode(RequestUtils.getRequestBaseUrl(req) + basePath + "/authorize/qq/notice", StandardCharsets.UTF_8)
         ))).GET().build();
         try {
-            var response = httpClient.send(request, (responseInfo -> HttpResponse.BodySubscribers.mapping(HttpResponse.BodySubscribers.ofString(StandardCharsets.UTF_8), body-> {
-                try {
-                    return objectMapper.readValue(body, QQAccessToken.class);
-                } catch (JsonProcessingException e) {
-                    log.error("获取QQAccessToken时, 响应json转换失败", e);
-                    return null;
-                }
-            })));
+            var response = httpClient.send(
+                    request,
+                    responseInfo -> HttpResponse.BodySubscribers.mapping(HttpResponse.BodySubscribers.ofString(StandardCharsets.UTF_8), body-> {
+                        if(responseInfo.statusCode() != HttpStatus.OK.value()) return null;
+                        try {
+                            var result = objectMapper.readValue(body, QQAccessToken.class);
+                            if(!StringUtils.hasText(result.getAccessToken())){
+                                log.error("获取qq AccessToken 失败: body=" + body);
+                                return null;
+                            }
+                            return result;
+                        } catch (JsonProcessingException e) {
+                            log.error("获取QQAccessToken时, 响应json转换失败: content=" + body, e);
+                            return null;
+                        }
+                    })
+            );
             if(response.body() == null) throw new SystemException();
             return response.body();
         } catch (IOException | InterruptedException e) {
@@ -79,9 +95,19 @@ public class QQAuthorizeServiceImpl implements IQQAuthorizeService {
             var response = httpClient.send(request, responseInfo -> HttpResponse.BodySubscribers.mapping(
                     HttpResponse.BodySubscribers.ofString(StandardCharsets.UTF_8),
                     body->{
+                        if(responseInfo.statusCode() != HttpStatus.OK.value()){
+                            log.error("获取QQ openId 失败：code=" + responseInfo.statusCode() + "\tbody=" + body);
+                            return null;
+                        }
                         try {
                             //noinspection unchecked
-                            return (Map<String, String>) objectMapper.readValue(body, objectMapper.getTypeFactory().constructMapType(HashMap.class, String.class, String.class));
+                            var map = (Map<String, String>) objectMapper.readValue(body, objectMapper.getTypeFactory().constructMapType(HashMap.class, String.class, String.class));
+                            var openId = map.get("openid");
+                            if(!StringUtils.hasText(openId)){
+                                log.error("获取QQ openId失败: body=" + body);
+                                return null;
+                            }
+                            return openId;
                         } catch (JsonProcessingException e) {
                             log.error("获取QQOpenId时，响应json解析失败", e);
                             return null;
@@ -89,7 +115,7 @@ public class QQAuthorizeServiceImpl implements IQQAuthorizeService {
                     }
             ));
             if(response.body() == null) throw new SystemException();
-            return response.body().get("openid");
+            return response.body();
         } catch (IOException | InterruptedException e) {
             log.error("获取QQOpenId失败", e);
             throw new SystemException(e);
@@ -97,7 +123,8 @@ public class QQAuthorizeServiceImpl implements IQQAuthorizeService {
     }
 
     @Override
-    public QQUserInfo getUserInfo(String accessToken, String openId) {
+    public QQUserInfo getUserInfo(String accessToken) {
+        var openId = getOpenId(accessToken);
         var request = HttpRequest.newBuilder(URI.create(String.format(
                 URL_GET_USER_INFO,
                 accessToken,
@@ -105,19 +132,33 @@ public class QQAuthorizeServiceImpl implements IQQAuthorizeService {
                 openId
         ))).build();
         try {
-            var response = httpClient.send(request, responseInfo->HttpResponse.BodySubscribers.mapping(
-                    HttpResponse.BodySubscribers.ofString(StandardCharsets.UTF_8),
-                    body->{
-                        try {
-                            return objectMapper.readValue(body, QQUserInfo.class);
-                        } catch (JsonProcessingException e) {
-                            log.error("获取qq用户信息时，响应json解析失败", e);
-                            return null;
-                        }
-                    }
-            ));
+            var response = httpClient.send(
+                    request,
+                    responseInfo->HttpResponse.BodySubscribers.mapping(
+                            HttpResponse.BodySubscribers.ofString(StandardCharsets.UTF_8),
+                            body->{
+                                if(responseInfo.statusCode() != HttpStatus.OK.value()) {
+                                    log.error("获取QQ用户信息失败: code=" + responseInfo.statusCode() + "\tbody=" + body);
+                                    return null;
+                                }
+                                try {
+                                    var userInfo = objectMapper.readValue(body, QQUserInfo.class);
+                                    if(userInfo.getRet() == -1){
+                                        log.error("获取qq用户信息失败：body=" + body);
+                                        return null;
+                                    }
+                                    return userInfo;
+                                } catch (JsonProcessingException e) {
+                                    log.error("获取qq用户信息时，响应json解析失败", e);
+                                    return null;
+                                }
+                            }
+                    )
+            );
             if(response.body() == null) throw new SystemException();
-            return response.body();
+            var userInfo = response.body();
+            userInfo.setOpenId(openId);
+            return userInfo;
         } catch (IOException | InterruptedException e) {
             log.error("获取qq用户信息失败", e);
             throw new SystemException();

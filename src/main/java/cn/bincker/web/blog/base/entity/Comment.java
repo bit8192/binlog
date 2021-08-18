@@ -1,19 +1,22 @@
 package cn.bincker.web.blog.base.entity;
 
 import cn.bincker.web.blog.base.config.UserAuditingListener;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
+import org.hibernate.Hibernate;
 import org.springframework.data.annotation.CreatedBy;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotEmpty;
+import java.util.Objects;
 
 /**
  * 留言
  */
-@EqualsAndHashCode(callSuper = true)
 @Entity
-@Data
+@Getter
+@Setter
+@ToString
+@RequiredArgsConstructor
 @EntityListeners(UserAuditingListener.class)
 public class Comment extends BaseEntity {
     @Enumerated(EnumType.STRING)
@@ -55,5 +58,19 @@ public class Comment extends BaseEntity {
          * 留言
          */
         LEFT_MESSAGE
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        Comment comment = (Comment) o;
+
+        return Objects.equals(getId(), comment.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return 860659860;
     }
 }

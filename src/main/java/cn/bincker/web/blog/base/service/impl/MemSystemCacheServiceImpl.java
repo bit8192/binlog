@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class MemSystemCacheServiceImpl implements ISystemCacheService, DisposableBean {
+    private static final Object NULL_OBJECT = new Object();//充当null的value
     private static final long CLEAR_TIMEOUT = 5 * 60 * 1000L;//定时清理时间(5分钟)
     private final Map<String, Object> cacheMap;//所有数据将存在这里
     private final PriorityQueue<ExpireInfo> expireInfoQueue;//存储过期信息，定时清理
@@ -72,7 +73,7 @@ public class MemSystemCacheServiceImpl implements ISystemCacheService, Disposabl
             expireInfoQueue.add(expireInfo);
         }
         //放在后面推入，防止在等待时被删掉
-        this.cacheMap.put(key, obj);
+        this.cacheMap.put(key, obj == null ? NULL_OBJECT : obj);
     }
 
     @Override
@@ -106,7 +107,7 @@ public class MemSystemCacheServiceImpl implements ISystemCacheService, Disposabl
     @Override
     public <T> Optional<T> getValue(String key, Class<T> clazz) {
         Object result = cacheMap.get(key);
-        if(result == null) return Optional.empty();
+        if(result == null || result == NULL_OBJECT) return Optional.empty();
         if(!clazz.isAssignableFrom(result.getClass())){
             throw new SystemException("无法将[" + result.getClass() + "]转换为[" + clazz + "]");
         }

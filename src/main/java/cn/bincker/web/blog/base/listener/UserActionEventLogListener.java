@@ -20,6 +20,8 @@ public class UserActionEventLogListener implements ApplicationListener<UserActio
         log.setAction(event.getAction());
         log.setUser(event.getUser());
         log.setCreatedDate(event.getCreatedDate());
+        log.setTargetId(event.getTarget() == null ? null : event.getTarget().getId());
+        log.setAdditionalInfo(event.getAdditionalInfo());
         userActionLogRepository.save(log);
     }
 }

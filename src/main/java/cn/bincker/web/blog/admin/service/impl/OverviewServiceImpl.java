@@ -70,10 +70,8 @@ public class OverviewServiceImpl implements IOverviewService {
 
         var loginActions = List.of(
                 UserActionEvent.ActionEnum.LOGIN_PASSWORD,
-                UserActionEvent.ActionEnum.LOGIN_GITHUB,
-                UserActionEvent.ActionEnum.LOGIN_QQ,
-                UserActionEvent.ActionEnum.LOGIN_WECHAT,
-                UserActionEvent.ActionEnum.LOGIN_PHONE
+                UserActionEvent.ActionEnum.LOGIN_OAUTH2,
+                UserActionEvent.ActionEnum.LOGIN_REGISTER
         );
         vo.setTotalLoginNum(userActionLogRepository.countByActionIn(loginActions));
         vo.setTodayLoginNum(userActionLogRepository.countByActionInAndCreatedDateBetween(loginActions, today, tomorrow));

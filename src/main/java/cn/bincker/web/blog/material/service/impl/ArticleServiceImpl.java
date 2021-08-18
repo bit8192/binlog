@@ -89,6 +89,7 @@ public class ArticleServiceImpl implements IArticleService {
             if(!currentUser.get().getId().equals(article.getCreatedUser().getId())) throw new ForbiddenException();
         }
         var result = new ArticleVo(article);
+        result.setCommentNum(articleRepository.countCommentNum(articleId));
         if(currentUser.isPresent()){
             result.setIsAgreed(articleAgreeRepository.findByArticleIdAndCreatedUserId(article.getId(), currentUser.get().getId()).isPresent());
         }else{
@@ -181,7 +182,8 @@ public class ArticleServiceImpl implements IArticleService {
         if(StringUtils.hasText(dto.getContent())){
             Matcher matcher = RegexpConstant.MARKDOWN_IMAGE.matcher(dto.getContent());
             var result = new ArrayList<String>();
-            while (matcher.find()) result.add(matcher.group(1));
+            var index = 0;
+            while (matcher.find() && index++ < 5) result.add(matcher.group(1));
             target.setImages(result.toArray(new String[]{}));
         }
         target.setArticleClass(dto.getArticleClass());

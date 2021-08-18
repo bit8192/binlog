@@ -9,9 +9,15 @@ import java.io.Serializable;
 public class VerifyQuestion<A extends Serializable> {
     private A answer;
     private BufferedImage question;
+    private Long expireTime;
 
-    public VerifyQuestion(A answer, BufferedImage question) {
+    public VerifyQuestion(A answer, BufferedImage question, Long expireTime) {
         this.answer = answer;
         this.question = question;
+        this.expireTime = expireTime;
+    }
+
+    public VerifyQuestion(A answer, BufferedImage question){
+        this(answer, question, System.currentTimeMillis() + 60000L * 10);
     }
 }

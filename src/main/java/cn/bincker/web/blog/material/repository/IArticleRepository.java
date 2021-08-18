@@ -55,4 +55,7 @@ public interface IArticleRepository extends JpaRepository<Article, Long>, JpaSpe
 
     @Query("from Article a join a.comments c where c.id = :commentId")
     Optional<Article> findByCommentId(Long commentId);
+
+    @Query("select a.comments.size from Article a where a.id = :articleId")
+    Long countCommentNum(Long articleId);
 }

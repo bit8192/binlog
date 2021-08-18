@@ -21,7 +21,7 @@ public interface IRequestLogRepository extends JpaRepository<RequestLog, Long>, 
     @Query("select DATE_FORMAT(log.createdDate, '%Y-%m-%d') as key, count(distinct log.sessionId) as value from RequestLog log where log.createdDate > :start and log.createdDate < :end group by key")
     List<StringLongValueVo> countAllBySessionId(Date start, Date end);
 
-    @Query("select log.address as key, count(distinct log.ip) as value from RequestLog log group by log.address")
+    @Query("select log.address as key, count(distinct log.ip) as value from RequestLog log where log.createdDate > :start and log.createdDate < :end group by log.address")
     List<StringLongValueVo> countAllByAddress(Date start, Date end);
 
     @Query("""

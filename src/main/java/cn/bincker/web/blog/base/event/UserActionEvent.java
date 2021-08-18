@@ -8,22 +8,25 @@ import org.springframework.context.ApplicationEvent;
 import java.text.DateFormat;
 import java.util.Date;
 
+@Getter
 public class UserActionEvent extends ApplicationEvent {
-    @Getter
     private final Date createdDate;
-    @Getter
     private final ActionEnum action;
-    @Getter
     private final BaseEntity target;
-    @Getter
     private final BaseUser user;
+    private final String additionalInfo;
 
-    public UserActionEvent(Object source, BaseUser user, ActionEnum action, BaseEntity target) {
+    public UserActionEvent(Object source, BaseUser user, ActionEnum action, BaseEntity target, String additionalInfo) {
         super(source);
         this.user = user;
         this.action = action;
         this.target = target;
         this.createdDate = new Date();
+        this.additionalInfo = additionalInfo;
+    }
+
+    public UserActionEvent(Object source, BaseUser user, ActionEnum action, BaseEntity target) {
+        this(source, user, action, target, "");
     }
 
     public UserActionEvent(Object source, BaseUser user, ActionEnum action) {
@@ -31,11 +34,15 @@ public class UserActionEvent extends ApplicationEvent {
     }
 
     public enum ActionEnum{
+//        帐号密码登录
         LOGIN_PASSWORD,
-        LOGIN_GITHUB,
-        LOGIN_QQ,
-        LOGIN_WECHAT,
-        LOGIN_PHONE,
+//        第三方登录
+        LOGIN_OAUTH2,
+//        注册后的自动登录
+        LOGIN_REGISTER,
+//        绑定帐号
+        BIND_ACCOUNT_OAUTH2,
         LOGOUT,
+        REGISTER,
     }
 }

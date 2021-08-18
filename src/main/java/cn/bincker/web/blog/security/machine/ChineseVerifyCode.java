@@ -218,7 +218,7 @@ public class ChineseVerifyCode implements IVerifyCode<ChineseVerifyCode.ChineseV
         HttpSession httpSession = request.getSession();
         if(httpSession.isNew()) return false;
         VerifyQuestion<?> question = (VerifyQuestion<?>) httpSession.getAttribute(SESSION_ATTRIBUTE_ANSWER);
-        if(question == null) return false;
+        if(question == null || System.currentTimeMillis() > question.getExpireTime()) return false;
         ChineseVerifyCodeAnswer answer = (ChineseVerifyCodeAnswer) question.getAnswer();
         if(answer == null) return false;
         for (int i = 0, pointsSize = answer.points.size(); i < pointsSize; i++) {

@@ -34,4 +34,16 @@ public class SystemProfile {
     private String datetimeFormat;
     private String dateFormat;
     private String timeFormat;
+
+    private String expression = "happy";
+
+    /**
+     * 是否允许注册用户
+     */
+    private Boolean allowRegister = true;
+
+    /**
+     * 记住我的加密密钥
+     */
+    private String rememberMeKey;
 }

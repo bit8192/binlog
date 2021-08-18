@@ -37,3 +37,6 @@ build/
 ### logs ###
 logs
 *.log
+
+### local config ###
+src/main/resources/application-local.yml

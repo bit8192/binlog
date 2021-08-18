@@ -16,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -118,6 +119,16 @@ public class ErrorController extends AbstractErrorController {
     @ResponseBody
     public ErrorResult notImplementedExceptionHandle(){
         return new ErrorResult("该功能未实现，请联系管理员");
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseBody
+    public ErrorResult methodArgumentNotValidExceptionHandle(MethodArgumentNotValidException exception){
+        var bindingResult = exception.getBindingResult();
+        var errors = bindingResult.getAllErrors();
+        if(errors.size() < 1) return new ErrorResult("未知验证错误");
+        return new ErrorResult(errors.get(0).getDefaultMessage());
     }
 
     private void printLog(Exception exception, HttpServletRequest request, String msg){

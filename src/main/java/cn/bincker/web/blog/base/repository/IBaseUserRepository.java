@@ -16,4 +16,6 @@ public interface IBaseUserRepository extends JpaRepository<BaseUser, Long>, JpaS
     Optional<BaseUser> findByQqOpenId(String openId);
 
     Long countByCreatedDateBetween(Date start, Date end);
+
+    Optional<BaseUser> findByGithub(String github);
 }

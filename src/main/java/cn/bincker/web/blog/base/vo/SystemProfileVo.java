@@ -10,13 +10,16 @@ public class SystemProfileVo {
     private String icp;
     private String github;
     private Boolean useQQAuthorize;
+    private Boolean useGithubAuthorize;
     private String expression;//happy or serious
+    private Boolean allowRegister;
 
-    public SystemProfileVo(SystemProfile systemProfile, boolean useQQAuthorize) {
+    public SystemProfileVo(SystemProfile systemProfile) {
         this.name = systemProfile.getName();
         this.copyRight = systemProfile.getCopyRight();
         this.icp = systemProfile.getIcp();
         this.github = systemProfile.getGithub();
-        this.useQQAuthorize = useQQAuthorize;
+        this.expression = systemProfile.getExpression();
+        this.allowRegister = systemProfile.getAllowRegister();
     }
 }

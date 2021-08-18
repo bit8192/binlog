@@ -91,7 +91,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         }
 //        否则路径是用户根路径，父级为空，所有者为自己
         else{
-            targetPath = systemFileFactory.fromPath(currentUser.getUsername(), dto.getName());
+            targetPath = systemFileFactory.fromPath(systemFileProperties.getLocation(), currentUser.getUsername(), dto.getName());
             target.setPath(targetPath.getPath());
             target.setPossessor(currentUser);
         }
