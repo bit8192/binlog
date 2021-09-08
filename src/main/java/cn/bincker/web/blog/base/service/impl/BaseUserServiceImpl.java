@@ -175,6 +175,7 @@ public class BaseUserServiceImpl implements IBaseUserService {
     }
 
     @Override
+    @Transactional
     public void bindQqOpenId(BaseUser user, String qqOpenId) {
         user = repository.getOne(user.getId());
         user.setQqOpenId(qqOpenId);

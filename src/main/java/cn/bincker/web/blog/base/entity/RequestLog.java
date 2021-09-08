@@ -17,7 +17,7 @@ public class RequestLog extends BaseEntity{
     private String address;
     private String referer;
     private String host;
-    @Column(length = 512)
+    @Column(length = 1024)
     private String userAgent;
     private String method;
     private String requestUri;
