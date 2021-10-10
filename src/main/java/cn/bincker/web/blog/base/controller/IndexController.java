@@ -9,14 +9,16 @@ import cn.bincker.web.blog.security.machine.IVerifyCode;
 import cn.bincker.web.blog.utils.RequestUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@RestController
 @RequestMapping("${binlog.base-path}")
+@Controller
 public class IndexController {
     private final IVerifyCode<?> verifyCode;
     private final SystemProfile profile;
@@ -32,12 +34,19 @@ public class IndexController {
         this.githubAuthorizeConfigProperties = githubAuthorizeConfigProperties;
     }
 
+    @GetMapping
+    public String index(Model model){
+        model.addAttribute("msg", "hello");
+        return "index";
+    }
+
     @GetMapping(value = "verify-code", produces = MediaType.IMAGE_JPEG_VALUE)
     public void verifyCode(HttpServletRequest request, HttpServletResponse response) throws IOException {
         verifyCode.write(request, response);
     }
 
     @GetMapping("profile")
+    @ResponseBody
     public SystemProfileVo profile(HttpServletRequest request){
         var vo = new SystemProfileVo(profile);
         vo.setUseQQAuthorize(qqAuthorizeConfigProperties.isUse());
