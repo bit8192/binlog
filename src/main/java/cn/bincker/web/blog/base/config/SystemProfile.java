@@ -13,6 +13,10 @@ public class SystemProfile {
      */
     private String name;
     /**
+     * 是否开发环境
+     */
+    private Boolean isDev;
+    /**
      * 展示版权
      */
     private String copyRight;

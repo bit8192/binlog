@@ -45,11 +45,6 @@ public class ErrorController extends AbstractErrorController {
         this.basePath = basePath;
     }
 
-    @Override
-    public String getErrorPath() {
-        return null;
-    }
-
     @RequestMapping(produces = MediaType.TEXT_HTML_VALUE)
     public void errorHtml(HttpServletRequest request, HttpServletResponse response) throws IOException {
         var errorAttributes = this.getErrorAttributes(request, allErrorAttributeOptions);

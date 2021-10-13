@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>footer</title>
+</head>
+<footer class="container-fluid p-3 bg-white text-center text-muted">
+    <span th:text="${profile.copyRight}" class="mx-2">copyright@2021 bincker</span>
+    <span class="mx-2">powered by <a class="text-decoration-none text-muted" href="https://github.com/Bincker1973/binlog">binlog</a></span>
+    <a class="text-decoration-none text-muted mx-2" href="https://beian.miit.gov.cn/" target="_blank"><span th:text="${profile.icp}">黔ICP备2021006710号-1</span></a>
+    <a class="text-decoration-none text-muted mx-2" href="https://github.com/Bincker1973" th:href="${profile.github}"><i class="bi-github"></i></a>
+</footer>
+</html>

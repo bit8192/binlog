@@ -1,12 +1,21 @@
 <!DOCTYPE html>
 <html lang="zh" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="fragment/head::head(_)">
+<head th:replace="fragment/head::head(_,_)">
     <meta charset="UTF-8">
     <title>Title</title>
 </head>
 <body>
-<h1 th:text="${msg}">Index Page</h1>
-</body>
+<main class="min-vh-100 d-flex flex-column bg-light">
+    <th:block th:replace="fragment/nav::nav" />
+    <div class="container flex-grow-1 d-flex flex-row">
+        <div class="flex-grow-1 mt-2"></div>
+        <div class="sticky-top mt-2">
+        </div>
+    </div>
+    <th:block th:replace="fragment/footer::footer" />
+</main>
+<th:block th:replace="fragment/head::script" />
 <script type="module">
 </script>
+</body>
 </html>

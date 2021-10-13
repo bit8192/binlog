@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /api
+Disallow: /article/article-class
+Disallow: /article/tags
+Disallow: /expression
+Allow: /about
+Disallow: /message
+Disallow: /net-disk-file
+Allow: /article
