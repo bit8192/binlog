@@ -7,53 +7,48 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
 </head>
 <body>
-<div class="card">
+<div class="card" th:fragment="card(user)">
     <!--  未登录状态  -->
-    <div class="card-body text-center" th:unless="${currentUser}">
+    <div class="card-body text-center" th:unless="${user}">
         <div>
             <i class="bi bi-person-circle text-muted" style="font-size: 52px"></i>
         </div>
         <div>
-            <span>bincker</span>
+            <a href="javascript:void(0)" class="text-decoration-none">登录/注册</a>
         </div>
         <div class="d-flex flex-row flex-nowrap justify-content-center align-items-center">
             <div>
-                <span class="d-block fs-4">666</span>
+                <span class="d-block fs-4">-</span>
                 <span class="d-block text-secondary">获赞</span>
             </div>
             <span class="mx-2 text-secondary">|</span>
             <div>
                 <span class="d-block fs-4">-</span>
                 <span class="d-block text-secondary fs-6">评论</span>
-            </div>
-            <span class="mx-2 text-secondary">|</span>
-            <div>
-                <span class="d-block fs-4">12</span>
-                <span class="d-block text-secondary fs-6">文章</span>
             </div>
         </div>
     </div>
     <!--  登陆后  -->
-    <div class="card-body text-center" th:if="${currentUser}">
+    <div class="card-body text-center" th:if="${user}">
         <div>
-            <img src="../../static/img/anonymous.webp" th:src="${currentUser.headImg}" width="80" height="80" class="rounded-circle" alt="headImg" />
+            <img src="../../static/img/anonymous.webp" th:src="${user.headImg}" width="80" height="80" class="rounded-circle" alt="headImg" style="object-fit: contain" />
         </div>
         <div>
-            <span th:text="${currentUser.username}">bincker</span>
+            <span th:text="${user.username}">bincker</span>
         </div>
         <div class="d-flex flex-row flex-nowrap justify-content-center align-items-center">
             <div>
-                <span class="d-block fs-4" th:text="${currentUser.}">666</span>
+                <span class="d-block fs-4" th:text="${user.agreedNum > 0 ? user.agreedNum : '-'}">666</span>
                 <span class="d-block text-secondary">获赞</span>
             </div>
             <span class="mx-2 text-secondary">|</span>
             <div>
-                <span class="d-block fs-4">-</span>
+                <span class="d-block fs-4" th:text="${user.commentNum > 0 ? user.commentNum : '-'}">-</span>
                 <span class="d-block text-secondary fs-6">评论</span>
             </div>
-            <span class="mx-2 text-secondary">|</span>
-            <div>
-                <span class="d-block fs-4">12</span>
+            <span class="mx-2 text-secondary" th:if="${user.isBlogger}">|</span>
+            <div th:if="${user.isBlogger}">
+                <span class="d-block fs-4" th:text="${user.articleNum > 0 ? user.articleNum : '-'}">12</span>
                 <span class="d-block text-secondary fs-6">文章</span>
             </div>
         </div>
