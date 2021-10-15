@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Collection;
 
 @RestController
-@RequestMapping("${binlog.base-path}/article-classes")
+@RequestMapping("/article-classes")
 public class ArticleClassController {
     private final IArticleClassService articleClassService;
 

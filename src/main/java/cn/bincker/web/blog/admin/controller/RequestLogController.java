@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Date;
 
 @RestController
-@RequestMapping("${binlog.base-path}/admin/request-log")
+@RequestMapping("/admin/request-log")
 public class RequestLogController {
     private final IRequestLogService requestLogService;
 

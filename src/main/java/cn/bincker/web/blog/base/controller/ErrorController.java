@@ -7,7 +7,6 @@ import cn.bincker.web.blog.base.exception.*;
 import cn.bincker.web.blog.utils.RequestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.web.servlet.error.AbstractErrorController;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
 import org.springframework.boot.web.servlet.error.ErrorAttributes;
@@ -15,13 +14,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.util.Optional;
 
 @Controller
@@ -31,7 +29,6 @@ public class ErrorController extends AbstractErrorController {
     private static final Logger log = LoggerFactory.getLogger(ErrorController.class);
 
     private final UserAuditingListener userAuditingListener;
-    private final String basePath;
     private final ErrorAttributeOptions allErrorAttributeOptions = ErrorAttributeOptions.of(
             ErrorAttributeOptions.Include.STACK_TRACE,
             ErrorAttributeOptions.Include.BINDING_ERRORS,
@@ -39,20 +36,21 @@ public class ErrorController extends AbstractErrorController {
             ErrorAttributeOptions.Include.MESSAGE
     );
 
-    public ErrorController(ErrorAttributes errorAttributes, UserAuditingListener userAuditingListener, @Value("${binlog.base-path}") String basePath) {
+    public ErrorController(ErrorAttributes errorAttributes, UserAuditingListener userAuditingListener) {
         super(errorAttributes);
         this.userAuditingListener = userAuditingListener;
-        this.basePath = basePath;
     }
 
     @RequestMapping(produces = MediaType.TEXT_HTML_VALUE)
-    public void errorHtml(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public String errorHtml(HttpServletRequest request, Model model) {
         var errorAttributes = this.getErrorAttributes(request, allErrorAttributeOptions);
         var path = (String) errorAttributes.get("path");
         var status = (Integer) errorAttributes.get("status");
-        if(status == HttpStatus.NOT_FOUND.value() && !path.startsWith(basePath)){
-            response.sendRedirect("/?redirectPath=" + response.encodeURL(path));
+        model.addAttribute("path", path);
+        if(status == HttpStatus.NOT_FOUND.value()){
+            return "404";
         }
+        return "error";
     }
 
     @RequestMapping

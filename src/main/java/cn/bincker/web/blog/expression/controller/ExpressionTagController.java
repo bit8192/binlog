@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("${binlog.base-path}/expression-tags")
+@RequestMapping("/expression-tags")
 public class ExpressionTagController {
     private final IExpressionTagService expressionTagService;
 

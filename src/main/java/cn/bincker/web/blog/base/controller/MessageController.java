@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("${binlog.base-path}/messages")
+@RequestMapping("/messages")
 public class MessageController {
     private final IMessageService messageService;
 

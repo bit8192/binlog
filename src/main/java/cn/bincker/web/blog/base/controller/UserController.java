@@ -20,7 +20,7 @@ import javax.servlet.http.HttpSession;
 import java.util.List;
 
 @RestController
-@RequestMapping("${binlog.base-path}/users")
+@RequestMapping("/users")
 public class UserController {
     private final IBaseUserService baseUserService;
     private final SystemProfile systemProfile;

@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 import static cn.bincker.web.blog.base.service.impl.LocalSystemFileFactoryImpl.CACHE_KEY_DOWNLOAD_CODE;
 
 @RestController
-@RequestMapping("${binlog.base-path}/net-disk-files")
+@RequestMapping("/net-disk-files")
 public class NetDiskFileController {
     private static final Logger log = LoggerFactory.getLogger(NetDiskFileController.class);
 

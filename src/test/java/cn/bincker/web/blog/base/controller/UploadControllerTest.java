@@ -1,6 +1,7 @@
 package cn.bincker.web.blog.base.controller;
 
 import cn.bincker.web.blog.base.entity.UploadFile;
+import cn.bincker.web.blog.base.exception.NotFoundException;
 import cn.bincker.web.blog.base.repository.IUploadFileRepository;
 import cn.bincker.web.blog.base.dto.UploadFileDto;
 import cn.bincker.web.blog.base.service.ISystemFileFactory;
@@ -9,7 +10,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -38,8 +38,6 @@ class UploadControllerTest {
 
     private MockMvc mockMvc;
 
-    @Value("${binlog.base-path}")
-    private String basePath;
     @Autowired
     private IUploadFileRepository uploadFileRepository;
     @Autowired
@@ -61,7 +59,7 @@ class UploadControllerTest {
     @Transactional
     void upload() throws Exception {
         var result = mockMvc.perform(
-                fileUpload(basePath + "/files")
+                fileUpload("/files")
                 .file(new MockMultipartFile("filename", "test-file.txt", MediaType.TEXT_PLAIN_VALUE, "<<upload-content>>".getBytes(StandardCharsets.UTF_8)))
                 .param("isPublic", "true")
         )
@@ -69,7 +67,7 @@ class UploadControllerTest {
                 .andDo(document("files"))
                 .andReturn();
         var responseVo = ((UploadFileDto[])objectMapper.readValue(result.getResponse().getContentAsString(), objectMapper.getTypeFactory().constructArrayType(UploadFileDto.class)))[0];
-        var uploadFile = uploadFileRepository.getOne(responseVo.getId());
+        var uploadFile = uploadFileRepository.findById(responseVo.getId()).orElseThrow(NotFoundException::new);
         assertTrue(systemFileFactory.fromPath(uploadFile.getPath()).delete());
     }
 
@@ -90,7 +88,7 @@ class UploadControllerTest {
         }
         try {
             mockMvc.perform(
-                    RestDocumentationRequestBuilders.get(basePath + "/files/{id}", uploadFile.getId())
+                    RestDocumentationRequestBuilders.get("/files/{id}", uploadFile.getId())
             )
                     .andExpect(status().isOk())
                     .andDo(print())

@@ -9,7 +9,6 @@ import cn.bincker.web.blog.base.service.IQQAuthorizeService;
 import cn.bincker.web.blog.base.service.ISystemCacheService;
 import cn.bincker.web.blog.base.vo.BaseUserVo;
 import cn.bincker.web.blog.utils.RequestUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,13 +19,11 @@ import java.util.Optional;
 
 @ConditionalOnBean(IQQAuthorizeService.class)
 @Controller
-@RequestMapping("${binlog.base-path}/authorize/qq")
+@RequestMapping("/authorize/qq")
 public class QQAuthorizeController extends AbstractOauth2AuthorizeController<QQAccessToken, QQUserInfo>{
-    private final String basePath;
 
-    public QQAuthorizeController(@Value("${binlog.base-path}") String basePath, IQQAuthorizeService qqAuthorizeService, IBaseUserService userService, ISystemCacheService systemCacheService) {
+    public QQAuthorizeController(IQQAuthorizeService qqAuthorizeService, IBaseUserService userService, ISystemCacheService systemCacheService) {
         super(userService, systemCacheService, qqAuthorizeService);
-        this.basePath = basePath;
     }
 
     @Override
@@ -46,7 +43,7 @@ public class QQAuthorizeController extends AbstractOauth2AuthorizeController<QQA
 
     @Override
     String getRedirectUrl(HttpServletRequest request) {
-        return RequestUtils.getRequestBaseUrl(request) + basePath + "/authorize/qq/notice";
+        return RequestUtils.getRequestBaseUrl(request) + "/authorize/qq/notice";
     }
 
     @Override

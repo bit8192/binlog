@@ -8,7 +8,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -35,8 +34,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 public class TagControllerTest {
     private MockMvc mockMvc;
-    @Value("${binlog.base-path}")
-    private String basePath;
     @Autowired
     private ITagRepository tagRepository;
     @Autowired
@@ -69,7 +66,7 @@ public class TagControllerTest {
             tagRepository.save(tag);
         }
         mockMvc.perform(
-                get(basePath + "/tags/all").contentType(MediaType.APPLICATION_JSON)
+                get("/tags/all").contentType(MediaType.APPLICATION_JSON)
         )
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -88,7 +85,7 @@ public class TagControllerTest {
             tagRepository.save(tag);
         }
         mockMvc.perform(
-                get(basePath + "/tags/hot")
+                get("/tags/hot")
         )
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -106,7 +103,7 @@ public class TagControllerTest {
         tag.setTitle("标题");
         tagRepository.save(tag);
         mockMvc.perform(
-                get(basePath + "/tags/{id}", tag.getId()).contentType(MediaType.APPLICATION_JSON)
+                get("/tags/{id}", tag.getId()).contentType(MediaType.APPLICATION_JSON)
         )
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -121,7 +118,7 @@ public class TagControllerTest {
         var tag = new TagPostDto();
         tag.setTitle("标题");
         mockMvc.perform(
-                post(basePath + "/tags")
+                post("/tags")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(tag))
         )
@@ -139,7 +136,7 @@ public class TagControllerTest {
         tag.setTitle("test title");
         tagRepository.save(tag);
         mockMvc.perform(
-                delete(basePath + "/tags/{id}", tag.getId())
+                delete("/tags/{id}", tag.getId())
         )
                 .andDo(print())
                 .andExpect(status().isOk())

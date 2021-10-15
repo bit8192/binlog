@@ -6,7 +6,6 @@ import cn.bincker.web.blog.security.machine.VerifyQuestion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.util.Pair;
 import org.springframework.mock.web.MockHttpSession;
@@ -36,8 +35,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(RestDocumentationExtension.class)
 public class AuthenticationTests {
     private MockMvc mock;
-    @Value("${binlog.base-path}")
-    private String basePath;
 
     @BeforeEach
     void beforeTest(
@@ -54,7 +51,7 @@ public class AuthenticationTests {
     void authentication() throws Exception {
         MockHttpSession session = new MockHttpSession();
         MvcResult result = mock.perform(
-                get(basePath + "/verify-code")
+                get("/verify-code")
                 .session(session)
         )
                 .andExpect(status().isOk())
@@ -65,7 +62,7 @@ public class AuthenticationTests {
         System.out.println(verifyQuestion);
 
         MockHttpServletRequestBuilder requestBuilder =
-                post(basePath + "/authorize")
+                post("/authorize")
                         .param("username", "admin")
                         .param("password", "123456")
                 .session(session);

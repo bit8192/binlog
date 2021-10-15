@@ -12,7 +12,7 @@ import java.util.Date;
 import java.util.List;
 
 @RestController
-@RequestMapping("${binlog.base-path}/admin/overview")
+@RequestMapping("/admin/overview")
 public class OverviewController {
     private final IOverviewService overviewService;
 

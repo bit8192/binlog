@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.constraints.NotEmpty;
 import java.util.Collections;
 
-@RequestMapping("${binlog.base-path}/article")
+@RequestMapping("/article")
 @RestController
 public class ArticleController {
     private final IArticleService articleService;

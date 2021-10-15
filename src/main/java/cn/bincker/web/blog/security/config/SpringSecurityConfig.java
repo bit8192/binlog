@@ -16,7 +16,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     private final AuthenticationHandler authenticationHandler;
     private final VerifyCodeFilter verifyCodeFilter;
-    private final String basePath;
     private final SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer;
     private final UserDetailsService userDetailsService;
     private final ApplicationContext applicationContext;
@@ -25,7 +24,6 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     public SpringSecurityConfig(
             AuthenticationHandler authenticationHandler,
             VerifyCodeFilter verifyCodeFilter,
-            @Value("${binlog.base-path}") String basePath,
             SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer,
             UserDetailsService userDetailsService,
             ApplicationContext applicationContext,
@@ -33,7 +31,6 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     ) {
         this.authenticationHandler = authenticationHandler;
         this.verifyCodeFilter = verifyCodeFilter;
-        this.basePath = basePath;
         this.securityExceptionHandingConfigurer = securityExceptionHandingConfigurer;
         this.userDetailsService = userDetailsService;
         this.applicationContext = applicationContext;
@@ -53,31 +50,31 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(
                         HttpMethod.POST,
 //                        文章点击量
-                        basePath + "/article/*/view",
+                        "/article/*/view",
 //                        上传文件
-                        basePath + "/files",
+                        "/files",
 //                        注册用户
-                        basePath + "/users"
+                        "/users"
                 ).permitAll()
                 .antMatchers(HttpMethod.POST, "**").authenticated()
                 .antMatchers(HttpMethod.PUT, "**").authenticated()
                 .antMatchers(HttpMethod.PATCH, "**").authenticated()
                 .antMatchers(HttpMethod.DELETE, "**").authenticated()
-                .antMatchers(HttpMethod.POST, basePath + "/article-classes", basePath + "/article", basePath + "/tags").hasAnyRole(admin, blogger)
-                .antMatchers(HttpMethod.PUT, basePath + "/article-classes", basePath + "/article", basePath + "/tags").hasAnyRole(admin, blogger)
-                .antMatchers(HttpMethod.PATCH, basePath + "/article-classes", basePath + "/article", basePath + "/tags").hasAnyRole(admin, blogger)
-                .antMatchers(HttpMethod.DELETE, basePath + "/article").hasRole(blogger)
-                .antMatchers(HttpMethod.DELETE, basePath + "/article-classes", basePath + "/tags").hasRole(admin)
-                .antMatchers(HttpMethod.GET, basePath + "/users/all").hasAnyRole(admin, blogger)
+                .antMatchers(HttpMethod.POST, "/article-classes", "/article", "/tags").hasAnyRole(admin, blogger)
+                .antMatchers(HttpMethod.PUT, "/article-classes", "/article", "/tags").hasAnyRole(admin, blogger)
+                .antMatchers(HttpMethod.PATCH, "/article-classes", "/article", "/tags").hasAnyRole(admin, blogger)
+                .antMatchers(HttpMethod.DELETE, "/article").hasRole(blogger)
+                .antMatchers(HttpMethod.DELETE, "/article-classes", "/tags").hasRole(admin)
+                .antMatchers(HttpMethod.GET, "/users/all").hasAnyRole(admin, blogger)
                 .anyRequest().permitAll()
 
                 .and().formLogin()
-                .loginProcessingUrl(basePath + "/authorize")
+                .loginProcessingUrl("/authorize")
                 .successHandler(authenticationHandler)
                 .failureHandler(authenticationHandler)
 
                 .and().logout()
-                .logoutUrl(basePath + "/logout")
+                .logoutUrl("/logout")
                 .logoutSuccessHandler(new CustomLogoutSuccessHandler(applicationContext))
 
                 .and().rememberMe()

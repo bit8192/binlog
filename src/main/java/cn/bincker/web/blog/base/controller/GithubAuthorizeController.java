@@ -9,7 +9,6 @@ import cn.bincker.web.blog.base.service.IGithubAuthorizeService;
 import cn.bincker.web.blog.base.service.ISystemCacheService;
 import cn.bincker.web.blog.base.vo.BaseUserVo;
 import cn.bincker.web.blog.utils.RequestUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,18 +19,16 @@ import java.util.Optional;
 
 @Controller
 @ConditionalOnBean(IGithubAuthorizeService.class)
-@RequestMapping("${binlog.base-path}/authorize/github")
+@RequestMapping("/authorize/github")
 public class GithubAuthorizeController extends AbstractOauth2AuthorizeController<GithubAccessToken, GithubUserInfo> {
-    private final String basePath;
 
-    protected GithubAuthorizeController(IBaseUserService userService, ISystemCacheService systemCacheService, IGithubAuthorizeService githubAuthorizeService, @Value("${binlog.base-path}") String basePath) {
+    protected GithubAuthorizeController(IBaseUserService userService, ISystemCacheService systemCacheService, IGithubAuthorizeService githubAuthorizeService) {
         super(userService, systemCacheService, githubAuthorizeService);
-        this.basePath = basePath;
     }
 
     @Override
     String getRedirectUrl(HttpServletRequest request) {
-        return RequestUtils.getRequestBaseUrl(request) + basePath + "/authorize/github/notice";
+        return RequestUtils.getRequestBaseUrl(request) + "/authorize/github/notice";
     }
 
     @Override

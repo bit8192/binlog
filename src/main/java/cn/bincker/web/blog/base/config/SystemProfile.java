@@ -29,10 +29,6 @@ public class SystemProfile {
      */
     private String github;
     /**
-     * url前缀
-     */
-    private String basePath;
-    /**
      * 时间格式化
      */
     private String datetimeFormat;

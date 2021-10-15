@@ -17,7 +17,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -52,9 +51,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 public class NetDiskFileControllerTest {
     private MockMvc mockMvc;
-
-    @Value("${binlog.base-path}")
-    private String basePath;
 
     @Autowired
     private INetDiskFileRepository netDiskFileRepository;
@@ -95,7 +91,7 @@ public class NetDiskFileControllerTest {
 
         try {
             mockMvc.perform(
-                    get(basePath + "/net-disk-files/{id}", testFile.getId()).contentType(MediaType.APPLICATION_JSON)
+                    get("/net-disk-files/{id}", testFile.getId()).contentType(MediaType.APPLICATION_JSON)
             )
                     .andDo(print())
                     .andExpect(status().isOk())
@@ -124,7 +120,7 @@ public class NetDiskFileControllerTest {
 
         try {
             mockMvc.perform(
-                    get(basePath + "/net-disk-files")
+                    get("/net-disk-files")
             )
                     .andDo(print())
                     .andExpect(status().isOk())
@@ -133,7 +129,7 @@ public class NetDiskFileControllerTest {
                     ));
 
             mockMvc.perform(
-                    get(basePath + "/net-disk-files").param("id", firstDir.getId().toString())
+                    get("/net-disk-files").param("id", firstDir.getId().toString())
             )
                     .andDo(print())
                     .andExpect(status().isOk())
@@ -158,7 +154,7 @@ public class NetDiskFileControllerTest {
         var file = createFile("first-file.txt", "hello world", currentUser, thirdDir);
         try{
             mockMvc.perform(
-                    get(basePath + "/net-disk-files/{id}/parents", file.getId())
+                    get("/net-disk-files/{id}/parents", file.getId())
             )
                     .andDo(print())
                     .andExpect(status().isOk())
@@ -195,7 +191,7 @@ public class NetDiskFileControllerTest {
         };
 
         var result = mockMvc.perform(
-                post(basePath + "/net-disk-files/directories").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(netDiskFileDto))
+                post("/net-disk-files/directories").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(netDiskFileDto))
         )
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -213,7 +209,7 @@ public class NetDiskFileControllerTest {
         netDiskFileDto.setName("sub-dir");
         netDiskFileDto.setParentId(responseVo.getId());
         mockMvc.perform(
-                post(basePath + "/net-disk-files/directories").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(netDiskFileDto))
+                post("/net-disk-files/directories").contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(netDiskFileDto))
         )
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -250,7 +246,7 @@ public class NetDiskFileControllerTest {
         dto.setEveryoneWritable(false);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         var result = mockMvc.perform(
-                fileUpload(basePath + "/net-disk-files/files")
+                fileUpload("/net-disk-files/files")
                         .file(new MockMultipartFile("test.txt", "test.txt", MediaType.TEXT_PLAIN_VALUE, "<<file-content>>".getBytes(StandardCharsets.UTF_8)))
                         .file(new MockMultipartFile("fileInfo", "", MediaType.APPLICATION_JSON_VALUE, objectMapper.writeValueAsString(dto).getBytes(StandardCharsets.UTF_8)))
         )
@@ -266,7 +262,7 @@ public class NetDiskFileControllerTest {
                 result.getResponse().getContentAsString(),
                 typeFactory.constructArrayType(NetDiskFileVo.class)
         );
-        var target = netDiskFileRepository.getOne(resultObject[0].getId());
+        var target = netDiskFileRepository.findById(resultObject[0].getId()).orElseThrow();
         var targetFile = systemFileFactory.fromNetDiskFile(target);
         assertTrue(targetFile.exists());
         assertTrue(targetFile.delete());
@@ -284,7 +280,7 @@ public class NetDiskFileControllerTest {
         dto.setName(childFile.getName());
         dto.setParentId(topDir.getId());
         mockMvc.perform(
-                put(basePath + "/net-disk-files").contentType(MediaType.APPLICATION_JSON)
+                put("/net-disk-files").contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto))
         )
                 .andDo(print())
@@ -307,7 +303,7 @@ public class NetDiskFileControllerTest {
         var user = userAuditingListener.getCurrentAuditor().orElseThrow();
         var file = createFile("test.txt", "hello world", user, null);
         mockMvc.perform(
-                get(basePath + "/net-disk-files/download/{id}", file.getId())
+                get("/net-disk-files/download/{id}", file.getId())
         )
                 .andDo(print())
                 .andExpect(status().isOk());
@@ -320,7 +316,7 @@ public class NetDiskFileControllerTest {
         var user = userAuditingListener.getCurrentAuditor().orElseThrow();
         var file = createFile("test.txt", "hello world", user, null);
         mockMvc.perform(
-                delete(basePath + "/net-disk-files/{id}", file.getId())
+                delete("/net-disk-files/{id}", file.getId())
         )
                 .andDo(print())
                 .andExpect(status().isOk());

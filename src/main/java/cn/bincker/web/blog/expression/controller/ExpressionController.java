@@ -28,7 +28,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 @RestController
-@RequestMapping("${binlog.base-path}/expressions")
+@RequestMapping("/expressions")
 public class ExpressionController {
     private final IExpressionService expressionService;
     private final SystemFileProperties systemFileProperties;

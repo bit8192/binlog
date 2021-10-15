@@ -6,7 +6,6 @@ import cn.bincker.web.blog.base.entity.ISystemFile;
 import cn.bincker.web.blog.base.service.ISystemFileFactory;
 import cn.bincker.web.blog.utils.FileUtils;
 import cn.bincker.web.blog.utils.RequestUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import cn.bincker.web.blog.base.entity.LocalSystemFileImpl;
@@ -19,11 +18,9 @@ import java.time.Duration;
 public class LocalSystemFileFactoryImpl implements ISystemFileFactory {
     public static final String CACHE_KEY_DOWNLOAD_CODE = "DOWNLOAD-FILE-CODE-";
     private final ISystemCacheService systemCacheService;
-    private final String basePath;
 
-    public LocalSystemFileFactoryImpl(ISystemCacheService systemCacheService, @Value("${binlog.base-path}") String basePath) {
+    public LocalSystemFileFactoryImpl(ISystemCacheService systemCacheService) {
         this.systemCacheService = systemCacheService;
-        this.basePath = basePath;
     }
 
     @Override
@@ -46,7 +43,7 @@ public class LocalSystemFileFactoryImpl implements ISystemFileFactory {
         String code = generateDownloadKey();
         while (systemCacheService.containsKey(CACHE_KEY_DOWNLOAD_CODE + code)) code = generateDownloadKey();
         systemCacheService.put(CACHE_KEY_DOWNLOAD_CODE + code, "", Duration.ofMinutes(10));//十分钟有效
-        return RequestUtils.getRequestBaseUrl(request) + basePath + "/net-disk-files/download/" + netDiskFile.getId() + "?code=" + code;
+        return RequestUtils.getRequestBaseUrl(request) + "/net-disk-files/download/" + netDiskFile.getId() + "?code=" + code;
     }
 
     private String generateDownloadKey(){

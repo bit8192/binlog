@@ -3,14 +3,12 @@ package cn.bincker.web.blog.security.filter;
 import cn.bincker.web.blog.base.vo.SuccessMsgVo;
 import cn.bincker.web.blog.security.machine.IVerifyCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -24,22 +22,20 @@ import java.util.List;
 public class VerifyCodeFilter implements Filter {
     private final IVerifyCode<?> verifyCode;
     private final ObjectMapper objectMapper;
-    private final String basePath;
     private final List<RequestMatcher> verifyRequestMatcherList;
 
-    public VerifyCodeFilter(IVerifyCode<?> verifyCode, ObjectMapper objectMapper, @Value("${binlog.base-path}") String basePath) {
+    public VerifyCodeFilter(IVerifyCode<?> verifyCode, ObjectMapper objectMapper) {
         this.verifyCode = verifyCode;
         this.objectMapper = objectMapper;
-        this.basePath = basePath;
         verifyRequestMatcherList = new ArrayList<>();
 //        登录
-        verifyRequestMatcherList.add(new AntPathRequestMatcher(basePath + "/authorize", HttpMethod.POST.name()));
+        verifyRequestMatcherList.add(new AntPathRequestMatcher("/authorize", HttpMethod.POST.name()));
 //        注册
-        verifyRequestMatcherList.add(new AntPathRequestMatcher(basePath + "/users", HttpMethod.POST.name()));
+        verifyRequestMatcherList.add(new AntPathRequestMatcher("/users", HttpMethod.POST.name()));
     }
 
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
+    public void init(FilterConfig filterConfig) {
 
     }
 

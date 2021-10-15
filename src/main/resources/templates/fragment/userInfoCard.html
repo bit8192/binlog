@@ -1,13 +1,62 @@
 <!DOCTYPE html>
-<html lang="zh" xmlns:th="http://www.www.thymeleaf.org">
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <title>userInfoCard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
 </head>
 <body>
 <div class="card">
-    <div class="card-body">
-
+    <!--  未登录状态  -->
+    <div class="card-body text-center" th:unless="${currentUser}">
+        <div>
+            <i class="bi bi-person-circle text-muted" style="font-size: 52px"></i>
+        </div>
+        <div>
+            <span>bincker</span>
+        </div>
+        <div class="d-flex flex-row flex-nowrap justify-content-center align-items-center">
+            <div>
+                <span class="d-block fs-4">666</span>
+                <span class="d-block text-secondary">获赞</span>
+            </div>
+            <span class="mx-2 text-secondary">|</span>
+            <div>
+                <span class="d-block fs-4">-</span>
+                <span class="d-block text-secondary fs-6">评论</span>
+            </div>
+            <span class="mx-2 text-secondary">|</span>
+            <div>
+                <span class="d-block fs-4">12</span>
+                <span class="d-block text-secondary fs-6">文章</span>
+            </div>
+        </div>
+    </div>
+    <!--  登陆后  -->
+    <div class="card-body text-center" th:if="${currentUser}">
+        <div>
+            <img src="../../static/img/anonymous.webp" th:src="${currentUser.headImg}" width="80" height="80" class="rounded-circle" alt="headImg" />
+        </div>
+        <div>
+            <span th:text="${currentUser.username}">bincker</span>
+        </div>
+        <div class="d-flex flex-row flex-nowrap justify-content-center align-items-center">
+            <div>
+                <span class="d-block fs-4" th:text="${currentUser.}">666</span>
+                <span class="d-block text-secondary">获赞</span>
+            </div>
+            <span class="mx-2 text-secondary">|</span>
+            <div>
+                <span class="d-block fs-4">-</span>
+                <span class="d-block text-secondary fs-6">评论</span>
+            </div>
+            <span class="mx-2 text-secondary">|</span>
+            <div>
+                <span class="d-block fs-4">12</span>
+                <span class="d-block text-secondary fs-6">文章</span>
+            </div>
+        </div>
     </div>
 </div>
 </body>

@@ -18,7 +18,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.restdocs.RestDocumentationContextProvider;
@@ -50,9 +49,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 public class ArticleControllerTest {
     private MockMvc mockMvc;
-
-    @Value("${binlog.base-path}")
-    private String basePath;
 
     @Autowired
     private IArticleRepository articleRepository;
@@ -88,7 +84,7 @@ public class ArticleControllerTest {
         article.setLastModifiedUser(user);
         articleRepository.save(article);
         mockMvc.perform(
-                get(basePath + "/article/{id}", article.getId())
+                get("/article/{id}", article.getId())
         )
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -133,7 +129,7 @@ public class ArticleControllerTest {
         dto.setTags(tags);
 
         var insertResult = mockMvc.perform(
-                post(basePath + "/article")
+                post("/article")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto))
                         .characterEncoding(StandardCharsets.UTF_8.name())
@@ -152,7 +148,7 @@ public class ArticleControllerTest {
         dto.setId(responseArticle.getId());
         dto.setTitle("changed title");
         mockMvc.perform(
-                put(basePath + "/article")
+                put("/article")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto))
                         .characterEncoding(StandardCharsets.UTF_8.name())
@@ -182,7 +178,7 @@ public class ArticleControllerTest {
         article.setLastModifiedUser(user);
         articleRepository.save(article);
         mockMvc.perform(
-                delete(basePath + "/article/{id}", article.getId())
+                delete("/article/{id}", article.getId())
         )
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -202,7 +198,7 @@ public class ArticleControllerTest {
         tagRepository.save(tag);
         buildPageData(30, articleClass, Collections.singleton(tag));
         mockMvc.perform(
-                get(basePath + "/article")
+                get("/article")
         )
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -220,7 +216,7 @@ public class ArticleControllerTest {
         tagRepository.save(tag);
         buildPageData(40, articleClass, Collections.singleton(tag));
         mockMvc.perform(
-                get(basePath + "/article/search/article-class/{id}", articleClass.getId())
+                get("/article/search/article-class/{id}", articleClass.getId())
                         .param("page", "1")
                         .param("size", "20")
         )
@@ -242,7 +238,7 @@ public class ArticleControllerTest {
         tagRepository.save(tag);
         buildPageData(20, articleClass, Collections.singleton(tag));
         mockMvc.perform(
-                get(basePath + "/article/search/tag/{id}", tag.getId())
+                get("/article/search/tag/{id}", tag.getId())
         )
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -261,7 +257,7 @@ public class ArticleControllerTest {
         tagRepository.save(tag);
         buildPageData(20, articleClass, Collections.singleton(tag));
         mockMvc.perform(
-                get(basePath + "/article/search/keywords")
+                get("/article/search/keywords")
                         .param("keywords", "title 1")
         )
                 .andDo(print())
@@ -288,7 +284,7 @@ public class ArticleControllerTest {
         articleRepository.save(article);
 
         mockMvc.perform(
-                post(basePath + "/article/{id}/toggle-agree", article.getId())
+                post("/article/{id}/toggle-agree", article.getId())
         )
                 .andDo(print())
                 .andExpect(status().isOk())

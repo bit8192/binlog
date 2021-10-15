@@ -3,11 +3,8 @@ package cn.bincker.web.blog.base.controller;
 import cn.bincker.web.blog.base.config.GithubAuthorizeConfigProperties;
 import cn.bincker.web.blog.base.config.QQAuthorizeConfigProperties;
 import cn.bincker.web.blog.base.config.SystemProfile;
-import cn.bincker.web.blog.base.service.IIpAddressQueryService;
 import cn.bincker.web.blog.base.vo.SystemProfileVo;
 import cn.bincker.web.blog.security.machine.IVerifyCode;
-import cn.bincker.web.blog.utils.RequestUtils;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,20 +14,17 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@RequestMapping("${binlog.base-path}")
 @Controller
 public class IndexController {
     private final IVerifyCode<?> verifyCode;
     private final SystemProfile profile;
     private final QQAuthorizeConfigProperties qqAuthorizeConfigProperties;
-    private final IIpAddressQueryService ipAddressQueryService;
     private final GithubAuthorizeConfigProperties githubAuthorizeConfigProperties;
 
-    public IndexController(IVerifyCode<?> verifyCode, SystemProfile profile, QQAuthorizeConfigProperties qqAuthorizeConfigProperties, IIpAddressQueryService ipAddressQueryService, GithubAuthorizeConfigProperties githubAuthorizeConfigProperties) {
+    public IndexController(IVerifyCode<?> verifyCode, SystemProfile profile, QQAuthorizeConfigProperties qqAuthorizeConfigProperties, GithubAuthorizeConfigProperties githubAuthorizeConfigProperties) {
         this.verifyCode = verifyCode;
         this.profile = profile;
         this.qqAuthorizeConfigProperties = qqAuthorizeConfigProperties;
-        this.ipAddressQueryService = ipAddressQueryService;
         this.githubAuthorizeConfigProperties = githubAuthorizeConfigProperties;
     }
 
@@ -47,13 +41,10 @@ public class IndexController {
 
     @GetMapping("profile")
     @ResponseBody
-    public SystemProfileVo profile(HttpServletRequest request){
+    public SystemProfileVo profile(){
         var vo = new SystemProfileVo(profile);
         vo.setUseQQAuthorize(qqAuthorizeConfigProperties.isUse());
         vo.setUseGithubAuthorize(githubAuthorizeConfigProperties.isUse());
-        var ip = RequestUtils.getRequestIp(request);
-        var address = ipAddressQueryService.query(ip);
-        var userAgent = request.getHeader(HttpHeaders.USER_AGENT);
         return vo;
     }
 }
