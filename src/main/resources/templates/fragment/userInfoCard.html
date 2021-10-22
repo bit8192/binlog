@@ -7,14 +7,14 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
 </head>
 <body>
-<div class="card" th:fragment="card(user)">
+<div class="card user-info-card" th:fragment="card(user)">
     <!--  未登录状态  -->
     <div class="card-body text-center" th:unless="${user}">
         <div>
             <i class="bi bi-person-circle text-muted" style="font-size: 52px"></i>
         </div>
         <div>
-            <a href="javascript:void(0)" class="text-decoration-none">登录/注册</a>
+            <button type="button" class="btn btn-link text-decoration-none" data-bs-toggle="modal" data-bs-target="#loginModal">登录/注册</button>
         </div>
         <div class="d-flex flex-row flex-nowrap justify-content-center align-items-center">
             <div>
