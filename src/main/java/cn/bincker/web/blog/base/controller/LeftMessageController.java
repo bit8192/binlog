@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.base.controller;
 
+import cn.bincker.web.blog.base.annotation.ApiController;
 import cn.bincker.web.blog.base.dto.CommentDto;
 import cn.bincker.web.blog.base.service.ILeftMessageService;
 import cn.bincker.web.blog.base.vo.CommentVo;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/left-messages")
+@ApiController
 public class LeftMessageController {
     private final ILeftMessageService leftMessageService;
 

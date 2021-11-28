@@ -2,11 +2,9 @@ package cn.bincker.web.blog.material.entity;
 
 import cn.bincker.web.blog.base.entity.AuditEntity;
 import cn.bincker.web.blog.base.entity.Comment;
-import cn.bincker.web.blog.base.entity.UploadFile;
 import cn.bincker.web.blog.base.entity.converter.StringArrayConverter;
 import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotEmpty;
@@ -14,9 +12,10 @@ import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Set;
 
-@EqualsAndHashCode(callSuper = true)
 @Entity
-@Data
+@Getter
+@Setter
+@ToString
 @NamedEntityGraphs({
         @NamedEntityGraph(name = "Article.default", attributeNodes = {
                 @NamedAttributeNode("tags"),
@@ -57,6 +56,7 @@ public class Article extends AuditEntity {
     private String describe;
 
     @ManyToMany
+    @ToString.Exclude
     private Set<Tag> tags;
 
     @ManyToOne
@@ -99,5 +99,6 @@ public class Article extends AuditEntity {
     private Long forwardingNum = 0L;
 
     @ManyToMany
+    @ToString.Exclude
     private List<Comment> comments;
 }

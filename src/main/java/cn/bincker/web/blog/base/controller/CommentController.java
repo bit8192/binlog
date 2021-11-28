@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.base.controller;
 
+import cn.bincker.web.blog.base.annotation.ApiController;
 import cn.bincker.web.blog.base.dto.CommentDto;
 import cn.bincker.web.blog.base.service.ICommentService;
 import cn.bincker.web.blog.base.vo.CommentVo;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/comments")
+@ApiController
 public class CommentController {
     private final ICommentService commentService;
 

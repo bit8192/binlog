@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.netdisk.controller;
 
+import cn.bincker.web.blog.base.annotation.ApiController;
 import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.exception.BadRequestException;
@@ -45,6 +46,7 @@ import static cn.bincker.web.blog.base.service.impl.LocalSystemFileFactoryImpl.C
 
 @RestController
 @RequestMapping("/net-disk-files")
+@ApiController
 public class NetDiskFileController {
     private static final Logger log = LoggerFactory.getLogger(NetDiskFileController.class);
 

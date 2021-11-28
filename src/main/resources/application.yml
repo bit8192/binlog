@@ -17,6 +17,7 @@ binlog:
       - "*"
     allow-empty-referer: false
     location: upload-file
+  api-path: /api
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver

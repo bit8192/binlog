@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.base.controller;
 
+import cn.bincker.web.blog.base.annotation.ApiController;
 import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.entity.Role;
@@ -26,6 +27,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/files")
+@ApiController
 public class UploadController {
     private final IUploadService uploadService;
 

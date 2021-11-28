@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.base.controller;
 
+import cn.bincker.web.blog.base.annotation.ApiController;
 import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.entity.Message;
 import cn.bincker.web.blog.base.service.IMessageService;
@@ -17,6 +18,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/messages")
+@ApiController
 public class MessageController {
     private final IMessageService messageService;
 

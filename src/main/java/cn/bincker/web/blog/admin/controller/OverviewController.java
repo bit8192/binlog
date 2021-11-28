@@ -2,6 +2,7 @@ package cn.bincker.web.blog.admin.controller;
 
 import cn.bincker.web.blog.admin.service.IOverviewService;
 import cn.bincker.web.blog.admin.vo.BinlogStatusVo;
+import cn.bincker.web.blog.base.annotation.ApiController;
 import cn.bincker.web.blog.base.exception.BadRequestException;
 import cn.bincker.web.blog.base.vo.StringLongValueVo;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/admin/overview")
+@ApiController
 public class OverviewController {
     private final IOverviewService overviewService;
 

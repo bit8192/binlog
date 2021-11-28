@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.material.controller;
 
+import cn.bincker.web.blog.base.annotation.ApiController;
 import cn.bincker.web.blog.base.exception.NotFoundException;
 import cn.bincker.web.blog.material.service.ITagService;
 import cn.bincker.web.blog.material.dto.TagPostDto;
@@ -13,6 +14,7 @@ import java.util.Collection;
 
 @RestController
 @RequestMapping("/tags")
+@ApiController
 public class TagController {
     private final ITagService tagService;
 

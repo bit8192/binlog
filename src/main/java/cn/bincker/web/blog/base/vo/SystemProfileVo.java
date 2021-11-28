@@ -6,6 +6,7 @@ import lombok.Data;
 @Data
 public class SystemProfileVo {
     private String name;
+    private Boolean isDev;
     private String copyRight;
     private String icp;
     private String github;
@@ -16,6 +17,7 @@ public class SystemProfileVo {
 
     public SystemProfileVo(SystemProfile systemProfile) {
         this.name = systemProfile.getName();
+        this.isDev = systemProfile.getIsDev();
         this.copyRight = systemProfile.getCopyRight();
         this.icp = systemProfile.getIcp();
         this.github = systemProfile.getGithub();

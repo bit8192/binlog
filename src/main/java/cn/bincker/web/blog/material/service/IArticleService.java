@@ -5,6 +5,7 @@ import cn.bincker.web.blog.base.vo.CommentVo;
 import cn.bincker.web.blog.base.vo.ValueVo;
 import cn.bincker.web.blog.material.dto.ArticleDto;
 import cn.bincker.web.blog.material.entity.Article;
+import cn.bincker.web.blog.material.vo.ArchiveVo;
 import cn.bincker.web.blog.material.vo.ArticleListVo;
 import cn.bincker.web.blog.material.vo.ArticleVo;
 import org.springframework.data.domain.Page;
@@ -41,4 +42,9 @@ public interface IArticleService {
      * 评论
      */
     CommentVo commenting(Long articleId, CommentDto dto);
+
+    /**
+     * 归档列表
+     */
+    Page<ArchiveVo> getArchivePage(Pageable pageable);
 }

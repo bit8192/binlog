@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.base.controller;
 
+import cn.bincker.web.blog.base.annotation.ApiController;
 import cn.bincker.web.blog.base.config.SystemProfile;
 import cn.bincker.web.blog.base.constant.SessionKeyConstant;
 import cn.bincker.web.blog.base.dto.BaseUserDto;
@@ -21,6 +22,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/users")
+@ApiController
 public class UserController {
     private final IBaseUserService baseUserService;
     private final SystemProfile systemProfile;

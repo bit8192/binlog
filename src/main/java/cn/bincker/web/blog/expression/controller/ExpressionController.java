@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.expression.controller;
 
+import cn.bincker.web.blog.base.annotation.ApiController;
 import cn.bincker.web.blog.base.config.SystemFileProperties;
 import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.enumeration.FileSystemTypeEnum;
@@ -29,6 +30,7 @@ import java.util.Collections;
 
 @RestController
 @RequestMapping("/expressions")
+@ApiController
 public class ExpressionController {
     private final IExpressionService expressionService;
     private final SystemFileProperties systemFileProperties;

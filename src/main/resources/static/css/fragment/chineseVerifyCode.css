@@ -1,0 +1,16 @@
+.chinese-verify-code-point{
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border: white solid 3px;
+    border-radius: 16px;
+    text-align: center;
+    overflow: hidden;
+    background-color: #0099ff;
+    color: white;
+    box-shadow: #333333 0 0 10px 3px;
+    margin-left: -11px;
+    margin-top: -11px;
+    line-height: 15px;
+    user-select: none;
+}

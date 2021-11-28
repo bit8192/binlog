@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.material.controller;
 
+import cn.bincker.web.blog.base.annotation.ApiController;
 import cn.bincker.web.blog.base.exception.NotFoundException;
 import cn.bincker.web.blog.material.service.IArticleClassService;
 import cn.bincker.web.blog.material.dto.ArticleClassPostDto;
@@ -14,6 +15,7 @@ import java.util.Collection;
 
 @RestController
 @RequestMapping("/article-classes")
+@ApiController
 public class ArticleClassController {
     private final IArticleClassService articleClassService;
 

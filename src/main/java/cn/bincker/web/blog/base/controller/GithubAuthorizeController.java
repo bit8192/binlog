@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.base.controller;
 
+import cn.bincker.web.blog.base.annotation.ApiController;
 import cn.bincker.web.blog.base.constant.SessionKeyConstant;
 import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.entity.GithubAccessToken;
@@ -20,6 +21,7 @@ import java.util.Optional;
 @Controller
 @ConditionalOnBean(IGithubAuthorizeService.class)
 @RequestMapping("/authorize/github")
+@ApiController
 public class GithubAuthorizeController extends AbstractOauth2AuthorizeController<GithubAccessToken, GithubUserInfo> {
 
     protected GithubAuthorizeController(IBaseUserService userService, ISystemCacheService systemCacheService, IGithubAuthorizeService githubAuthorizeService) {

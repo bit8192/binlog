@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.material.controller;
 
+import cn.bincker.web.blog.base.annotation.ApiController;
 import cn.bincker.web.blog.base.dto.CommentDto;
 import cn.bincker.web.blog.base.dto.valid.InsertValid;
 import cn.bincker.web.blog.base.dto.valid.UpdateValid;
@@ -26,6 +27,7 @@ import java.util.Collections;
 
 @RequestMapping("/article")
 @RestController
+@ApiController
 public class ArticleController {
     private final IArticleService articleService;
 

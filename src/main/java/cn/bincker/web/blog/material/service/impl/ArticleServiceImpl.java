@@ -26,10 +26,7 @@ import cn.bincker.web.blog.material.repository.ITagRepository;
 import cn.bincker.web.blog.material.service.IArticleService;
 import cn.bincker.web.blog.material.dto.ArticleDto;
 import cn.bincker.web.blog.material.specification.ArticleSpecification;
-import cn.bincker.web.blog.material.vo.ArticleClassVo;
-import cn.bincker.web.blog.material.vo.ArticleListVo;
-import cn.bincker.web.blog.material.vo.ArticleVo;
-import cn.bincker.web.blog.material.vo.TagVo;
+import cn.bincker.web.blog.material.vo.*;
 import cn.bincker.web.blog.netdisk.repository.INetDiskFileRepository;
 import cn.bincker.web.blog.netdisk.vo.NetDiskFileVo;
 import org.springframework.context.ApplicationContext;
@@ -283,5 +280,10 @@ public class ArticleServiceImpl implements IArticleService {
             applicationContext.publishEvent(messageEvent);
         }
         return vo;
+    }
+
+    @Override
+    public Page<ArchiveVo> getArchivePage(Pageable pageable) {
+        return articleRepository.findAll(pageable).map(ArchiveVo::new);
     }
 }

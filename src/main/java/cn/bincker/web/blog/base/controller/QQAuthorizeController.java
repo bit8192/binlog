@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.base.controller;
 
+import cn.bincker.web.blog.base.annotation.ApiController;
 import cn.bincker.web.blog.base.constant.SessionKeyConstant;
 import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.entity.QQAccessToken;
@@ -20,6 +21,7 @@ import java.util.Optional;
 @ConditionalOnBean(IQQAuthorizeService.class)
 @Controller
 @RequestMapping("/authorize/qq")
+@ApiController
 public class QQAuthorizeController extends AbstractOauth2AuthorizeController<QQAccessToken, QQUserInfo>{
 
     public QQAuthorizeController(IQQAuthorizeService qqAuthorizeService, IBaseUserService userService, ISystemCacheService systemCacheService) {

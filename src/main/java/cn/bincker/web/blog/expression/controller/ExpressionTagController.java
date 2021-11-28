@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.expression.controller;
 
+import cn.bincker.web.blog.base.annotation.ApiController;
 import cn.bincker.web.blog.expression.dto.ExpressionTagDto;
 import cn.bincker.web.blog.expression.service.IExpressionTagService;
 import cn.bincker.web.blog.expression.vo.ExpressionTagVo;
@@ -10,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/expression-tags")
+@ApiController
 public class ExpressionTagController {
     private final IExpressionTagService expressionTagService;
 

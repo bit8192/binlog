@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.security.config;
 
+import cn.bincker.web.blog.base.config.SystemProfile;
 import cn.bincker.web.blog.base.entity.Role;
 import cn.bincker.web.blog.security.filter.VerifyCodeFilter;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +21,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     private final UserDetailsService userDetailsService;
     private final ApplicationContext applicationContext;
     private final String rememberMeKey;
+    private final SystemProfile systemProfile;
 
     public SpringSecurityConfig(
             AuthenticationHandler authenticationHandler,
@@ -27,14 +29,15 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
             SecurityExceptionHandingConfigurer securityExceptionHandingConfigurer,
             UserDetailsService userDetailsService,
             ApplicationContext applicationContext,
-            @Value("${binlog.remember-me-key:d#>bc49c&8475$41d6*ab0a.8ca863588e63}") String rememberMeKey
-    ) {
+            @Value("${binlog.remember-me-key:d#>bc49c&8475$41d6*ab0a.8ca863588e63}") String rememberMeKey,
+            SystemProfile systemProfile) {
         this.authenticationHandler = authenticationHandler;
         this.verifyCodeFilter = verifyCodeFilter;
         this.securityExceptionHandingConfigurer = securityExceptionHandingConfigurer;
         this.userDetailsService = userDetailsService;
         this.applicationContext = applicationContext;
         this.rememberMeKey = rememberMeKey;
+        this.systemProfile = systemProfile;
     }
 
     @Override
@@ -46,35 +49,36 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         final var blogger = Role.RoleEnum.BLOGGER.toString();
         final var admin = Role.RoleEnum.ADMIN.toString();
+        final var apiPath = systemProfile.getApiPath();
         http.authorizeRequests()
                 .antMatchers(
                         HttpMethod.POST,
 //                        文章点击量
-                        "/article/*/view",
+                        apiPath + "/article/*/view",
 //                        上传文件
-                        "/files",
+                        apiPath + "/files",
 //                        注册用户
-                        "/users"
+                        apiPath + "/users"
                 ).permitAll()
                 .antMatchers(HttpMethod.POST, "**").authenticated()
                 .antMatchers(HttpMethod.PUT, "**").authenticated()
                 .antMatchers(HttpMethod.PATCH, "**").authenticated()
                 .antMatchers(HttpMethod.DELETE, "**").authenticated()
-                .antMatchers(HttpMethod.POST, "/article-classes", "/article", "/tags").hasAnyRole(admin, blogger)
-                .antMatchers(HttpMethod.PUT, "/article-classes", "/article", "/tags").hasAnyRole(admin, blogger)
-                .antMatchers(HttpMethod.PATCH, "/article-classes", "/article", "/tags").hasAnyRole(admin, blogger)
-                .antMatchers(HttpMethod.DELETE, "/article").hasRole(blogger)
-                .antMatchers(HttpMethod.DELETE, "/article-classes", "/tags").hasRole(admin)
-                .antMatchers(HttpMethod.GET, "/users/all").hasAnyRole(admin, blogger)
+                .antMatchers(HttpMethod.POST, apiPath + "/article-classes", apiPath + "/article", apiPath + "/tags").hasAnyRole(admin, blogger)
+                .antMatchers(HttpMethod.PUT, apiPath + "/article-classes", apiPath + "/article", apiPath + "/tags").hasAnyRole(admin, blogger)
+                .antMatchers(HttpMethod.PATCH, apiPath + "/article-classes", apiPath + "/article", apiPath + "/tags").hasAnyRole(admin, blogger)
+                .antMatchers(HttpMethod.DELETE, apiPath + "/article").hasRole(blogger)
+                .antMatchers(HttpMethod.DELETE, apiPath + "/article-classes", apiPath + "/tags").hasRole(admin)
+                .antMatchers(HttpMethod.GET, apiPath + "/users/all").hasAnyRole(admin, blogger)
                 .anyRequest().permitAll()
 
                 .and().formLogin()
-                .loginProcessingUrl("/authorize")
+                .loginProcessingUrl(apiPath + "/authorize")
                 .successHandler(authenticationHandler)
                 .failureHandler(authenticationHandler)
 
                 .and().logout()
-                .logoutUrl("/logout")
+                .logoutUrl(apiPath + "/logout")
                 .logoutSuccessHandler(new CustomLogoutSuccessHandler(applicationContext))
 
                 .and().rememberMe()

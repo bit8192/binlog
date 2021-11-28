@@ -7,6 +7,7 @@ import cn.bincker.web.blog.base.service.IBaseUserService;
 import cn.bincker.web.blog.base.vo.SuccessMsgVo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.ApplicationContext;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
@@ -35,11 +36,11 @@ public class AuthenticationHandler implements AuthenticationSuccessHandler, Auth
     }
 
     @Override
-    public void onAuthenticationFailure(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, AuthenticationException e) throws IOException, ServletException {
-        httpServletResponse.setStatus(HttpStatus.BAD_REQUEST.value());
-        httpServletResponse.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        httpServletResponse.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        objectMapper.writeValue(httpServletResponse.getWriter(), new SuccessMsgVo(false, "认证失败"));
+    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException e) throws IOException, ServletException {
+        response.setStatus(HttpStatus.BAD_REQUEST.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        objectMapper.writeValue(response.getWriter(), new SuccessMsgVo(false, "认证失败"));
     }
 
     @Override
