@@ -2,8 +2,8 @@ package cn.bincker.web.blog.netdisk.entity;
 
 import cn.bincker.web.blog.base.entity.AuditEntity;
 import cn.bincker.web.blog.base.entity.BaseUser;
+import cn.bincker.web.blog.base.enumeration.FileSystemTypeEnum;
 import lombok.*;
-import org.hibernate.Hibernate;
 import org.springframework.util.StringUtils;
 
 import javax.persistence.*;
@@ -37,6 +37,12 @@ public class NetDiskFile extends AuditEntity {
 
     @ManyToOne
     private NetDiskFile parent;
+
+    /**
+     * 文件存储类型,可能在多个位置同时存在
+     */
+    @Convert(converter = FileSystemTypeEnumSetConverter.class)
+    private Set<FileSystemTypeEnum> fileSystemTypeSet;
 
     /**
      * 所有父级节点
@@ -94,17 +100,19 @@ public class NetDiskFile extends AuditEntity {
         }
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        NetDiskFile that = (NetDiskFile) o;
+    public static class FileSystemTypeEnumSetConverter implements AttributeConverter<Set<FileSystemTypeEnum>, String>{
+        @Override
+        public String convertToDatabaseColumn(Set<FileSystemTypeEnum> attribute) {
+            if(attribute == null) return null;
+            if(attribute.isEmpty()) return "";
+            return attribute.stream().map(FileSystemTypeEnum::name).collect(Collectors.joining(","));
+        }
 
-        return Objects.equals(getId(), that.getId());
-    }
-
-    @Override
-    public int hashCode() {
-        return 552188326;
+        @Override
+        public Set<FileSystemTypeEnum> convertToEntityAttribute(String dbData) {
+            if(dbData == null) return null;
+            if(!StringUtils.hasText(dbData)) return new HashSet<>();
+            return Arrays.stream(dbData.split(",")).map(FileSystemTypeEnum::valueOf).collect(Collectors.toSet());
+        }
     }
 }

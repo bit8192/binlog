@@ -1,6 +1,7 @@
 package cn.bincker.web.blog.netdisk.controller;
 
 import cn.bincker.web.blog.AuthenticationTests;
+import cn.bincker.web.blog.base.config.SystemFileProperties;
 import cn.bincker.web.blog.base.config.UserAuditingListener;
 import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.repository.IBaseUserRepository;
@@ -62,6 +63,8 @@ public class NetDiskFileControllerTest {
     private ObjectMapper objectMapper;
     @Autowired
     private IBaseUserRepository baseUserRepository;
+    @Autowired
+    private SystemFileProperties systemFileProperties;
 
     @BeforeEach
     public void beforeEach(
@@ -201,7 +204,7 @@ public class NetDiskFileControllerTest {
                 ))
                 .andReturn();
         var responseVo = objectMapper.readValue(result.getResponse().getContentAsString(), NetDiskFileVo.class);
-        var topDir = systemFileFactory.fromPath(user.getUsername(), netDiskFileDto.getName());
+        var topDir = systemFileFactory.fromPath(systemFileProperties.getDefaultStoreType(), user.getUsername(), netDiskFileDto.getName());
 //        确保创建成功
         System.out.println(topDir.getPath());
         assertTrue(topDir.exists());
@@ -217,7 +220,7 @@ public class NetDiskFileControllerTest {
                         requestFields(createDirectoryRequestFields),
                         responseFields(getNetDiskFileFields("").toArray(new FieldDescriptor[]{}))
                 ));
-        var subDir = systemFileFactory.fromPath(topDir.getPath() + File.separator + netDiskFileDto.getName());
+        var subDir = systemFileFactory.fromPath(systemFileProperties.getDefaultStoreType(), topDir.getPath(), netDiskFileDto.getName());
 //        确保创建成功
         assertTrue(subDir.exists());
 

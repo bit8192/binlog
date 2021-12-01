@@ -1,11 +1,13 @@
 package cn.bincker.web.blog.netdisk.vo;
 
+import cn.bincker.web.blog.base.enumeration.FileSystemTypeEnum;
 import cn.bincker.web.blog.base.vo.BaseUserVo;
 import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
 import lombok.Data;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Data
@@ -17,6 +19,8 @@ public class NetDiskFileVo {
     private Boolean isDirectory;
 
     private String mediaType;
+
+    private Set<FileSystemTypeEnum> fileSystemTypeSet;
 
     private Long size;
 
@@ -48,6 +52,7 @@ public class NetDiskFileVo {
         this.isDirectory = netDiskFile.getIsDirectory();
         this.mediaType = netDiskFile.getMediaType();
         this.size = netDiskFile.getSize();
+        this.fileSystemTypeSet = netDiskFile.getFileSystemTypeSet();
         this.createdDate = netDiskFile.getCreatedDate();
         this.lastModifiedDate = netDiskFile.getLastModifiedDate();
         if(netDiskFile.getPossessor() != null) this.possessor = new BaseUserVo(netDiskFile.getPossessor());

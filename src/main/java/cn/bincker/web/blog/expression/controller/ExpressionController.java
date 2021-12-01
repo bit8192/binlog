@@ -61,14 +61,14 @@ public class ExpressionController {
     @GetMapping(value = "{title}", produces = {MediaType.IMAGE_GIF_VALUE, MediaType.IMAGE_JPEG_VALUE, MediaType.IMAGE_PNG_VALUE, "image/webp","image/*"})
     public void get(@PathVariable String title, HttpServletRequest request, HttpServletResponse response) throws IOException {
         var target = expressionService.getByTitle(title);
-        if(!systemFileProperties.getType().equals(FileSystemTypeEnum.LOCAL)) {
-            response.sendRedirect(systemFileFactory.getDownloadUrl(target.getPath()));
+        if(!systemFileProperties.getExpressionStoreType().equals(FileSystemTypeEnum.LOCAL)) {
+            response.sendRedirect(systemFileFactory.getDownloadUrl(request, systemFileProperties.getExpressionStoreType(), target.getPath()));
             return;
         }
         if(ResponseUtils.checkETag(request, response, target.getSha256())) return;
         if(ResponseUtils.checkLastModified(request, response, target.getLastModifiedDate())) return;
         ResponseUtils.setCachePeriod(response, Duration.ofDays(30));
-        try(var in = systemFileFactory.fromPath(target.getPath()).getInputStream()){
+        try(var in = systemFileFactory.fromPath(systemFileProperties.getExpressionStoreType(), target.getPath()).getInputStream()){
             in.transferTo(response.getOutputStream());
         }
     }

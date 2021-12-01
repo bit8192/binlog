@@ -46,8 +46,8 @@ public class UploadServiceImpl implements IUploadService {
 
         Optional<BaseUser> userOptional = userAuditingListener.getCurrentAuditor();
         uploadDir = userOptional
-                .map(baseUser -> systemFileFactory.fromPath(systemFileProperties.getLocation(), baseUser.getUsername(), "public", dateUtils.todayStr()))
-                .orElseGet(() -> systemFileFactory.fromPath(systemFileProperties.getLocation(), "public", dateUtils.todayStr()));
+                .map(baseUser -> systemFileFactory.fromPath(systemFileProperties.getDefaultStoreType(), baseUser.getUsername(), "public", dateUtils.todayStr()))
+                .orElseGet(() -> systemFileFactory.fromPath(systemFileProperties.getDefaultStoreType(), "public", dateUtils.todayStr()));
 
         if(!uploadDir.exists() && !uploadDir.mkdirs()) throw new SystemException("创建目录失败: path=" + uploadDir.getPath());
         String finalUploadDir = uploadDir.getPath();
@@ -59,10 +59,10 @@ public class UploadServiceImpl implements IUploadService {
             String fileName = multipartFile.getOriginalFilename();
             if(!StringUtils.hasText(fileName)) fileName = UUID.randomUUID().toString();
             fileName = fileName.replaceAll(RegexpConstant.ILLEGAL_FILE_NAME_CHAR_VALUE, "");
-            var targetFile = systemFileFactory.fromPath(finalUploadDir, fileName);
+            var targetFile = systemFileFactory.fromPath(systemFileProperties.getDefaultStoreType(), finalUploadDir, fileName);
             while (targetFile.exists()){
                 fileName = FileUtils.nextSerialFileName(fileName);
-                targetFile = systemFileFactory.fromPath(finalUploadDir, fileName);
+                targetFile = systemFileFactory.fromPath(systemFileProperties.getDefaultStoreType(), finalUploadDir, fileName);
             }
             uploadFile.setPath(targetFile.getPath());
             uploadFile.setName(fileName);

@@ -4,6 +4,7 @@ import cn.bincker.web.blog.base.exception.SystemException;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
+import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,9 +59,33 @@ public class FileUtils {
         return result.toString();
     }
 
+    /**
+     * 通过路径获取文件名
+     */
+    public static String getFileName(String path){
+        if(path.indexOf('/') != -1){
+            return CommonUtils.getStringSuffix(path, "/");
+        }else{
+            return CommonUtils.getStringSuffix(path, "\\");
+        }
+    }
+
     public static String getFileSuffix(String filename){
         var suffix = CommonUtils.getStringSuffix(filename, ".");
         if(!StringUtils.hasText(suffix)) return suffix;
         return "." + suffix;
+    }
+
+    public static Stack<String> getDirectoryStack(String path, char separator) {
+        var result = new Stack<String>();
+        if(!StringUtils.hasText(path)) return result;
+        var index = path.length();
+        var currentDirectory = path;
+        do{
+            currentDirectory = currentDirectory.substring(0, index);
+            result.push(currentDirectory);
+            index = currentDirectory.lastIndexOf(separator);
+        }while (index > 0);
+        return result;
     }
 }

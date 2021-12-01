@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.base.controller;
 
+import cn.bincker.web.blog.base.config.SystemFileProperties;
 import cn.bincker.web.blog.base.entity.UploadFile;
 import cn.bincker.web.blog.base.exception.NotFoundException;
 import cn.bincker.web.blog.base.repository.IUploadFileRepository;
@@ -44,6 +45,8 @@ class UploadControllerTest {
     private ISystemFileFactory systemFileFactory;
     @Autowired
     private ObjectMapper objectMapper;
+    @Autowired
+    private SystemFileProperties systemFileProperties;
 
     @BeforeEach
     public void beforeTest(
@@ -68,7 +71,7 @@ class UploadControllerTest {
                 .andReturn();
         var responseVo = ((UploadFileDto[])objectMapper.readValue(result.getResponse().getContentAsString(), objectMapper.getTypeFactory().constructArrayType(UploadFileDto.class)))[0];
         var uploadFile = uploadFileRepository.findById(responseVo.getId()).orElseThrow(NotFoundException::new);
-        assertTrue(systemFileFactory.fromPath(uploadFile.getPath()).delete());
+        assertTrue(systemFileFactory.fromPath(systemFileProperties.getDefaultStoreType(), uploadFile.getPath()).delete());
     }
 
     @Test
@@ -82,7 +85,7 @@ class UploadControllerTest {
         uploadFile.setSha256("");
         uploadFile.setMediaType("");
         uploadFileRepository.save(uploadFile);
-        var file = systemFileFactory.fromPath(uploadFile.getPath());
+        var file = systemFileFactory.fromPath(systemFileProperties.getDefaultStoreType(), uploadFile.getPath());
         try(var in = new ByteArrayInputStream("<<content>>".getBytes(StandardCharsets.UTF_8)); var out = file.getOutputStream()){
             in.transferTo(out);
         }

@@ -40,3 +40,4 @@ logs
 
 ### local config ###
 src/main/resources/application-local.yml
+src/test/resources/application-local.yml

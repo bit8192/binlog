@@ -12,7 +12,6 @@ binlog:
   verify-code:
     image-path: verify-code-images
   files:
-    type: LOCAL
     allow-referer:
       - "*"
     allow-empty-referer: false
@@ -39,3 +38,5 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: on
+  profiles:
+    include: local

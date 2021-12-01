@@ -155,8 +155,10 @@ public class ArticleServiceImpl implements IArticleService {
     }
 
     private void checkDto(ArticleDto dto){
-        var cover = netDiskFileRepository.findById(dto.getCover().getId()).orElseThrow(NotFoundException::new);
-        if(cover.getIsDirectory()) throw new BadRequestException("封面不能是文件夹");
+        if(dto.getCover() != null) {
+            var cover = netDiskFileRepository.findById(dto.getCover().getId()).orElseThrow(NotFoundException::new);
+            if (cover.getIsDirectory()) throw new BadRequestException("封面不能是文件夹");
+        }
     }
 
     private ArticleVo getUpdatedResult(Article target){

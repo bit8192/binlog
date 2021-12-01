@@ -3,10 +3,14 @@ package cn.bincker.web.blog.base.entity;
 import java.io.*;
 
 public class LocalSystemFileImpl implements ISystemFile {
+    private final String basePath;
+    private final String path;
     private final File file;
 
-    public LocalSystemFileImpl(String path){
-        this.file = new File(path);
+    public LocalSystemFileImpl(String basePath, String path){
+        this.basePath = basePath;
+        this.path = path;
+        this.file = new File(basePath, path);
     }
 
     @Override
@@ -16,7 +20,7 @@ public class LocalSystemFileImpl implements ISystemFile {
 
     @Override
     public String getPath() {
-        return file.getPath();
+        return path;
     }
 
     @Override
@@ -41,7 +45,7 @@ public class LocalSystemFileImpl implements ISystemFile {
 
     @Override
     public boolean renameTo(String toPath) {
-        return file.renameTo(new File(toPath));
+        return file.renameTo(new File(basePath, toPath));
     }
 
     @Override

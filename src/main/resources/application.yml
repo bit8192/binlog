@@ -12,11 +12,12 @@ binlog:
   verify-code:
     image-path: ./verify-images
   files:
-    type: local
     allow-referer:
       - "*"
     allow-empty-referer: false
     location: upload-file
+    expression-store-type: LOCAL
+    expression-store-location: .expression
   api-path: /api
 spring:
   datasource:

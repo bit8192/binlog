@@ -3,6 +3,7 @@ package cn.bincker.web.blog.netdisk.controller;
 import cn.bincker.web.blog.base.annotation.ApiController;
 import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.entity.BaseUser;
+import cn.bincker.web.blog.base.enumeration.FileSystemTypeEnum;
 import cn.bincker.web.blog.base.exception.BadRequestException;
 import cn.bincker.web.blog.base.exception.ForbiddenException;
 import cn.bincker.web.blog.base.exception.NotFoundException;
@@ -22,7 +23,6 @@ import cn.bincker.web.blog.utils.CommonUtils;
 import cn.bincker.web.blog.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.util.StringUtils;
@@ -37,12 +37,13 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static cn.bincker.web.blog.base.service.impl.LocalSystemFileFactoryImpl.CACHE_KEY_DOWNLOAD_CODE;
+import static cn.bincker.web.blog.base.service.impl.SystemFileFactoryImpl.CACHE_KEY_DOWNLOAD_CODE;
 
 @RestController
 @RequestMapping("/net-disk-files")
@@ -62,11 +63,30 @@ public class NetDiskFileController {
         this.systemFileProperties = systemFileProperties;
     }
 
+    /**
+     * 获取可用的文件存储位置
+     */
+    @GetMapping("file-system-type/available")
+    public List<FileSystemTypeEnum> getAvailableFileSystemType(){
+        var result = new ArrayList<FileSystemTypeEnum>();
+        result.add(FileSystemTypeEnum.LOCAL);
+        if(systemFileProperties.getAliyunOss() != null){
+            result.add(FileSystemTypeEnum.ALI_OSS);
+        }
+        return result;
+    }
+
+    /**
+     * 通过ID获取文件信息
+     */
     @GetMapping(value = "{id}")
     public NetDiskFileVo getItem(@PathVariable Long id){
         return netDiskFileService.findVoById(id).orElseThrow(NotFoundException::new);
     }
 
+    /**
+     * 列出文件列表
+     */
     @GetMapping
     public Collection<NetDiskFileListVo> listChildren(
             BaseUser user,
@@ -81,6 +101,9 @@ public class NetDiskFileController {
         return netDiskFileService.listChildrenVo(user, id, isDirectory, mediaType, suffix, sort);
     }
 
+    /**
+     * 通过id获取当前文件的父级目录列表
+     */
     @GetMapping("{id}/parents")
     public Collection<NetDiskFileListVo> getParents(BaseUser user, @PathVariable Long id){
         var target = netDiskFileService.findById(id).orElseThrow(NotFoundException::new);
@@ -96,11 +119,17 @@ public class NetDiskFileController {
         return result;
     }
 
+    /**
+     * 创建文件夹
+     */
     @PostMapping("directories")
     public NetDiskFileVo createDirectory(@RequestBody @Validated(CreateDirectoryValid.class) NetDiskFileDto dto){
         return netDiskFileService.createDirectory(dto);
     }
 
+    /**
+     * 上传文件
+     */
     @PostMapping("files")
     public Collection<NetDiskFileVo> upload(MultipartHttpServletRequest request, @RequestPart("fileInfo") @Validated(UploadFileValid.class) NetDiskFileDto dto){
         return netDiskFileService.upload(
@@ -130,6 +159,9 @@ public class NetDiskFileController {
         return netDiskFileService.getDownloadUrl(request, id, user);
     }
 
+    /**
+     * 通过生成的下载链接下载，生成的下载链接是一次性的，不会做防盗链判断
+     */
     @GetMapping(value = "download/{id}")
     public void download(@PathVariable Long id, BaseUser user, HttpServletResponse response, @RequestParam String code){
         var netDiskFile = netDiskFileService.findById(id).orElseThrow(NotFoundException::new);
@@ -138,6 +170,9 @@ public class NetDiskFileController {
         outputFile(netDiskFile, user, response, true);
     }
 
+    /**
+     * 直接获取资源, 会做防盗链判断
+     */
     @GetMapping(value = "get/{id}")
     public void get(@PathVariable Long id, BaseUser user, HttpServletRequest request, HttpServletResponse response){
         var netDiskFile = netDiskFileService.findById(id).orElseThrow(NotFoundException::new);
@@ -170,7 +205,7 @@ public class NetDiskFileController {
         }
         var file = systemFileFactory.fromNetDiskFile(netDiskFile);
         if(!file.exists()) throw new NotFoundException("文件不存在", "存在文件记录但文件不存在：netDiskFileId=" + netDiskFile.getId() + "\tpath=" + netDiskFile.getPath());
-        if(isDownload) response.setHeader("Content-Disposition", "attachment; filename=" + netDiskFile.getName());
+        if(isDownload) response.setHeader("Content-Disposition", "attachment; filename=" + URLEncoder.encode(netDiskFile.getName(), StandardCharsets.UTF_8));
         response.setCharacterEncoding(StandardCharsets.UTF_8.displayName());
         try(var in = file.getInputStream(); var out = response.getOutputStream()){
             in.transferTo(out);
@@ -180,6 +215,9 @@ public class NetDiskFileController {
         }
     }
 
+    /**
+     * 缩略图
+     */
     @GetMapping("thumbnail/{id}/{size}")
     public void thumbnail(@PathVariable Long id, BaseUser user, @PathVariable Integer size, HttpServletRequest request, HttpServletResponse response){
         if(size == null || size < 40 || size > 200) throw new BadRequestException();
@@ -234,6 +272,9 @@ public class NetDiskFileController {
         }
     }
 
+    /**
+     * 删除文件
+     */
     @DeleteMapping("{id}")
     public void del(@PathVariable Long id){
         netDiskFileService.delete(id);

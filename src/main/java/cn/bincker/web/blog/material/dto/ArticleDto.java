@@ -58,7 +58,6 @@ public class ArticleDto {
     /**
      * 封面
      */
-    @NotNull
     private NetDiskFile cover;
 
     @NotNull

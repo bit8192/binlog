@@ -1,18 +1,26 @@
 package cn.bincker.web.blog.base.service;
 
 import cn.bincker.web.blog.base.entity.ISystemFile;
+import cn.bincker.web.blog.base.enumeration.FileSystemTypeEnum;
 import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
+import org.springframework.lang.NonNull;
 
+import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
+import java.util.Set;
 
 public interface ISystemFileFactory {
-    ISystemFile fromPath(String path);
+    ISystemFile fromPath(@NonNull Set<FileSystemTypeEnum> fileSystemTypeEnumSet, String path);
 
-    ISystemFile fromPath(String ...paths);
+    ISystemFile fromPath(@NonNull FileSystemTypeEnum expressionStoreType, String path);
 
-    ISystemFile fromNetDiskFile(NetDiskFile netDiskFile);
+    ISystemFile fromPath(@NonNull Set<FileSystemTypeEnum> fileSystemTypeEnumSet, String ...paths);
 
-    String getDownloadUrl(HttpServletRequest request, NetDiskFile netDiskFile);
+    ISystemFile fromPath(@NonNull FileSystemTypeEnum fileSystemTypeEnum, String ...paths);
 
-    String getDownloadUrl(String path);
+    ISystemFile fromNetDiskFile(@NonNull NetDiskFile netDiskFile);
+
+    String getDownloadUrl(@NonNull HttpServletRequest request, @NonNull NetDiskFile netDiskFile);
+
+    String getDownloadUrl(@NonNull HttpServletRequest request, @NonNull FileSystemTypeEnum fileType, @NonNull String path);
 }

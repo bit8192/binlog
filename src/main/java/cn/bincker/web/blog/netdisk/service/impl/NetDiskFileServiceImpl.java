@@ -1,7 +1,6 @@
 package cn.bincker.web.blog.netdisk.service.impl;
 
 import cn.bincker.web.blog.base.config.UserAuditingListener;
-import cn.bincker.web.blog.base.config.SystemFileProperties;
 import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.entity.BaseUser;
 import cn.bincker.web.blog.base.exception.*;
@@ -48,19 +47,16 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
     private final UserAuditingListener userAuditingListener;
     private final ISystemFileFactory systemFileFactory;
     private final IBaseUserRepository baseUserRepository;
-    private final SystemFileProperties systemFileProperties;
 
     public NetDiskFileServiceImpl(
             INetDiskFileRepository netDiskFileRepository,
             UserAuditingListener userAuditingListener,
             ISystemFileFactory systemFileFactory,
-            IBaseUserRepository baseUserRepository,
-            SystemFileProperties systemFileProperties) {
+            IBaseUserRepository baseUserRepository) {
         this.netDiskFileRepository = netDiskFileRepository;
         this.userAuditingListener = userAuditingListener;
         this.systemFileFactory = systemFileFactory;
         this.baseUserRepository = baseUserRepository;
-        this.systemFileProperties = systemFileProperties;
     }
 
     @Override
@@ -81,23 +77,41 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         if(dto.getParentId() != null){
             var parent = netDiskFileRepository.findById(dto.getParentId())
                     .orElseThrow(()->new NotFoundException("父级目录不存在", "创建目录时父级目录不存在： NetDiskFile.id=" + dto.getParentId()));
-//            判断是否有权限创建
-            checkWritePermission(currentUser, parent);
-            target.setPossessor(parent.getPossessor());
-            targetPath = systemFileFactory.fromPath(parent.getPath(), dto.getName());
-            target.setPath(targetPath.getPath());
-            target.setParent(parent);
-            setParents(target, parent);
+            //是否有相同的目录
+            var sameDir = netDiskFileRepository.findByPath(FileUtils.join(parent.getPath(), dto.getName()));
+            if(sameDir.isPresent()){
+                target = sameDir.get();
+                if(target.getFileSystemTypeSet().contains(dto.getFileSystemType())) throw new SystemException("文件夹已存在");
+                target.getFileSystemTypeSet().add(dto.getFileSystemType());
+                targetPath = systemFileFactory.fromNetDiskFile(target);
+            } else {
+                //判断是否有权限创建
+                checkWritePermission(currentUser, parent);
+                target.setPossessor(parent.getPossessor());
+                targetPath = systemFileFactory.fromPath(dto.getFileSystemType(), parent.getPath(), dto.getName());
+                target.setPath(targetPath.getPath());
+                target.setParent(parent);
+                setParents(target, parent);
+            }
         }
 //        否则路径是用户根路径，父级为空，所有者为自己
         else{
-            targetPath = systemFileFactory.fromPath(systemFileProperties.getLocation(), currentUser.getUsername(), dto.getName());
-            target.setPath(targetPath.getPath());
-            target.setPossessor(currentUser);
+            //判断是否有相同的目录
+            var sameDir = netDiskFileRepository.findByPath(FileUtils.join(currentUser.getUsername(), dto.getName()));
+            if(sameDir.isPresent()){
+                target = sameDir.get();
+                if(target.getFileSystemTypeSet().contains(dto.getFileSystemType())) throw new SystemException("文件夹已存在");
+                target.getFileSystemTypeSet().add(dto.getFileSystemType());
+                targetPath = systemFileFactory.fromNetDiskFile(target);
+            }else{
+                targetPath = systemFileFactory.fromPath(dto.getFileSystemType(), currentUser.getUsername(), dto.getName());
+                target.setPath(targetPath.getPath());
+                target.setPossessor(currentUser);
+            }
         }
 
-//            所有者才可以修改权限
-        if(target.getPossessor().getId().equals(currentUser.getId())){
+//            所有者且没有重复目录才可以修改权限
+        if(target.getId() == null && target.getPossessor().getId().equals(currentUser.getId())){
             setNetDiskFilePermission(dto, target);
         }
 
@@ -140,7 +154,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
             if(parentOptional.isEmpty()) throw new NotFoundException();
             targetPath = parentOptional.get().getPath();
         }else{
-            var targetPathSystemFile = systemFileFactory.fromPath(systemFileProperties.getLocation(), currentUser.getUsername());
+            var targetPathSystemFile = systemFileFactory.fromPath(dto.getFileSystemType(), currentUser.getUsername());
             if(!targetPathSystemFile.exists() && !targetPathSystemFile.mkdirs()) throw new SystemException("创建文件夹失败");
             targetPath = targetPathSystemFile.getPath();
         }
@@ -153,16 +167,16 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
             }else{
                 netDiskFile.setName(UUID.randomUUID().toString());
             }
-            while (systemFileFactory.fromPath(targetPath, netDiskFile.getName()).exists())
+            while (systemFileFactory.fromPath(dto.getFileSystemType(), targetPath, netDiskFile.getName()).exists())
                 netDiskFile.setName(FileUtils.nextSerialFileName(netDiskFile.getName()));
             netDiskFile.setPath(FileUtils.join(targetPath, netDiskFile.getName()));
             netDiskFile.setSuffix(CommonUtils.getStringSuffix(netDiskFile.getName(), "."));//后缀全用小写，方便查询
             netDiskFile.setMediaType(multipartFile.getContentType());
             netDiskFile.setSize(multipartFile.getSize());
             //写到文件, 并计算sha256
-            var systemFile = systemFileFactory.fromPath(targetPath, netDiskFile.getName());
+            var systemFile = systemFileFactory.fromPath(dto.getFileSystemType(), targetPath, netDiskFile.getName());
             while (systemFile.exists()){
-                systemFile = systemFileFactory.fromPath(targetPath, FileUtils.nextSerialFileName(systemFile.getName()));
+                systemFile = systemFileFactory.fromPath(dto.getFileSystemType(), targetPath, FileUtils.nextSerialFileName(systemFile.getName()));
             }
             try(var in = multipartFile.getInputStream()){
                 netDiskFile.setSha256(DigestUtils.sha256Hex(in));
@@ -293,7 +307,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         if(dto.getParentId() != null || target.getParent() != null){//如果传入parent不为空，或者传入parent未空但原有parent不为空
             if(dto.getParentId() == null){//传入parent为空则移动到根目录
                 target.setParent(null);
-                target.setPath(FileUtils.join(systemFileProperties.getLocation(), currentUser.getUsername(), dto.getName()));
+                target.setPath(FileUtils.join(currentUser.getUsername(), dto.getName()));
                 setParents(target, null);
             }else{
                 var parent = netDiskFileRepository.findById(dto.getParentId())

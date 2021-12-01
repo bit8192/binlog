@@ -39,7 +39,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class ExpressionServiceImpl implements IExpressionService {
-    private static final String EXPRESSION_DIRECTORY = ".expression";//图标储存目录名称
     public static final long EXPRESSION_FILE_MAX_SIZE = 200 * 1024L;
     private final IExpressionRepository expressionRepository;
     private final IExpressionAgreeRepository expressionAgreeRepository;
@@ -102,7 +101,7 @@ public class ExpressionServiceImpl implements IExpressionService {
                             return c;
                         })
         ).stream().collect(Collectors.toUnmodifiableMap(ExpressionTag::getId, t->t));
-        var expressionPath = systemFileFactory.fromPath(systemFileProperties.getLocation(), EXPRESSION_DIRECTORY);
+        var expressionPath = systemFileFactory.fromPath(systemFileProperties.getExpressionStoreType(), systemFileProperties.getExpressionStoreLocation());
         if(!expressionPath.exists() && !expressionPath.mkdirs()) throw new SystemException("创建目录失败：path=" + expressionPath);
         for (ExpressionDto expressionInfo : expressionInfos) {
             var multipartFiles = fileMap.get(expressionInfo.getFileName());
@@ -110,7 +109,7 @@ public class ExpressionServiceImpl implements IExpressionService {
                 throw new BadRequestException("没有文件:" + expressionInfo.getFileName(), "无效请求");
             var multipartFile = multipartFiles.get(0);
             if(multipartFile.getSize() > EXPRESSION_FILE_MAX_SIZE) throw new BadRequestException("图片过大: size=" + multipartFile.getSize(),"表情不得大于" + EXPRESSION_FILE_MAX_SIZE/1024 + "kb");
-            var systemFile = systemFileFactory.fromPath(expressionPath.getPath(), expressionInfo.getTitle() + FileUtils.getFileSuffix(expressionInfo.getFileName()));
+            var systemFile = systemFileFactory.fromPath(systemFileProperties.getExpressionStoreType(), expressionPath.getPath(), expressionInfo.getTitle() + FileUtils.getFileSuffix(expressionInfo.getFileName()));
             if(systemFile.exists()) throw new BadRequestException("表情已存在:" + systemFile.getPath(), "表情已存在");
             var expression = new Expression();
             expression.setPath(systemFile.getPath());
@@ -160,7 +159,7 @@ public class ExpressionServiceImpl implements IExpressionService {
             expressionAgreeRepository.save(agree);
         }
         synchronized ((SynchronizedPrefixConstant.TOGGLE_EXPRESSION_AGREE + id).intern()){
-            target = expressionRepository.getOne(id);
+            target = expressionRepository.findById(id).orElseThrow(SystemException::new);
             target.setAgreedNum(expressionAgreeRepository.countByExpression(target));
             expressionRepository.save(target);
         }

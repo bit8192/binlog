@@ -1,6 +1,7 @@
 package cn.bincker.web.blog.netdisk.dto;
 
 import cn.bincker.web.blog.base.constant.RegexpConstant;
+import cn.bincker.web.blog.base.enumeration.FileSystemTypeEnum;
 import cn.bincker.web.blog.netdisk.dto.valid.CreateDirectoryValid;
 import cn.bincker.web.blog.base.dto.valid.UpdateValid;
 import cn.bincker.web.blog.netdisk.dto.valid.UploadFileValid;
@@ -25,6 +26,11 @@ public class NetDiskFileDto {
     @Length(max = 255, groups = CreateDirectoryValid.class)
     @Null(groups = UploadFileValid.class)
     private String name;
+
+    @NotNull
+    @NotEmpty
+    private FileSystemTypeEnum fileSystemType;
+
     private Long parentId;
     private Boolean everyoneReadable = false;
     private Boolean everyoneWritable = false;

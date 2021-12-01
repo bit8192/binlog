@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface INetDiskFileRepository extends JpaRepository<NetDiskFile, Long>, JpaSpecificationExecutor<NetDiskFile> {
 
@@ -54,4 +55,6 @@ public interface INetDiskFileRepository extends JpaRepository<NetDiskFile, Long>
     where f.id in (:ids)
     """)
     List<EntityLongValueVo> findAllChildrenNum(List<Long> ids);
+
+    Optional<NetDiskFile> findByPath(String path);
 }
