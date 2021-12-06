@@ -5,6 +5,7 @@ package cn.bincker.web.blog.base.exception;
  */
 public class SystemException extends RuntimeException{
     public SystemException() {
+        this("系统繁忙");
     }
 
     public SystemException(String s) {

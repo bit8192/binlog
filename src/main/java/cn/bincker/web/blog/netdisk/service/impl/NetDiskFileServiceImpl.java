@@ -71,6 +71,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         var target = new NetDiskFile();
         target.setName(dto.getName());
         target.setIsDirectory(true);
+        target.setFileSystemTypeSet(Collections.singleton(dto.getFileSystemType()));
 
 //        如果有父级，那么设置所有者，并设置路径
         ISystemFile targetPath;
@@ -88,7 +89,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
                 //判断是否有权限创建
                 checkWritePermission(currentUser, parent);
                 target.setPossessor(parent.getPossessor());
-                targetPath = systemFileFactory.fromPath(dto.getFileSystemType(), parent.getPath(), dto.getName());
+                targetPath = systemFileFactory.fromPath(dto.getFileSystemType(), parent.getPath(), dto.getName() + "/");
                 target.setPath(targetPath.getPath());
                 target.setParent(parent);
                 setParents(target, parent);
@@ -104,7 +105,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
                 target.getFileSystemTypeSet().add(dto.getFileSystemType());
                 targetPath = systemFileFactory.fromNetDiskFile(target);
             }else{
-                targetPath = systemFileFactory.fromPath(dto.getFileSystemType(), currentUser.getUsername(), dto.getName());
+                targetPath = systemFileFactory.fromPath(dto.getFileSystemType(), currentUser.getUsername(), dto.getName() + "/");
                 target.setPath(targetPath.getPath());
                 target.setPossessor(currentUser);
             }
@@ -152,6 +153,8 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         if(dto.getParentId() != null){
             parentOptional = netDiskFileRepository.findById(dto.getParentId());
             if(parentOptional.isEmpty()) throw new NotFoundException();
+            //如果存储类型必须是父目录中的一种
+            if(!parentOptional.get().getFileSystemTypeSet().contains(dto.getFileSystemType())) throw new SystemException("请先创建对应存储类型的父级目录");
             targetPath = parentOptional.get().getPath();
         }else{
             var targetPathSystemFile = systemFileFactory.fromPath(dto.getFileSystemType(), currentUser.getUsername());
@@ -162,6 +165,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         for (MultipartFile multipartFile : multipartFiles) {
             //构建uploadFile
             var netDiskFile = new NetDiskFile();
+            netDiskFile.setFileSystemTypeSet(Collections.singleton(dto.getFileSystemType()));
             if(StringUtils.hasText(multipartFile.getOriginalFilename())){
                 netDiskFile.setName(multipartFile.getOriginalFilename().replaceAll(RegexpConstant.ILLEGAL_FILE_NAME_CHAR_VALUE, ""));
             }else{
@@ -187,6 +191,9 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
                 in.transferTo(out);
             } catch (IOException e) {
                 throw new SystemException(e);
+            }
+            if(!systemFile.exists()){
+                throw new SystemException("上传文件失败:path=" + systemFile.getPath());
             }
             if(parentOptional.isPresent()){
                 var parent = parentOptional.get();
@@ -224,8 +231,10 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         netDiskFile.setParents(parents);
     }
 
+    /**
+     * 删除目录或文件，这个操作是无法回滚的，因为即便数据被回滚了，文件也被删了
+     */
     @Override
-    @Transactional
     public void delete(Long id) {
         //当前用户
         var currentUser = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
@@ -246,26 +255,27 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
                 allFile.add(netDiskFile);
             }
         }
-//        删除所有文件记录
-        netDiskFileRepository.deleteAll(allFileAndDirectory);
-//        删除上传文件实体
+//        先删除文件
         for (var file : allFile) {
             try {
                 var systemFile = systemFileFactory.fromNetDiskFile(file);
-                if(!systemFile.delete()) throw new DeleteFileFailException(systemFile);
+                if(systemFile.exists() && !systemFile.delete()) throw new DeleteFileFailException(systemFile);
+                netDiskFileRepository.delete(file);
             }catch (Exception e){
-                //出现任何异常都不进行回滚，因为即使回滚了也可能有一部分文件已经被删除了
-                log.error("删除目录失败：path=" + file.getPath(), e);
+                log.error("删除文件失败：path=" + file.getPath(), e);
+                throw new DeleteFileFailException(file.getPath(), e);
             }
         }
 //        删除所有目录, 从底部向上删除
         for (int i = allDirectory.size() - 1; i > -1; i--) {
+            var directory = allDirectory.get(i);
             try {
-                var file = systemFileFactory.fromNetDiskFile(allDirectory.get(i));
-                if(!file.delete()) throw new DeleteFileFailException(file);
+                var file = systemFileFactory.fromNetDiskFile(directory);
+                if(file.exists() && !file.delete()) throw new DeleteFileFailException(file);
+                netDiskFileRepository.delete(directory);
             }catch (Exception e){
-                //出现任何异常都不进行回滚，因为即使回滚了也可能有一部分文件已经被删除了
-                log.error("删除目录失败：path=" + allDirectory.get(i).getPath());
+                log.error("删除目录失败：path=" + directory, e);
+                throw new DeleteFileFailException(directory.getPath(), e);
             }
         }
     }

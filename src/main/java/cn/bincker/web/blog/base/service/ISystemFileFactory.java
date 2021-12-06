@@ -20,6 +20,8 @@ public interface ISystemFileFactory {
 
     ISystemFile fromNetDiskFile(@NonNull NetDiskFile netDiskFile);
 
+    ISystemFile fromNetDiskFile(@NonNull NetDiskFile netDiskFile, boolean isDirectory);
+
     String getDownloadUrl(@NonNull HttpServletRequest request, @NonNull NetDiskFile netDiskFile);
 
     String getDownloadUrl(@NonNull HttpServletRequest request, @NonNull FileSystemTypeEnum fileType, @NonNull String path);

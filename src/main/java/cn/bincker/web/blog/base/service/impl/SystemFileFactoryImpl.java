@@ -87,6 +87,15 @@ public class SystemFileFactoryImpl implements ISystemFileFactory {
     }
 
     @Override
+    public ISystemFile fromNetDiskFile(@NonNull NetDiskFile netDiskFile, boolean isDirectory) {
+        if(isDirectory){
+            return fromPath(netDiskFile.getFileSystemTypeSet(), netDiskFile.getPath() + "/");
+        }else{
+            return fromPath(netDiskFile.getFileSystemTypeSet(), netDiskFile.getPath());
+        }
+    }
+
+    @Override
     public String getDownloadUrl(@NonNull HttpServletRequest request, @NonNull NetDiskFile netDiskFile) {
         if(netDiskFile.getFileSystemTypeSet().size() > 1) throw new SystemException("不支持同时操作多个数据源");
         if(netDiskFile.getFileSystemTypeSet().isEmpty()) throw new SystemException("文件存储位置错误");
