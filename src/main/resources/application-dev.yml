@@ -9,3 +9,4 @@ spring:
 logging:
   level:
     cn.bincker.web.blog: debug
+    org.hibernate.type.descriptor.sql.BasicBinder: trace

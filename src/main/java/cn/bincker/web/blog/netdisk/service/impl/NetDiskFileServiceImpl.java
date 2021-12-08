@@ -239,7 +239,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
             netDiskFile.setParents(Collections.emptyList());
             return;
         }
-        var parents = new ArrayList<>(parent.getParents());
+        var parents = parent.getParents() == null ? new ArrayList<Long>() : new ArrayList<>(parent.getParents());
         parents.add(parent.getId());
         netDiskFile.setParents(parents);
     }
@@ -527,13 +527,14 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
     }
 
     @Override
+    @Transactional
     public NetDiskFileVo uploadMaterial(String group, MultipartFile multipartFile) {
         var user = userAuditingListener.getCurrentAuditor().orElseThrow(ForbiddenException::new);
         var storeRootPath = FileUtils.join(user.getUsername(), systemFileProperties.getMaterialStoreLocation()) + File.separator;
         //获取/创建存储根目录
         var storeRoot = netDiskFileRepository.findByPath(storeRootPath).orElseGet(() -> {
             var dto = new NetDiskFileDto();
-            dto.setName(group);
+            dto.setName(systemFileProperties.getMaterialStoreLocation());
             dto.setEveryoneReadable(false);
             dto.setEveryoneWritable(false);
             dto.setReadableUserList(Collections.emptySet());
@@ -542,7 +543,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
             return commonCreateDirectory(dto);
         });
         //获取/创建存储分组目录
-        var storePath = netDiskFileRepository.findByPath(FileUtils.join(storeRoot.getPath(), group)).orElseGet(() -> {
+        var storePath = netDiskFileRepository.findByPath(FileUtils.join(storeRoot.getPath(), group) + File.separator).orElseGet(() -> {
             var dto = new NetDiskFileDto();
             dto.setName(group);
             dto.setParentId(storeRoot.getId());
