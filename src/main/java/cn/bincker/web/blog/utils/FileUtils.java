@@ -51,7 +51,7 @@ public class FileUtils {
             }else{//拼接的路径最后没有斜杠
                 if(paths[i].startsWith(File.separator)){
                     result.append(paths[i]);
-                }else{
+                }else if(StringUtils.hasLength(paths[i])){
                     result.append(File.separatorChar).append(paths[i]);
                 }
             }

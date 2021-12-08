@@ -28,6 +28,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import javax.imageio.ImageIO;
@@ -141,6 +142,16 @@ public class NetDiskFileController {
                         .collect(Collectors.toList()),
                 dto
         );
+    }
+
+    /**
+     * 上传素材
+     * @param group 分组，通常为文章标题
+     * @param material 素材文件
+     */
+    @PostMapping("materials")
+    public NetDiskFileVo uploadMaterials(@RequestPart("group") String group, @RequestPart("material") MultipartFile material){
+        return netDiskFileService.uploadMaterial(group, material);
     }
 
     /**

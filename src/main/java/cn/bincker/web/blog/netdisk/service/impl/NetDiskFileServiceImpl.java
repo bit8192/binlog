@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.netdisk.service.impl;
 
+import cn.bincker.web.blog.base.config.SystemFileProperties;
 import cn.bincker.web.blog.base.config.UserAuditingListener;
 import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.entity.BaseUser;
@@ -47,21 +48,21 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
     private final UserAuditingListener userAuditingListener;
     private final ISystemFileFactory systemFileFactory;
     private final IBaseUserRepository baseUserRepository;
+    private final SystemFileProperties systemFileProperties;
 
     public NetDiskFileServiceImpl(
             INetDiskFileRepository netDiskFileRepository,
             UserAuditingListener userAuditingListener,
             ISystemFileFactory systemFileFactory,
-            IBaseUserRepository baseUserRepository) {
+            IBaseUserRepository baseUserRepository, SystemFileProperties systemFileProperties) {
         this.netDiskFileRepository = netDiskFileRepository;
         this.userAuditingListener = userAuditingListener;
         this.systemFileFactory = systemFileFactory;
         this.baseUserRepository = baseUserRepository;
+        this.systemFileProperties = systemFileProperties;
     }
 
-    @Override
-    @Transactional
-    public NetDiskFileVo createDirectory(NetDiskFileDto dto) {
+    private NetDiskFile commonCreateDirectory(NetDiskFileDto dto){
         var currentUser = userAuditingListener.getCurrentAuditor().orElseThrow(UnauthorizedException::new);
 
         if(dto.getName().matches(RegexpConstant.ILLEGAL_FILE_NAME_CHAR_VALUE))
@@ -118,12 +119,17 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
 
 //        持久化
         netDiskFileRepository.save(target);
-//        生成视图
-        NetDiskFileVo vo = new NetDiskFileVo(target);
 
 //        创建目录放在最后面执行
         if(!targetPath.exists() && !targetPath.mkdirs()) throw new MakeDirectoryFailException(targetPath);
-        return vo;
+
+        return target;
+    }
+
+    @Override
+    @Transactional
+    public NetDiskFileVo createDirectory(NetDiskFileDto dto) {
+        return new NetDiskFileVo(commonCreateDirectory(dto));
     }
 
     /**
@@ -164,50 +170,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         var result = new ArrayList<NetDiskFileVo>(multipartFiles.size());
         for (MultipartFile multipartFile : multipartFiles) {
             //构建uploadFile
-            var netDiskFile = new NetDiskFile();
-            netDiskFile.setFileSystemTypeSet(Collections.singleton(dto.getFileSystemType()));
-            if(StringUtils.hasText(multipartFile.getOriginalFilename())){
-                netDiskFile.setName(multipartFile.getOriginalFilename().replaceAll(RegexpConstant.ILLEGAL_FILE_NAME_CHAR_VALUE, ""));
-            }else{
-                netDiskFile.setName(UUID.randomUUID().toString());
-            }
-            while (systemFileFactory.fromPath(dto.getFileSystemType(), targetPath, netDiskFile.getName()).exists())
-                netDiskFile.setName(FileUtils.nextSerialFileName(netDiskFile.getName()));
-            netDiskFile.setPath(FileUtils.join(targetPath, netDiskFile.getName()));
-            netDiskFile.setSuffix(CommonUtils.getStringSuffix(netDiskFile.getName(), "."));//后缀全用小写，方便查询
-            netDiskFile.setMediaType(multipartFile.getContentType());
-            netDiskFile.setSize(multipartFile.getSize());
-            //写到文件, 并计算sha256
-            var systemFile = systemFileFactory.fromPath(dto.getFileSystemType(), targetPath, netDiskFile.getName());
-            while (systemFile.exists()){
-                systemFile = systemFileFactory.fromPath(dto.getFileSystemType(), targetPath, FileUtils.nextSerialFileName(systemFile.getName()));
-            }
-            try(var in = multipartFile.getInputStream()){
-                netDiskFile.setSha256(DigestUtils.sha256Hex(in));
-            } catch (IOException | NoSuchAlgorithmException e) {
-                throw new SystemException(e);
-            }
-            try(var in = multipartFile.getInputStream(); var out = systemFile.getOutputStream()){
-                in.transferTo(out);
-            } catch (IOException e) {
-                throw new SystemException(e);
-            }
-            if(!systemFile.exists()){
-                throw new SystemException("上传文件失败:path=" + systemFile.getPath());
-            }
-            if(parentOptional.isPresent()){
-                var parent = parentOptional.get();
-                netDiskFile.setParent(parent);
-                netDiskFile.setPossessor(parent.getPossessor());
-                setParents(netDiskFile, parent);
-            }else{
-                netDiskFile.setPossessor(currentUser);
-            }
-            netDiskFile.setIsDirectory(false);
-            //如果是持有者，那么设置权限
-            if(currentUser.getId().equals(netDiskFile.getPossessor().getId())){
-                setNetDiskFilePermission(dto, netDiskFile);
-            }
+            NetDiskFile netDiskFile = buildNetDiskFile(dto, currentUser, parentOptional, targetPath, multipartFile);
             //持久化
             netDiskFileRepository.save(netDiskFile);
             //填上用户数据, 因为这里的用户只有id, 查也查不出来（被缓存了吧，能想到的办法只有手动查）
@@ -216,6 +179,56 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
             result.add(new NetDiskFileVo(netDiskFile));
         }
         return result;
+    }
+
+    private NetDiskFile buildNetDiskFile(NetDiskFileDto dto, BaseUser currentUser, Optional<NetDiskFile> parentOptional, String targetPath, MultipartFile multipartFile) {
+        var netDiskFile = new NetDiskFile();
+        netDiskFile.setFileSystemTypeSet(Collections.singleton(dto.getFileSystemType()));
+        if(StringUtils.hasText(dto.getName())){
+            netDiskFile.setName(dto.getName().replaceAll(RegexpConstant.ILLEGAL_FILE_NAME_CHAR_VALUE, ""));
+        }else if(StringUtils.hasText(multipartFile.getOriginalFilename())){
+            netDiskFile.setName(multipartFile.getOriginalFilename().replaceAll(RegexpConstant.ILLEGAL_FILE_NAME_CHAR_VALUE, ""));
+        }else{
+            netDiskFile.setName(UUID.randomUUID().toString());
+        }
+        while (systemFileFactory.fromPath(dto.getFileSystemType(), targetPath, netDiskFile.getName()).exists())
+            netDiskFile.setName(FileUtils.nextSerialFileName(netDiskFile.getName()));
+        netDiskFile.setPath(FileUtils.join(targetPath, netDiskFile.getName()));
+        netDiskFile.setSuffix(CommonUtils.getStringSuffix(netDiskFile.getName(), "."));//后缀全用小写，方便查询
+        netDiskFile.setMediaType(multipartFile.getContentType());
+        netDiskFile.setSize(multipartFile.getSize());
+        //写到文件, 并计算sha256
+        var systemFile = systemFileFactory.fromPath(dto.getFileSystemType(), targetPath, netDiskFile.getName());
+        while (systemFile.exists()){
+            systemFile = systemFileFactory.fromPath(dto.getFileSystemType(), targetPath, FileUtils.nextSerialFileName(systemFile.getName()));
+        }
+        try(var in = multipartFile.getInputStream()){
+            netDiskFile.setSha256(DigestUtils.sha256Hex(in));
+        } catch (IOException | NoSuchAlgorithmException e) {
+            throw new SystemException(e);
+        }
+        try(var in = multipartFile.getInputStream(); var out = systemFile.getOutputStream()){
+            in.transferTo(out);
+        } catch (IOException e) {
+            throw new SystemException(e);
+        }
+        if(!systemFile.exists()){
+            throw new SystemException("上传文件失败:path=" + systemFile.getPath());
+        }
+        if(parentOptional.isPresent()){
+            var parent = parentOptional.get();
+            netDiskFile.setParent(parent);
+            netDiskFile.setPossessor(parent.getPossessor());
+            setParents(netDiskFile, parent);
+        }else{
+            netDiskFile.setPossessor(currentUser);
+        }
+        netDiskFile.setIsDirectory(false);
+        //如果是持有者，那么设置权限
+        if(currentUser.getId().equals(netDiskFile.getPossessor().getId())){
+            setNetDiskFilePermission(dto, netDiskFile);
+        }
+        return netDiskFile;
     }
 
     /**
@@ -317,13 +330,13 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
         if(dto.getParentId() != null || target.getParent() != null){//如果传入parent不为空，或者传入parent未空但原有parent不为空
             if(dto.getParentId() == null){//传入parent为空则移动到根目录
                 target.setParent(null);
-                target.setPath(FileUtils.join(currentUser.getUsername(), dto.getName()));
+                target.setPath(FileUtils.join(currentUser.getUsername(), dto.getName()) + (target.getIsDirectory() ? "/" : ""));
                 setParents(target, null);
             }else{
                 var parent = netDiskFileRepository.findById(dto.getParentId())
                         .orElseThrow(()->new NotFoundException("父级不存在", "移动操作失败父级节点不存在：id=" + dto.getParentId()));
                 target.setParent(parent);
-                target.setPath(new File(new File(parent.getPath()), dto.getName()).getPath());
+                target.setPath(new File(new File(parent.getPath()), dto.getName()).getPath() + (target.getIsDirectory() ? "/" : ""));
                 setParents(target, parent);
             }
 //            修改所有子节点的父节点列表
@@ -336,7 +349,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
 //        重命名
         if(!dto.getName().equals(target.getName())){
             target.setName(dto.getName());
-            target.setPath(new File(new File(target.getPath()).getParentFile(), target.getName()).getPath());
+            target.setPath(new File(new File(target.getPath()).getParentFile(), target.getName()).getPath() + (target.getIsDirectory() ? "/" : ""));
             needUpdateChildrenPath = target.getIsDirectory();
         }
 //        修改子节点路径
@@ -344,7 +357,7 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
 //            修改所有子节点路径
             for (NetDiskFile netDiskFile : allChildren) {
                 var parent = parentNetDiskFileMap.get(netDiskFile.getParent().getId());
-                netDiskFile.setPath(new File(new File(parent.getPath()), netDiskFile.getName()).getPath());
+                netDiskFile.setPath(new File(new File(parent.getPath()), netDiskFile.getName()).getPath() + (netDiskFile.getIsDirectory() ? "/" : ""));
             }
         }
 //        只有所有者才能修改权限
@@ -511,5 +524,44 @@ public class NetDiskFileServiceImpl implements INetDiskFileService {
                     throw new ForbiddenException();
             }
         }
+    }
+
+    @Override
+    public NetDiskFileVo uploadMaterial(String group, MultipartFile multipartFile) {
+        var user = userAuditingListener.getCurrentAuditor().orElseThrow(ForbiddenException::new);
+        var storeRootPath = FileUtils.join(user.getUsername(), systemFileProperties.getMaterialStoreLocation()) + File.separator;
+        //获取/创建存储根目录
+        var storeRoot = netDiskFileRepository.findByPath(storeRootPath).orElseGet(() -> {
+            var dto = new NetDiskFileDto();
+            dto.setName(group);
+            dto.setEveryoneReadable(false);
+            dto.setEveryoneWritable(false);
+            dto.setReadableUserList(Collections.emptySet());
+            dto.setWritableUserList(Collections.emptySet());
+            dto.setFileSystemType(systemFileProperties.getMaterialStoreType());
+            return commonCreateDirectory(dto);
+        });
+        //获取/创建存储分组目录
+        var storePath = netDiskFileRepository.findByPath(FileUtils.join(storeRoot.getPath(), group)).orElseGet(() -> {
+            var dto = new NetDiskFileDto();
+            dto.setName(group);
+            dto.setParentId(storeRoot.getId());
+            dto.setEveryoneReadable(false);
+            dto.setEveryoneWritable(false);
+            dto.setReadableUserList(Collections.emptySet());
+            dto.setWritableUserList(Collections.emptySet());
+            dto.setFileSystemType(systemFileProperties.getMaterialStoreType());
+            return commonCreateDirectory(dto);
+        });
+
+        var targetDto = new NetDiskFileDto();
+        targetDto.setParentId(storePath.getId());
+        targetDto.setFileSystemType(systemFileProperties.getMaterialStoreType());
+        targetDto.setWritableUserList(Collections.emptySet());
+        targetDto.setReadableUserList(Collections.emptySet());
+        targetDto.setEveryoneWritable(false);
+        targetDto.setEveryoneReadable(true);
+        var target = buildNetDiskFile(targetDto, user, Optional.of(storePath), storePath.getPath(), multipartFile);
+        return new NetDiskFileVo(netDiskFileRepository.save(target));
     }
 }

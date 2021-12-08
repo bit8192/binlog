@@ -20,6 +20,7 @@ public class SystemFileConfig {
         var baseLocation = systemFileFactory.fromPath(Collections.singleton(FileSystemTypeEnum.LOCAL));
         if(!baseLocation.exists() && !baseLocation.mkdirs()) throw new RuntimeException("无法创建本地文件夹: " + baseLocation.getPath());
 
+        //创建阿里云OSS根路径
         var aliyunOssProperties = systemFileProperties.getAliyunOss();
         if(aliyunOssProperties != null && StringUtils.hasText(aliyunOssProperties.getLocation())) {
             var aliyunLocation = systemFileFactory.fromPath(Collections.singleton(FileSystemTypeEnum.ALI_OSS));

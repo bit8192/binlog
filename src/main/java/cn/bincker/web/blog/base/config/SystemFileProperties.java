@@ -38,6 +38,14 @@ public class SystemFileProperties {
      */
     private String expressionStoreLocation = ".expression";
     /**
+     * 文章素材存储类型
+     */
+    private FileSystemTypeEnum materialStoreType = FileSystemTypeEnum.LOCAL;
+    /**
+     * 文章素材存储位置
+     */
+    private String materialStoreLocation = "素材";
+    /**
      * 阿里云OSS
      */
     private AliyunOssProperties aliyunOss;

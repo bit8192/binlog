@@ -79,4 +79,11 @@ public interface INetDiskFileService {
      * 获取下载链接
      */
     ValueVo<String> getDownloadUrl(HttpServletRequest request, Long id, BaseUser user);
+
+    /**
+     * 上传素材
+     * @param group 分组，一般为文章标题
+     * @param multipartFile 文件
+     */
+    NetDiskFileVo uploadMaterial(String group, MultipartFile multipartFile);
 }

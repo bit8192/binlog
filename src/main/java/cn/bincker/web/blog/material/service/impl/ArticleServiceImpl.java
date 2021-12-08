@@ -1,5 +1,6 @@
 package cn.bincker.web.blog.material.service.impl;
 
+import cn.bincker.web.blog.base.config.SystemFileProperties;
 import cn.bincker.web.blog.base.config.UserAuditingListener;
 import cn.bincker.web.blog.base.constant.RegexpConstant;
 import cn.bincker.web.blog.base.dto.CommentDto;
@@ -13,6 +14,7 @@ import cn.bincker.web.blog.base.exception.NotFoundException;
 import cn.bincker.web.blog.base.exception.UnauthorizedException;
 import cn.bincker.web.blog.base.repository.*;
 import cn.bincker.web.blog.base.service.ICommentService;
+import cn.bincker.web.blog.base.service.ISystemFileFactory;
 import cn.bincker.web.blog.base.vo.CommentVo;
 import cn.bincker.web.blog.base.vo.ValueVo;
 import cn.bincker.web.blog.material.constant.SynchronizedPrefixConstant;
@@ -27,8 +29,10 @@ import cn.bincker.web.blog.material.service.IArticleService;
 import cn.bincker.web.blog.material.dto.ArticleDto;
 import cn.bincker.web.blog.material.specification.ArticleSpecification;
 import cn.bincker.web.blog.material.vo.*;
+import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
 import cn.bincker.web.blog.netdisk.repository.INetDiskFileRepository;
 import cn.bincker.web.blog.netdisk.vo.NetDiskFileVo;
+import cn.bincker.web.blog.utils.FileUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -37,7 +41,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -59,8 +65,10 @@ public class ArticleServiceImpl implements IArticleService {
     private final IBaseUserRepository userRepository;
     private final ICommentRepository commentRepository;
     private final ApplicationContext applicationContext;
+    private final ISystemFileFactory systemFileFactory;
+    private final SystemFileProperties systemFileProperties;
 
-    public ArticleServiceImpl(UserAuditingListener userAuditingListener, IArticleRepository articleRepository, ITagRepository tagRepository, IArticleClassRepository articleClassRepository, INetDiskFileRepository netDiskFileRepository, IArticleAgreeRepository articleAgreeRepository, ICommentReplyRepository commentReplyRepository, ICommentAgreeRepository commentAgreeRepository, ICommentTreadRepository commentTreadRepository, ICommentReplyAgreeRepository commentReplyAgreeRepository, ICommentReplyTreadRepository commentReplyTreadRepository, IBaseUserRepository userRepository, ICommentRepository commentRepository, ApplicationContext applicationContext) {
+    public ArticleServiceImpl(UserAuditingListener userAuditingListener, IArticleRepository articleRepository, ITagRepository tagRepository, IArticleClassRepository articleClassRepository, INetDiskFileRepository netDiskFileRepository, IArticleAgreeRepository articleAgreeRepository, ICommentReplyRepository commentReplyRepository, ICommentAgreeRepository commentAgreeRepository, ICommentTreadRepository commentTreadRepository, ICommentReplyAgreeRepository commentReplyAgreeRepository, ICommentReplyTreadRepository commentReplyTreadRepository, IBaseUserRepository userRepository, ICommentRepository commentRepository, ApplicationContext applicationContext, ISystemFileFactory systemFileFactory, SystemFileProperties systemFileProperties) {
         this.userAuditingListener = userAuditingListener;
         this.articleRepository = articleRepository;
         this.tagRepository = tagRepository;
@@ -75,6 +83,8 @@ public class ArticleServiceImpl implements IArticleService {
         this.userRepository = userRepository;
         this.commentRepository = commentRepository;
         this.applicationContext = applicationContext;
+        this.systemFileFactory = systemFileFactory;
+        this.systemFileProperties = systemFileProperties;
     }
 
     @Override
@@ -170,8 +180,8 @@ public class ArticleServiceImpl implements IArticleService {
                 )
                         .stream().map(tag -> new TagVo(tag, null)).collect(Collectors.toSet())
         );
-        result.setCover(new NetDiskFileVo(netDiskFileRepository.getOne(target.getCover().getId())));
-        result.setArticleClass(new ArticleClassVo(articleClassRepository.getOne(target.getArticleClass().getId()), null));
+        result.setCover(new NetDiskFileVo(netDiskFileRepository.findById(target.getCover().getId()).orElseThrow()));
+        result.setArticleClass(new ArticleClassVo(articleClassRepository.findById(target.getArticleClass().getId()).orElseThrow(), null));
         return result;
     }
 
