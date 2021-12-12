@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.resource.ResourceHttpRequestHandler;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -29,6 +30,9 @@ public class RequestLogInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        if(handler.getClass().equals(ResourceHttpRequestHandler.class)) return true;
+        var serverName = request.getServerName();
+        if(serverName.equalsIgnoreCase("localhost") || serverName.equals("127.0.0.1")) return true;
         var ip = RequestUtils.getRequestIp(request);
         var log = new RequestLog();
         log.setIp(ip);
