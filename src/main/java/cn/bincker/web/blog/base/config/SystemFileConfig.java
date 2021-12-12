@@ -2,11 +2,7 @@ package cn.bincker.web.blog.base.config;
 
 import cn.bincker.web.blog.base.enumeration.FileSystemTypeEnum;
 import cn.bincker.web.blog.base.service.ISystemFileFactory;
-import com.aliyun.oss.OSS;
-import com.aliyun.oss.OSSClientBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 
@@ -37,17 +33,5 @@ public class SystemFileConfig {
             if(systemFileProperties.getExpressionStoreType() == FileSystemTypeEnum.ALI_OSS)
                 throw new RuntimeException("binlog.files.expression-store-type配置错误: 请配置binlog.files.aliyun-oss后再使用ALI_OSS");
         }
-    }
-
-    @Bean
-    @ConditionalOnProperty({
-            "binlog.files.aliyun-oss.endpoint",
-            "binlog.files.aliyun-oss.access-key-id",
-            "binlog.files.aliyun-oss.access-key-secret",
-            "binlog.files.aliyun-oss.bucket-name",
-    })
-    public OSS aliyunOss(SystemFileProperties systemFileProperties){
-        var config = systemFileProperties.getAliyunOss();
-        return new OSSClientBuilder().build(config.getEndpoint(), config.getAccessKeyId(), config.getAccessKeySecret());
     }
 }

@@ -4,12 +4,25 @@ set workdir [pwd]
 set remote_location "~/"
 set locale_location "target"
 set target_file "binlog-0.0.1-SNAPSHOT.jar"
-set frontend_project_dir "../binlog-frontend"
+set java_path "java"
+set method [lindex $argv 0]
 
-if { $server == "" } {
-    puts "用法：$argv0 [-b 总是进行打包，否则如果jar包存在则直接上传] [-bf 总是对前端进行打包] user@server"
+if { [regexp {^[\w_]+@\S+} $server] == 0 || $method != "deploy" && $method != "start" && $method != "stop" && $method != "restart" } {
+    puts "用法：$argv0 deploy|start|stop|restart \[-b 总是进行打包，否则如果jar包存在则直接上传] \[-bf 总是对前端进行打包] user@server"
     exit 1
 }
+
+expect_after {
+    timeout {
+        puts "等待超时"
+        exit 1
+    }
+    eof {
+        puts "断开连接"
+        exit 1
+    }
+}
+
 
 # 检测是否有选项
 proc has_arg {arg} {
@@ -57,8 +70,6 @@ proc upload {} {
 # 打包后台
 proc package_service {} {
     global locale_location
-    # 如果没有打包前端或需要进行打包则进行前端打包
-    if { ![file exists "$locale_location/classes/static/index.html"] || [has_arg "-bf"] } package_frontend
     puts "打包开始..."
     spawn mvn -DskipTests -Dprofiles.active=prod package
     set errorCode [lindex [wait] 3]
@@ -71,21 +82,126 @@ proc package_service {} {
     puts "打包完成"
 }
 
-# 打包前端
-proc package_frontend {} {
-    global frontend_project_dir workdir
-    puts "前端打包开始..."
-    cd $frontend_project_dir
-    spawn npm run build
-    set errorCode [lindex [wait] 3]
-    if $errorCode {
-        expect eof
-        puts $expect_out(buffer)
-        puts "前端打包失败\terrorCode=$errorCode"
-        exit 1
+# 结束应用
+proc stop_application {} {
+    global server server_password remote_location target_file java_path
+    spawn ssh $server
+    set timeout 300
+    expect {
+        "password: " {
+            send "$server_password\r"
+            exp_continue
+        }
+        "Permission denied, please try again." {
+            puts "\n password error"
+            exit 1
+        }
+        "(yes/no)?" {
+            send "yes\r"
+            exp_continue
+        }
+        fail {
+            puts "\n连接失败"
+            exit 1
+        }
+        -re "\\\$|# " {
+            puts "\n登录成功"
+        }
     }
-    cd $workdir
-    puts "前端打包完成"
+    send "cd $remote_location\r"
+    expect -re "\\\$|# "
+    puts "查找进程"
+    send "ps aux | grep \" -jar $target_file\"\r"
+    set process_regexp "\\w+\\s+(\\d+)\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+$java_path -jar $target_file"
+    expect {
+        -re $process_regexp {
+            puts "发现进程"
+            puts $expect_out(0,string)
+            set pid $expect_out(1,string)
+            expect -re "\\\$|# "
+            send "kill $pid\r"
+            expect -re "\\\$|# "
+            sleep 1
+        }
+        -re "\\\$|# " {}
+    }
+    # 等待进程结束
+    send "ps aux | grep \" -jar $target_file\"\r"
+    expect {
+        -re $process_regexp {
+            sleep 1
+            exp_continue
+        }
+        -re "\\\$|# " {}
+    }
+    send "exit\r"
+    expect eof
+}
+
+# 启动应用
+proc start_application {} {
+    global server server_password target_file java_path
+    puts "启动应用..."
+    spawn ssh $server
+    set timeout 300
+    expect {
+        "password: " {
+            send "$server_password\r"
+            exp_continue
+        }
+        "Permission denied, please try again." {
+            puts "\n password error"
+            exit 1
+        }
+        "(yes/no)?" {
+            send "yes\r"
+            exp_continue
+        }
+        fail {
+            puts "\n连接失败"
+            exit 1
+        }
+        -re "\\\$|# " {
+            puts "\n登录成功"
+        }
+    }
+    send "nohup $java_path -jar $target_file > nohup.out &\r"
+    sleep 3
+    send "\r"
+    expect -re "\\\$|# "
+    while 1 {
+        send "tail -n 20 nohup.out\r"
+        expect {
+            -timeout 60
+            "Application run failed" {
+                expect -re "\\\$|# "
+                puts $expect_out(buffer)
+                send "exit\r"
+                expect eof
+                exit 1
+            }
+            "Web server failed to start" {
+                expect -re "\\\$|# "
+                puts $expect_out(buffer)
+                send "exit\r"
+                expect eof
+                puts "启动失败"
+                exit 1
+            }
+            -re "Started \\w+ in \\S+ seconds" {
+                puts "重启成功"
+                expect -re "\\\$|# "
+                puts $expect_out(buffer)
+                send "exit\r"
+                expect eof
+                exit
+            }
+            -re "\\\$|#" {
+                sleep 1
+                exp_continue
+            }
+        }
+    }
 }
 
 # 进入工作目录
@@ -106,6 +222,15 @@ expect_user {
 stty echo
 puts ""
 
-# 判断是否已经完成打包
-if { ![file exists "$locale_location/$target_file"] || [has_arg "-b"] || [has_arg "-bf"] } package_service
-upload
+if {$method == "deploy"} {
+    # 判断是否已经完成打包
+    if { ![file exists "$locale_location/$target_file"] || [has_arg "-b"] || [has_arg "-bf"] } package_service
+    stop_application
+    upload
+    start_application
+} elseif {$method == "start" || $method == "restart"} {
+    stop_application
+    start_application
+} elseif {$method == "stop"} {
+    stop_application
+}

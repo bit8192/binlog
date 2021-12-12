@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.5.5</version>
+        <version>2.6.1</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>cn.bincker</groupId>
@@ -15,7 +15,7 @@
     <description>bincker's blog</description>
 
     <properties>
-        <java.version>15</java.version>
+        <java.version>17</java.version>
     </properties>
 
     <profiles>
@@ -128,12 +128,6 @@
     </dependencies>
 
     <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
         <plugins>
             <plugin>
                 <groupId>org.asciidoctor</groupId>
