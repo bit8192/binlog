@@ -6,11 +6,13 @@ import cn.bincker.web.blog.base.config.SystemProfile;
 import cn.bincker.web.blog.base.entity.AliyunOssSystemFileImpl;
 import cn.bincker.web.blog.base.entity.CompositeSystemFile;
 import cn.bincker.web.blog.base.enumeration.FileSystemTypeEnum;
+import cn.bincker.web.blog.base.exception.NotFoundException;
 import cn.bincker.web.blog.base.exception.SystemException;
 import cn.bincker.web.blog.base.service.ISystemCacheService;
 import cn.bincker.web.blog.netdisk.entity.NetDiskFile;
 import cn.bincker.web.blog.base.entity.ISystemFile;
 import cn.bincker.web.blog.base.service.ISystemFileFactory;
+import cn.bincker.web.blog.netdisk.repository.INetDiskFileRepository;
 import cn.bincker.web.blog.utils.FileUtils;
 import cn.bincker.web.blog.utils.RequestUtils;
 import com.aliyun.oss.OSS;
@@ -30,18 +32,20 @@ public class SystemFileFactoryImpl implements ISystemFileFactory {
     private final Optional<OSS> aliyunOss;
     private final SystemFileProperties systemFileProperties;
     private final AliyunOssProperties aliyunOssProperties;
+    private final INetDiskFileRepository netDiskFileRepository;
 
     public SystemFileFactoryImpl(
             ISystemCacheService systemCacheService,
             SystemProfile systemProfile,
             Optional<OSS> aliyunOss,
-            SystemFileProperties systemFileProperties
-    ) {
+            SystemFileProperties systemFileProperties,
+            INetDiskFileRepository netDiskFileRepository) {
         this.systemCacheService = systemCacheService;
         this.systemProfile = systemProfile;
         this.aliyunOss = aliyunOss;
         this.systemFileProperties = systemFileProperties;
         this.aliyunOssProperties = systemFileProperties.getAliyunOss();
+        this.netDiskFileRepository = netDiskFileRepository;
     }
 
     private ISystemFile buildFile(FileSystemTypeEnum fileType, String path){
@@ -113,10 +117,11 @@ public class SystemFileFactoryImpl implements ISystemFileFactory {
                 }).orElseThrow();
             }
             case LOCAL -> {
+                var netDiskFile = netDiskFileRepository.findByPath(path).orElseThrow(NotFoundException::new);
                 String code = generateDownloadKey();
                 while (systemCacheService.containsKey(CACHE_KEY_DOWNLOAD_CODE + code)) code = generateDownloadKey();
                 systemCacheService.put(CACHE_KEY_DOWNLOAD_CODE + code, "", systemFileProperties.getDownloadUrlExpirationTime());//十分钟有效
-                return RequestUtils.getRequestBaseUrl(request) + systemProfile.getApiPath() + "/net-disk-files/download/" + path + "?code=" + code;
+                return RequestUtils.getRequestBaseUrl(request) + systemProfile.getApiPath() + "/net-disk-files/download/" + netDiskFile.getId() + "?code=" + code;
             }
         }
         throw new SystemException("未知的存储位置：" + fileType);
