@@ -42,7 +42,7 @@ public class ArticleVo {
         describe = article.getDescribe();
         content = article.getContent();
         tags = article.getTags().stream().map(t->new TagVo(t, null)).collect(Collectors.toSet());
-        cover = new NetDiskFileVo(article.getCover());
+        if(article.getCover() != null) cover = new NetDiskFileVo(article.getCover());
         images = article.getImages();
         articleClass = new ArticleClassVo(article.getArticleClass(), null);
         isOriginal = article.getIsOriginal();

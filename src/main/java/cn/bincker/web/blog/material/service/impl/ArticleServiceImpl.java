@@ -180,7 +180,8 @@ public class ArticleServiceImpl implements IArticleService {
                 )
                         .stream().map(tag -> new TagVo(tag, null)).collect(Collectors.toSet())
         );
-        result.setCover(new NetDiskFileVo(netDiskFileRepository.findById(target.getCover().getId()).orElseThrow()));
+        if(target.getCover() != null)
+            result.setCover(new NetDiskFileVo(netDiskFileRepository.findById(target.getCover().getId()).orElseThrow()));
         result.setArticleClass(new ArticleClassVo(articleClassRepository.findById(target.getArticleClass().getId()).orElseThrow(), null));
         return result;
     }

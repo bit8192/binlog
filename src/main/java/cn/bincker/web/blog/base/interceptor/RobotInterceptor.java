@@ -61,7 +61,8 @@ public class RobotInterceptor implements HandlerInterceptor {
                 userAgent.contains("coccocbot-image") ||
                 userAgent.contains("Qwantify/Bleriot") ||
                 userAgent.contains("Exabot") ||
-                userAgent.contains("DuckDuckBot")
+                userAgent.contains("DuckDuckBot") ||
+                userAgent.contains("Baiduspider")
                 ;
     }
 }
