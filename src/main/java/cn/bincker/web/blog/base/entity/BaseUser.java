@@ -3,7 +3,6 @@ package cn.bincker.web.blog.base.entity;
 import cn.bincker.web.blog.base.entity.converter.RoleConverter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
-import org.hibernate.Hibernate;
 import org.hibernate.annotations.ColumnDefault;
 
 import javax.persistence.Column;
@@ -11,7 +10,6 @@ import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.validation.constraints.NotEmpty;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 @Entity
@@ -59,18 +57,4 @@ public class BaseUser extends BaseEntity {
 
     @Column(unique = true)
     private String github;
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        BaseUser baseUser = (BaseUser) o;
-
-        return Objects.equals(getId(), baseUser.getId());
-    }
-
-    @Override
-    public int hashCode() {
-        return 496443638;
-    }
 }
