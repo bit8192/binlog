@@ -48,6 +48,11 @@ public class ArticleDto {
     private Integer orderNum = 0;
 
     /**
+     * 关键字
+     */
+    private String keywords;
+
+    /**
      * 简述
      */
     @NotEmpty

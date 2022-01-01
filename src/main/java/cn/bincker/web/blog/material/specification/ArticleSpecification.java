@@ -15,6 +15,7 @@ public class ArticleSpecification {
             var pattern = "%" + keywords + "%";
             return criteriaBuilder.or(
                     criteriaBuilder.like(root.get("title"), pattern),
+                    criteriaBuilder.like(root.get("keywords"), pattern),
                     criteriaBuilder.like(root.get("describe"), pattern),
                     criteriaBuilder.like(root.get("content"), pattern)
             );

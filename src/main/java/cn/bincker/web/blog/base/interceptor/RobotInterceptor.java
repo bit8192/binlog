@@ -22,15 +22,23 @@ public class RobotInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        if(handler.getClass().equals(ResourceHttpRequestHandler.class)) return true;
         var userAgent = request.getHeader(HttpHeaders.USER_AGENT);
-        var redirectPathParam = request.getParameter("redirectPath");
         var uri = request.getRequestURI();
+        //如果是静态文件请求
+        if(handler.getClass().equals(ResourceHttpRequestHandler.class)) {
+            //如果是请求首页且是机器人
+            if(uri != null && uri.equals("/index.html") && isRobot(userAgent)){
+                response.sendRedirect("/index");
+            }
+            return true;
+        }
+        //如果有跳转
+        var redirectPathParam = request.getParameter("redirectPath");
         if(isRobot(userAgent)){
             if(StringUtils.hasText(redirectPathParam)){
                 response.sendRedirect(URLDecoder.decode(redirectPathParam, StandardCharsets.UTF_8));
             }
-        }else if(!isApiRequest(handler)){
+        }else if(!uri.equals("/") && !isApiRequest(handler)){
             response.sendRedirect(SINGLE_PAGE_APP_REDIRECT_PATH + response.encodeURL(uri));
         }
         return true;

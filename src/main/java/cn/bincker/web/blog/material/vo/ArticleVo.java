@@ -16,6 +16,7 @@ public class ArticleVo {
     private Boolean recommend;
     private Boolean top;
     private Boolean isPublic;
+    private String keywords;
     private String describe;
     private String content;
     private Collection<TagVo> tags;
@@ -39,6 +40,7 @@ public class ArticleVo {
         recommend = article.getRecommend();
         top = article.getTop();
         isPublic = article.getIsPublic();
+        keywords = article.getKeywords();
         describe = article.getDescribe();
         content = article.getContent();
         tags = article.getTags().stream().map(t->new TagVo(t, null)).collect(Collectors.toSet());

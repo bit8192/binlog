@@ -49,6 +49,11 @@ public class Article extends AuditEntity {
     private Integer orderNum = 0;
 
     /**
+     * 关键字
+     */
+    private String keywords;
+
+    /**
      * 简述
      */
     @SuppressWarnings("JpaDataSourceORMInspection")
